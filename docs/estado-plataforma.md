@@ -1,6 +1,20 @@
 # Estado de Socias Digitales
 
-Corte inicial: **15 de octubre de 2026**, con actualizaciones fechadas hasta el **2 de noviembre**. Documento de continuidad, no una certificación universal ni un anuncio comercial.
+Corte inicial: **15 de octubre de 2026**, con actualizaciones fechadas hasta el **3 de noviembre**. Documento de continuidad, no una certificación universal ni un anuncio comercial.
+
+## Afiliadas y seguimiento — publicación y aceptación pendiente, 03/11/2026, Argentina
+
+**Código publicado en producción; falta la aceptación administrativa real.** Commit `d4ef51de175e226855629a8def54592994812630`, árbol exacto `9e580590d7462ad6f214956af3204ead38b90b87`, deployment Vercel `dpl_GW6XHzNrdPonea7s7LZqWhg6ccTt`, **READY** en `app.sociasdigitales.com`, con aliases conservados. Vercel confirmó Build Completed en veinte segundos y se comprobó el dominio. Este bloque actualiza el corte del 02/11 sin borrar su historia. Las **731 pruebas y el build correctos corresponden al mismo código publicado**; la revisión final de solo lectura no encontró bloqueantes.
+
+Se completaron en Chrome **80 combinaciones con datos ficticios**: Afiliadas de alumna, catálogo administrativo, accesos de Afiliadas y seguimiento de Socias; cada una en estados lleno/vacío/error/texto largo y anchos CSS **320/360/390/430/1280**. No hubo desbordes horizontales y los campos se comprobaron a 16 px. El modal Crear recurso se revisó además en esos cinco anchos con altura CSS 500: desplazamiento propio y Guardar visible. Una URL insegura fue rechazada antes del envío, conservando los datos del formulario. Esto comprueba las vistas y su comportamiento local, no un guardado autenticado administrativo en producción.
+
+Chrome se atascó al confirmar Cerrar para descartar el borrador ficticio. Los intentos de leer el diálogo/estado de la pestaña y la interacción nativa terminaron en timeout. No se guardó contenido real nuevo. La sesión disponible sigue siendo **Alex Prueba, alumna**, y no se elevó ni suplantó una cuenta. Se pidió al usuario descartar manualmente esa confirmación e ingresar como administrador; al cerrar este corte aún no hubo confirmación de esa sesión. Se detuvo el servidor QA y se retiraron la ruta ficticia y el enlace temporal local de `.env`. **Pendientes:** recorrido real de administración, confirmación de guardados/recargas con esa sesión y restaurar el viewport/emulación de prueba. No presentar toda la aceptación como finalizada.
+
+Seis comprobaciones HTTP en APIs de producción confirmaron **401 sin sesión y 403 ante origen cruzado**, con respuestas `private, no-store` y sin contenido sensible. No equivalen a probar las operaciones autorizadas de una administradora. En los diez minutos de logs consultados de este deployment no aparecieron entradas error/fatal. La consulta de drains devolvió **404: información no disponible**; no permite asegurar que no existan drains ni garantías adicionales sobre registros.
+
+El 03/11 se confirmó que las cinco tablas nuevas conservan **cero filas y cero identidades QA persistidas**. No se enviaron emails/push, no se otorgaron accesos y no se registraron cobros reales. La publicación mantiene el contrato: Afiliadas es adicional; al vencer seis meses vence solo acompañamiento y se conservan clases/herramientas según sus permisos.
+
+Reversión de código comprobada como referencia: `b9ddf69b2683c5ef69130546f619ecd4bdb9be4f` / `dpl_Dik7Kwg8YizN3oD9GB3tVTFwyvGB`. Si se usa, **conservar las cinco tablas, sus protecciones y cualquier dato que se cargue después**. Volver al deployment anterior no restaura ni elimina datos y no debe ejecutarse como un reset de base.
 
 ## Afiliadas y seguimiento de Socias — 02/11/2026, Argentina
 

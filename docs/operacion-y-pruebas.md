@@ -2,6 +2,20 @@
 
 Fecha: 15/10/2026. Complementa el inventario de `estado-plataforma.md`. No incluye credenciales ni autoriza envíos o cambios sobre usuarias reales.
 
+## Publicación de Afiliadas y seguimiento — cierre técnico del 03/11/2026, Argentina
+
+**Publicado, con aceptación administrativa real aún pendiente.** Producción usa commit `d4ef51de175e226855629a8def54592994812630`, árbol `9e580590d7462ad6f214956af3204ead38b90b87`, deployment `dpl_GW6XHzNrdPonea7s7LZqWhg6ccTt`, READY en `app.sociasdigitales.com` y aliases conservados. Vercel informó Build Completed en veinte segundos y el dominio fue confirmado. Las 731 pruebas y el build previos corresponden exactamente a este código. La revisión final de solo lectura no encontró bloqueantes; este corte reemplaza únicamente el estado de publicación/QA pendiente descrito el 02/11, conservando sus instrucciones y contratos.
+
+Aceptación visual con datos ficticios: ochenta combinaciones de cuatro vistas (Afiliadas alumna, catálogo admin, accesos y seguimiento), cuatro estados (lleno/vacío/error/texto largo) y cinco anchos CSS 320/360/390/430/1280. Cero desbordes horizontales y campos a 16 px. En los cinco anchos y altura CSS 500, Crear recurso conservó scroll propio y Guardar visible; el formulario rechazó una URL insegura antes de enviar y mantuvo los datos. No confundir esta matriz con el recorrido autenticado de una administradora real.
+
+Al confirmar Cerrar para descartar el borrador ficticio, Chrome dejó de responder. Lectura del diálogo, estado de pestaña e interacción nativa agotaron sus esperas; no se confirmó una nueva escritura real. La única sesión disponible era Alex Prueba como alumna y al cerrar el corte no se confirmó todavía una sesión administrativa. El servidor QA está detenido; la ruta ficticia y el enlace temporal local de `.env` fueron retirados. **Al retomar:** el usuario debe descartar manualmente la confirmación del borrador e ingresar como administrador; no elevar la cuenta de prueba ni suplantar otra sesión. Después completar creación/edición/publicación/archivo, habilitación/revocación, ciclo/cobro/historial y recargas con una identidad/entorno de prueba autorizados, y restaurar viewport/emulación. Este recorrido sigue pendiente y no debe darse por aprobado solo porque la versión ya esté publicada.
+
+Las seis comprobaciones HTTP de APIs de producción pasaron: 401 sin autenticación y 403 para origen cruzado, respuestas privadas `no-store` y sin información sensible. Comprueban denegaciones, no el éxito de una escritura administrativa autorizada. En los diez minutos de logs consultados del deployment no se encontraron error/fatal. La consulta de drains respondió 404 y queda **indisponible**; no inferir de esa respuesta que no haya drains ni otras garantías sobre los registros.
+
+Base verificada el 03/11: las cinco tablas nuevas siguen con cero filas y no quedaron identidades QA. No hubo emails/push, accesos concedidos o cobros reales nuevos. Mantener estas condiciones durante la aceptación; no usar una campaña ni un cobro real como prueba.
+
+Rollback de código de referencia: commit `b9ddf69b2683c5ef69130546f619ecd4bdb9be4f`, deployment `dpl_Dik7Kwg8YizN3oD9GB3tVTFwyvGB`. Conservar las cinco tablas, RLS, guards, auditorías y futuros datos; no aplicar un downgrade destructivo ni un reset para revertir la interfaz. La vuelta al código anterior no revierte cambios de datos o comunicaciones.
+
 ## Afiliadas y seguimiento de Socias — operación incorporada el 02/11/2026
 
 **Código en revisión, sin publicación confirmada al corte.** Estas instrucciones describen los nuevos módulos para su aceptación y operación después de publicar la versión revisada. Consultar primero el bloque más reciente de `docs/estado-plataforma.md`; no interpretar los cortes históricos como estado actual.
