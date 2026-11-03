@@ -4,6 +4,9 @@ const test = require('node:test'), assert = require('node:assert/strict'), fs = 
 const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8')
 function load(file, deps = {}) { const m = { exports: {} }; new Function('require', 'module', 'exports', ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(name => name === 'server-only' ? {} : name in deps ? deps[name] : require(name), m, m.exports); return m.exports }
 const d = load('src/lib/affiliate-hub.ts'), uid = '00000000-0000-4000-8000-000000000010', id = '00000000-0000-4000-8000-000000000001'
+const management = load('src/lib/class-management.ts'), materials = load('src/lib/class-materials.ts', { './class-management': management })
+const files = load('src/lib/affiliate-files.ts', { './class-materials': materials, './affiliate-hub': d })
+const fileServer = load('src/lib/affiliate-files-server.ts', { './affiliate-files': files, './affiliate-hub': d, './class-materials': materials, './r2-upload': load('src/lib/r2-upload.ts', { './class-management': management }) })
 const datos = { titulo: 'Mensaje de práctica aislado', cuerpo: 'Un copy de prueba local.', tipo: 'copy', campana: null, url: null, estado: 'publicado', destacado: false }
 const fila = { id, ...datos, version: 1, creado_en: '2026-11-02T12:00:00.123456+00:00', actualizado_en: '2026-11-02T12:00:00.123456+00:00' }
 function fixture(options = {}) {
@@ -34,7 +37,7 @@ function fixture(options = {}) {
     }
     return b
   } }
-  const api = load('src/lib/affiliate-hub-server.ts', { 'next/navigation': { unstable_rethrow: e => { if (e?.digest === 'NEXT_CONTROL') throw e } }, './supabase/server': { createClient: async () => { if (options.control) throw options.control; return db } }, './affiliate-hub': d, './metrics': load('src/lib/metrics.ts') })
+  const api = load('src/lib/affiliate-hub-server.ts', { 'next/navigation': { unstable_rethrow: e => { if (e?.digest === 'NEXT_CONTROL') throw e } }, './supabase/server': { createClient: async () => { if (options.control) throw options.control; return db } }, './affiliate-hub': d, './metrics': load('src/lib/metrics.ts'), './affiliate-files-server': fileServer })
   return { api, calls, rows, auth: { supabase: db, userId: uid, admin: true } }
 }
 test('Auth y perfil propio se comprueban; rol legacy, metadata y falta de fila no habilitan Afiliadas', async () => {

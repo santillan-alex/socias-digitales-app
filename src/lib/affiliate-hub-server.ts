@@ -3,6 +3,7 @@ import { unstable_rethrow } from 'next/navigation'
 import { createClient } from './supabase/server'
 import { origenMetricasPermitido } from './metrics'
 import { esRecursoAfiliada, recursoCoincideAfiliada, validarEntradaAfiliada, type CatalogoAfiliadas, type EntradaRecursoAfiliada, type RecursoAfiliada } from './affiliate-hub'
+import { comprobarVinculoArchivoAfiliadas, ErrorArchivoAfiliadas } from './affiliate-files-server'
 
 export const HEADERS_AFILIADAS = { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' }
 const CAMPOS = 'id,titulo,cuerpo,tipo,campana,url,estado,destacado,version,creado_en,actualizado_en'
@@ -49,6 +50,8 @@ function fallo(error: { code?: string } | null) {
 }
 export async function guardarRecursoAfiliadas(auth: SesionAfiliadas, entrada: EntradaRecursoAfiliada, editar = false): Promise<RecursoAfiliada> {
   if (!auth.admin) throw new ErrorAfiliadas(403, 'Solo el equipo de Flor puede editar recursos.')
+  try { await comprobarVinculoArchivoAfiliadas(entrada.id, entrada.datos) }
+  catch (error) { unstable_rethrow(error); if (error instanceof ErrorArchivoAfiliadas) throw new ErrorAfiliadas(error.status, error.message); throw new ErrorAfiliadas(503, 'No pudimos comprobar el archivo del recurso. Conservá el formulario y reintentá.') }
   const leer = () => auth.supabase.from('recursos_afiliadas').select(CAMPOS).eq('id', entrada.id).maybeSingle()
   const previa = await leer()
   if (previa.error) throw fallo(previa.error)

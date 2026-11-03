@@ -80,6 +80,19 @@ export function firmarCargaMaterial(key: string, contentType: string) {
   const signature = createHmac('sha256', c.signing).update(['AWS4-HMAC-SHA256', c.date, c.scope, hash(canonical)].join('\n')).digest('hex')
   return `https://${c.host}${c.uri}?${query}&X-Amz-Signature=${signature}`
 }
+export function firmarDescargaPrivada(key: string, contentDisposition: string, expiresIn = 60) {
+  if (!Number.isInteger(expiresIn) || expiresIn < 1 || expiresIn > 300 || /[\r\n]/.test(contentDisposition)) throw new Error('Descarga no válida.')
+  const c = config(key)
+  const query = queryString({
+    'response-content-disposition': contentDisposition,
+    'response-content-type': 'application/octet-stream',
+    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256', 'X-Amz-Credential': `${process.env.R2_ACCESS_KEY_ID}/${c.scope}`,
+    'X-Amz-Date': c.date, 'X-Amz-Expires': String(expiresIn), 'X-Amz-SignedHeaders': 'host',
+  })
+  const canonical = ['GET', c.uri, query, `host:${c.host}\n`, 'host', 'UNSIGNED-PAYLOAD'].join('\n')
+  const signature = createHmac('sha256', c.signing).update(['AWS4-HMAC-SHA256', c.date, c.scope, hash(canonical)].join('\n')).digest('hex')
+  return `https://${c.host}${c.uri}?${query}&X-Amz-Signature=${signature}`
+}
 export async function pedirR2(
   method: string,
   key: string,
@@ -87,7 +100,7 @@ export async function pedirR2(
   body: string | Uint8Array<ArrayBuffer> = '',
   contentType?: string,
   condicion?: { 'If-Match': string } | { 'If-None-Match': '*' },
-  opciones?: { sinCompresion?: boolean; timeoutMs?: number; metadatos?: Record<string, string> },
+  opciones?: { sinCompresion?: boolean; timeoutMs?: number; metadatos?: Record<string, string>; rango?: { inicio: number; fin: number } },
 ) {
   const c = config(key),
     qs = queryString(query),
@@ -96,11 +109,17 @@ export async function pedirR2(
     ? Object.fromEntries(Object.entries(condicion).map(([k, v]) => [k.toLowerCase(), v]))
     : {}
   const metadatos: Record<string, string> = {}
+  const rango: Record<string, string> = {}
+  if (opciones?.rango) {
+    const { inicio, fin } = opciones.rango
+    if (method !== 'GET' || !Number.isSafeInteger(inicio) || !Number.isSafeInteger(fin) || inicio < 0 || fin < inicio || fin - inicio >= 1024 * 1024) throw new Error('Rango de archivo no válido.')
+    rango.range = `bytes=${inicio}-${fin}`
+  }
   for (const [nombre, valor] of Object.entries(opciones?.metadatos ?? {})) {
     if (!/^[a-z0-9-]{1,40}$/.test(nombre) || !/^[\x20-\x7e]{1,256}$/.test(valor)) throw new Error('Metadatos de archivo no válidos.')
     metadatos[`x-amz-meta-${nombre}`] = valor
   }
-  const paraFirmar: Record<string, string> = { ...condicionales, ...metadatos, host: c.host, 'x-amz-content-sha256': payload, 'x-amz-date': c.date }
+  const paraFirmar: Record<string, string> = { ...condicionales, ...metadatos, ...rango, host: c.host, 'x-amz-content-sha256': payload, 'x-amz-date': c.date }
   const nombres = Object.keys(paraFirmar).sort()
   const signedHeaders = nombres.join(';')
   const headers = nombres.map(k => `${k}:${paraFirmar[k]}\n`).join('')
@@ -115,6 +134,7 @@ export async function pedirR2(
     headers: {
       ...condicionales,
       ...metadatos,
+      ...rango,
       ...(opciones?.sinCompresion ? { 'Accept-Encoding': 'identity' } : {}),
       'x-amz-date': c.date,
       'x-amz-content-sha256': payload,
