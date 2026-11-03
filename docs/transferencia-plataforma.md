@@ -2,6 +2,25 @@
 
 Fecha: **15/10/2026**. Este documento reemplaza el estado de transferencia anterior del 08/10. No confirma que se haya movido ningún servicio.
 
+## Ampliación de respaldo: archivos propios de Afiliadas — cierre del 03/11/2026
+
+El código publicado de esta ampliación corresponde al commit `5bfdfab03840d054b2e6fe8755d78e2c3cf8b1c6`, árbol `c96cfbf827e702910ec35e54bc0f277d445907b5`, deployment `dpl_BJ25xb7ZCmM7urk8NEJxA6uXgLoQ`, **READY confirmado**, con dominios app/Flor y aliases conservados. Las **777 pruebas**, build local completo y ESLint con salida 0 corresponden a esa versión. Desde Chrome con sesión administrativa, origen app, se subieron realmente PDF y MP4 técnicos, se guardaron archivados, se recargaron y descargaron; los SHA-256 de los archivos recibidos coinciden con sus fixtures. Esta aceptación no confirma una transferencia, respaldo ejecutado o restauración probada. Consultar el corte más reciente de `estado-plataforma.md` antes de operar.
+
+Afiliadas incorpora archivos propios en el **mismo bucket privado R2 existente**, además de los enlaces externos anteriores. No se agrega migración SQL, tabla, credencial, servicio o proveedor. Respaldar coordinadamente `recursos_afiliadas` —incluyendo UUID, referencia HTTPS estable, campaña, tipo, estado y versión— y estos prefijos privados cuando se usen:
+
+| Prefijo R2 | Qué debe conservarse |
+| --- | --- |
+| `afiliadas/archivos/<recursoId>/<archivoId>.<extension>` | Binarios confirmados e inmutables: MP4 hasta 1 GiB y documentos/imágenes permitidos hasta 25 MiB |
+| `afiliadas/indices/<recursoId>/<archivoId>.json` | Metadata privada que liga el archivo a su recurso, nombre, tamaño, MIME, extensión, creadora y fecha; necesaria para validar y emitir una descarga |
+
+Copiar solo la tabla, el código o los binarios por separado no restaura la entrega. Conservar los mismos UUID y relaciones, MIME y contenido del índice; probar la apertura autenticada tras restaurar. La referencia estable usa la ruta `/api/afiliadas/<recursoId>/archivo/<archivoId>` de la app; no guardar una firma R2 como destino permanente. Las firmas se generan al abrir y duran sesenta segundos. La publicación, el permiso Afiliadas y la referencia actual deben seguir comprobándose después del traslado; no sustituirlos por un bucket público o enlaces de duración indefinida.
+
+Inventario QA nuevo confirmado y conservado: PDF de **601 bytes**, recurso `8ee0e387-aeef-4785-affd-634bab3474e2`, archivo `57a18a0a-570b-4f98-97c9-76c1839b8ecb`; MP4 de **2324 bytes**, de un segundo y color rosa, recurso `5e50cd1c-2e94-4918-979d-5563c4cdab0e`, archivo `5916ce75-eda0-4633-8dda-1d9489189d6b`. Ambos recursos terminaron directamente **Archivados, versión 1**, sin publicación. Sus binarios e índices privados existen y son recuperables: incluirlos en el inventario del próximo respaldo, no eliminarlos para volver a declarar cero filas. Al inicio había cero habilitaciones Afiliadas activadas; no se modificaron grants, plan/rol ni se enviaron email/push. Las pruebas desde una alumna habilitada y la carga por alias Flor/CORS siguen pendientes. La evidencia de los cinco anchos y estados de la nueva interfaz es local.
+
+Las subidas multipart pueden dejar sesiones abandonadas u objetos sin referencia si se corta la conexión o se descarta el formulario. No hay limpieza automática ni borrado definitivo de esos objetos en esta ampliación. Inventariar y revisar esos casos en una operación separada; no eliminar índices, originales o material archivado durante el traslado. No hay DRM, antivirus ni transcodificación: TXT solo comprueba el prefijo, Office cabecera ZIP y MP4 su cabecera/tamaño/MIME. Un archivo ya descargado no se revoca al mover el servicio o retirar el permiso.
+
+Mantener CORS restringido al origen de carga autorizado y las credenciales de servidor fuera de documentos/Git. El inventario previo registra `https://app.sociasdigitales.com`; no asumir que un alias Flor, preview o dominio receptor puede subir hasta comprobarlo y autorizar su origen concreto. No se modificó CORS como parte de este corte. La nueva organización por campañas y la copia de textos completos no transfieren propiedad de destinos externos ni conectan ManyChat/Sndflow. Las afirmaciones de «solo enlaces externos» del inventario del 02/11 describen la etapa anterior y no deben usarse para excluir estos nuevos prefijos del próximo respaldo.
+
 ## Actualización de inventario y respaldo — 02/11/2026
 
 GitHub redirige con HTTP 301 desde `Lombardomercato/socias-digitales-app` al **mismo repositorio ID `1411000015`**, ahora `santillan-alex/socias-digitales-app`, público y con `main` predeterminada. Metadata pública y redirección verificadas el 02/11; esta entrega no efectuó ese cambio de propietario. Las referencias al nombre anterior de las secciones históricas no son el destino vigente por defecto. Antes de transferir o desplegar comprobar de nuevo ID, propietario, remoto, rama de producción e integración GitHub/Vercel. El proyecto Vercel y el dominio de la app siguen siendo los mismos; esta comprobación no demuestra que se haya transferido un servicio ni publicado código nuevo.
