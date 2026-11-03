@@ -28,7 +28,7 @@ test('dieciocho secciones únicas y activos correctos sin colisiones ni raíces 
 test('sidebar conserva dieciocho links, iconos, grupo activo abierto y badge real en todas las secciones', () => {
   for (const s of sections.ADMIN_SECTIONS) {
     const Sidebar = sidebar(s.href), html = renderToStaticMarkup(React.createElement(Sidebar, { datos }))
-    assert.equal((html.match(/href=/g) ?? []).length, 18); assert.equal((html.match(/data-icon=/g) ?? []).length, 18); assert.equal((html.match(/aria-current="page"/g) ?? []).length, 1)
+    assert.equal((html.match(/href=/g) ?? []).length, 18); assert.equal((html.match(/data-icon=/g) ?? []).length, 21); assert.equal((html.match(/aria-current="page"/g) ?? []).length, 1)
     assert.ok(html.includes(`href="${s.href}" aria-current="page"`)); assert.ok(html.includes('4 solicitudes pendientes')); assert.ok(html.includes('group-open:hidden')); assert.ok(!html.includes('<select')); assert.ok(!html.includes('overflow-x'))
     const grupo = navigation.ADMIN_NAVIGATION_GROUPS.find(g => g.rutas.includes(s.href)); assert.equal((html.match(/<details open=""/g) ?? []).length, grupo ? 1 : 0)
     for (const section of sections.ADMIN_SECTIONS) assert.ok(html.includes(`href="${section.href}"`))

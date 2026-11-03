@@ -340,6 +340,7 @@ body {
 }
 /* Administración: la misma navegación lateral en todas las secciones. */
 .sd-admin-shell [data-admin-section-header] { display: none; }
+.platform-design .sd-admin-shell nav[data-admin-menu] { background-color: transparent !important; }
 .platform-design .sd-admin-shell nav[data-admin-menu] a { display: flex; }
 .platform-design .sd-admin-shell header.sd-admin-shell__header { flex-wrap: nowrap; }
 .sd-admin-shell__content { scroll-margin-top: 96px; }
