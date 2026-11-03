@@ -2,6 +2,34 @@
 
 Corte inicial: **15 de octubre de 2026**, con actualizaciones fechadas hasta el **3 de noviembre**. Documento de continuidad, no una certificación universal ni un anuncio comercial.
 
+## Navegación lateral publicada — corte final del 03/11/2026, Argentina
+
+**Producción actual:** commit `b64446eb6122266f77c12439322688e96f7aa596`, árbol `f8d20b84aebb8f097b25a04dbfb5dbd0c747e485`, deployment Vercel `dpl_5isvmUu5cpLLvfebMxg1P2Qt1Gq2`, **READY**. Se conservaron `app.sociasdigitales.com`, `flor.sociasdigitales.com` y los aliases existentes. Este corte actualiza la etapa de navegación que el bloque anterior registra en QA; no cambia la historia de las operaciones autenticadas realizadas en `d4ef`.
+
+Validación de este cambio: **740/740 pruebas correctas**, build completo Turbopack/TypeScript con salida 0 y ESLint sin errores, con tres avisos preexistentes por imágenes nativas en `AdminDashboard`. La QA local de navegación pasó en anchos CSS **320/360/390/430/1280**, sin desborde. El diálogo Menú abre, se cierra con Escape y devuelve el foco a Menú. La comprobación DOM durante el desplazamiento confirmó el lateral fijo y el encabezado en posición 0.
+
+En **Chrome real de producción**, mediante la interfaz nativa, se revisaron Afiliadas y `/admin/classroom`: navegar Afiliadas → Clases funcionó; con Desafío expandido y desplazamiento hasta Material de apoyo, el menú se mantuvo fijo a la izquierda, Clases apareció activo y las acciones Nueva clase, Editar y Subir video siguieron visibles. Esto comprueba navegación y disposición de esas pantallas, no una carga de video nueva. La extensión de Chrome se atascó y se recuperó con interacción nativa; al detener la depuración, el viewport visible volvió a su tamaño normal. **La matriz móvil fue local: no se declara validación móvil autenticada en producción.**
+
+En los diez minutos de logs consultados del **nuevo deployment** no se encontraron error/fatal; la afirmación se limita a esa ventana. La captura validada de Afiliadas con el menú publicado, `menu-admin-publicado-20261103.jpg`, quedó guardada fuera del repositorio. Se retiró el enlace temporal de configuración, las rutas QA no están en el build y el servidor QA está apagado. El usuario pasó a usar otras pestañas de Chrome y se detuvo la interacción automatizada.
+
+Última comprobación SQL: recurso técnico **archivado, versión 3**; cobro con concepto exacto **QA Seguimiento 03/11/2026 — SIN PAGO REAL**, **Anulado, versión 2**, sin monto, moneda o `pagado_en`; dos auditorías del cobro; permiso de la cuenta de prueba **deshabilitado, versión 2**; **cero ciclos de acompañamiento guardados y cero habilitaciones de Afiliadas activadas**. Se mantienen los registros técnicos y su historial. No son cero filas ni pagos reales; no hubo emails/push ni cambios de plan/rol por el ensayo.
+
+Sigue pendiente el recorrido de la interfaz de una **Socia** con acceso Afiliadas, distinto de la sesión administrativa usada para los ensayos. La RLS anterior pasó mediante transacción y ROLLBACK y las operaciones administrativas están documentadas, pero no sustituyen esa aceptación de alumna ni la revisión móvil real. No presentar toda la plataforma o todos los recorridos como finalizados. Conservar las cinco tablas y sus protecciones si se revierte código.
+
+## Ampliación de aceptación autenticada — 03/11/2026, Argentina
+
+**Se comprobaron operaciones administrativas reales en la producción `d4ef51de175e226855629a8def54592994812630`.** Este ensayo es posterior al corte de publicación que figura abajo. Las afirmaciones de cero filas de ese corte describen el estado anterior al ensayo: **ya no son el inventario actual**. Los datos siguientes son pruebas identificadas y conservadas, sin pagos reales ni comunicaciones.
+
+El recurso `fa83e6a3-6559-4bcf-a574-a6db4edc8e64`, **Prueba técnica · Afiliadas (03/11)**, pasó por Borrador → Publicado → Archivado y termina **archivado, versión 3**. Antes de publicarlo se confirmó que había cero habilitaciones activadas de Afiliadas. Se comprobó su persistencia al recargar. No se enviaron emails ni push; queda conservado como recurso técnico archivado, no como contenido activo para las alumnas.
+
+Sobre la cuenta de alumna de prueba `06bb7999-997b-49c8-ba80-b8d05bca4a84`, el único cobro técnico **QA Seguimiento 03/11/2026 — SIN PAGO REAL** se creó Pendiente, sin monto ni moneda, y después se cambió a **Anulado, versión 2**. Conserva **dos entradas de auditoría**, sin fecha de pago (`pagado_en` nulo). No se guardó ningún ciclo de acompañamiento. Se habilitó y retiró Afiliadas a esa cuenta de prueba; el acceso termina **deshabilitado**, sin cambiar su plan o rol.
+
+El recurso archivado, el cobro anulado, la fila de acceso deshabilitada y las dos auditorías del cobro permanecen en la base. No eliminarlos ni reescribir el historial para volver a declarar «cero filas». No hubo cobro de dinero, acreditación de una compra ni un acceso nuevo que quedara habilitado a una alumna real.
+
+La sesión disponible durante estas comprobaciones era **administrativa**. No se completó por eso el recorrido de la interfaz de una Socia: falta verificar como alumna habilitada qué ve antes/después de publicar, copiar/abrir el recurso y revocar el permiso, conservando el campus cuando corresponda. La prueba RLS transaccional anterior sí pasó y terminó en ROLLBACK; no sustituye esa aceptación de interfaz.
+
+**Navegación lateral posterior: en QA, todavía sin publicar.** La suite de ese nuevo cambio pasa **740 pruebas**; el build final sigue pendiente. No atribuir ese número ni esa navegación a la producción `d4ef` publicada, cuya validación previa fue de 731 pruebas y build correcto. Se conservan los cortes anteriores para distinguir pruebas locales, operaciones autenticadas y código efectivamente publicado.
+
 ## Afiliadas y seguimiento — publicación y aceptación pendiente, 03/11/2026, Argentina
 
 **Código publicado en producción; falta la aceptación administrativa real.** Commit `d4ef51de175e226855629a8def54592994812630`, árbol exacto `9e580590d7462ad6f214956af3204ead38b90b87`, deployment Vercel `dpl_GW6XHzNrdPonea7s7LZqWhg6ccTt`, **READY** en `app.sociasdigitales.com`, con aliases conservados. Vercel confirmó Build Completed en veinte segundos y se comprobó el dominio. Este bloque actualiza el corte del 02/11 sin borrar su historia. Las **731 pruebas y el build correctos corresponden al mismo código publicado**; la revisión final de solo lectura no encontró bloqueantes.
