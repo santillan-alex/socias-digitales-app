@@ -26,19 +26,20 @@ test('navegación móvil: cinco destinos reales, ruta activa correcta y sin prec
   const src = read('src/components/MobileNavigation.tsx')
   assert.ok(src.includes('prefetch={false}')); assert.ok(!src.includes('fetch(')); assert.ok(!src.includes('supabase')); assert.ok(!src.includes('user_metadata'))
 })
-test('Flor dispone de todas las secciones en móvil, sin perder Mi día, Métricas o Invitaciones', () => {
+test('Flor dispone de dieciocho destinos desde el lateral y el diálogo móvil, sin pestañas horizontales', () => {
   const sections = cargar('src/lib/admin-sections.ts')
-  const pushes = []
-  const menu = cargar('src/components/AdminSectionMenu.tsx', { 'next/link': link, 'next/navigation': { usePathname: () => '/admin/checklist', useRouter: () => ({ push: v => pushes.push(v) }) }, './NavigationIcon': icon, '@/lib/admin-sections': sections })
-  const html = renderToStaticMarkup(React.createElement(menu.default))
-  assert.ok(html.includes('Sección del panel de Flor')); assert.ok(html.includes('value="/admin/checklist" selected=""'))
-  for (const s of sections.ADMIN_SECTIONS) { assert.ok(html.includes(`value="${s.href}"`)); assert.ok(html.includes(`href="${s.href}"`)) }
+  const navigation = cargar('src/lib/admin-navigation.ts', { './admin-sections': sections })
+  const Sidebar = cargar('src/components/AdminSidebar.tsx', { 'next/link': link, 'next/navigation': { usePathname: () => '/admin/checklist' }, './NavigationIcon': icon, '@/lib/admin-sections': sections, '@/lib/admin-navigation': navigation }).default
+  const html = renderToStaticMarkup(React.createElement(Sidebar, { datos: { nombre: 'Flor', solicitudesPendientes: 2 } }))
   assert.equal(sections.ADMIN_SECTIONS.length, 18)
-  assert.ok(html.includes('value="/admin/afiliadas"'))
-  assert.ok(html.includes('value="/admin/socias"'))
-  assert.ok(html.includes('value="/admin/recursos"'))
-  assert.ok(html.includes('value="/admin/equipo"'))
-  assert.ok(html.includes('value="/admin/encuesta"'))
+  for (const s of sections.ADMIN_SECTIONS) assert.ok(html.includes(`href="${s.href}"`))
+  assert.ok(html.includes('href="/admin/checklist" aria-current="page"'))
+  assert.ok(html.includes('2 solicitudes pendientes'))
+  assert.ok(html.includes('<summary')); assert.ok(html.includes('min-h-11'))
+  const frame = read('src/components/AdminShellFrame.tsx'), adapter = read('src/components/AdminSectionMenu.tsx')
+  assert.ok(frame.includes('<dialog')); assert.ok(frame.includes('aria-controls="sd-admin-menu-dialog"')); assert.ok(frame.includes('<AdminSidebar datos={datos} onNavigate={cerrarMenu}'))
+  assert.ok(frame.includes('safe-area-inset-bottom')); assert.ok(frame.includes('100dvh')); assert.ok(frame.includes('onClose='))
+  assert.ok(adapter.includes('dentroDelPanel ? null')); assert.ok(!adapter.includes('overflow-x-auto')); assert.ok(!adapter.includes('<select'))
 })
 test('contrato móvil conserva zoom, usa safe areas y no esconde desbordes para simular adaptación', () => {
   const layout = read('src/app/layout.tsx'), css = read('src/app/globals.css')

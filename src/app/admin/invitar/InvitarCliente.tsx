@@ -43,7 +43,7 @@ export default function InvitarCliente() {
 
   return (
     <div className="min-h-screen bg-[#FAF7F3] text-[#171413]">
-      <nav className="flex items-center justify-between border-b border-[#e7ddd5] px-6 py-4">
+      <nav data-admin-section-header="true" className="flex items-center justify-between border-b border-[#e7ddd5] px-6 py-4">
         <img src="/academy-horizontal-color.png" alt="Socias Digitales Academy" style={{ height: 44, width: 'auto', objectFit: 'contain' }} />
         <a href="/admin" className="text-sm font-medium text-[#294A38]">← Volver al panel</a>
       </nav>

@@ -158,7 +158,7 @@ export default function ComunidadAdmin({ initial, preguntas, consultasError, tot
   const ocupada = cargando || guardando || enviando || Boolean(objetivo) || respuestaCongelada || hayBorrador || sinAcceso
 
   return <main className="min-h-screen bg-[#F4EFEA] text-[#211C19]" data-platform-role="admin">
-    <header className="border-b border-[#E7DDD5] px-5 py-4 sm:px-8"><a href="/admin" className="inline-flex min-h-11 items-center gap-2 text-sm text-[#294A38]"><NavigationIcon name="inicio" />Panel de Flor</a></header>
+    <header data-admin-section-header="true" className="border-b border-[#E7DDD5] px-5 py-4 sm:px-8"><a href="/admin" className="inline-flex min-h-11 items-center gap-2 text-sm text-[#294A38]"><NavigationIcon name="inicio" />Panel de Flor</a></header>
     <AdminSectionMenu />
     <div className="mx-auto max-w-5xl space-y-6 px-5 py-8 sm:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-[10px] font-medium uppercase tracking-[.2em] text-[#294A38]">Entre Socias</p><h1 className="mt-2 font-serif text-4xl sm:text-5xl">Comunidad</h1><p className="mt-3 max-w-xl text-sm leading-relaxed text-[#746A64]">Compartí, respondé y acompañá la conversación. Acá también cuidás lo que se publica.</p></div><button onClick={() => tab === 'comunidad' ? cargarVista(vista) : router.refresh()} disabled={ocupada} className={accionClass}>{cargando ? 'Actualizando…' : 'Actualizar'}</button></div>

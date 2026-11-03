@@ -71,7 +71,7 @@ export default function EquipoAdmin({
       className="min-h-screen bg-[#F4EFEA] text-[#211C19]"
       data-platform-role="admin"
     >
-      <header className="border-b border-[#E7DDD5] px-5 py-4">
+      <header data-admin-section-header="true" className="border-b border-[#E7DDD5] px-5 py-4">
         <a
           href="/admin"
           className="inline-flex min-h-11 items-center text-sm text-[#294A38]"

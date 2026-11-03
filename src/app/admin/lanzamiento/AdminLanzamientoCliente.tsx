@@ -89,7 +89,7 @@ export default function AdminLanzamientoCliente({ metricas, afiliadas }: Props) 
 
   return (
     <div className="min-h-screen" style={{ background: '#f5f0eb' }}>
-      <nav className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
+      <nav data-admin-section-header="true" className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
         <img src="/academy-horizontal-color.png" alt="Socias Digitales Academy" style={{ height: 44, width: 'auto', objectFit: 'contain' }} />
         <a href="/admin" className="text-sm text-gray-500 hover:text-gray-800">← Panel admin</a>
       </nav>

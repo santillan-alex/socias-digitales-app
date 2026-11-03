@@ -338,3 +338,16 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .platform-design *, .sd-access-design * { scroll-behavior: auto !important; transition-duration: 0ms !important; }
 }
+/* Administración: la misma navegación lateral en todas las secciones. */
+.sd-admin-shell [data-admin-section-header] { display: none; }
+.platform-design .sd-admin-shell nav[data-admin-menu] a { display: flex; }
+.platform-design .sd-admin-shell header.sd-admin-shell__header { flex-wrap: nowrap; }
+.sd-admin-shell__content { scroll-margin-top: 96px; }
+.sd-admin-shell__content > :is(main, div).min-h-screen { min-height: calc(100dvh - 76px); }
+.sd-admin-shell summary::-webkit-details-marker { display: none; }
+@media (max-width: 639px) {
+  .platform-design .sd-admin-shell__header [data-admin-desktop] { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sd-admin-shell [data-admin-menu] svg { transition: none; }
+}

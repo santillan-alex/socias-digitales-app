@@ -57,7 +57,7 @@ export default function ResultadosAdmin({ resultados, socias, periodoActual, err
   }
   const selector = 'rounded-full border border-[#e7ddd5] bg-white px-4 py-2 text-sm'
   return <div className="min-h-screen bg-[#F4EFEA] text-[#211c19]">
-    <header className="flex h-[76px] items-center justify-between border-b border-[#e7ddd5] px-5 sm:px-8"><Link href="/admin"><img src="/academy-horizontal-color.png" alt="Socias Digitales Academy" className="h-11 w-auto" /></Link><Link href="/admin" className="text-sm text-[#294A38]">← Panel de Flor</Link></header>
+    <header data-admin-section-header="true" className="flex h-[76px] items-center justify-between border-b border-[#e7ddd5] px-5 sm:px-8"><Link href="/admin"><img src="/academy-horizontal-color.png" alt="Socias Digitales Academy" className="h-11 w-auto" /></Link><Link href="/admin" className="text-sm text-[#294A38]">← Panel de Flor</Link></header>
     <AdminSectionMenu />
     <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
       <p className="text-[10px] font-semibold uppercase tracking-[.22em] text-[#294A38]">Seguimiento de Socias</p><h1 className="mt-2 font-serif text-4xl font-semibold tracking-[-.04em] sm:text-5xl">Resultados</h1>

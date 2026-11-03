@@ -2,10 +2,6 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import NavigationIcon from '@/components/NavigationIcon'
-import AdminSectionMenu from '@/components/AdminSectionMenu'
-import { ADMIN_SECTIONS } from '@/lib/admin-sections'
 import { TIPOS_ACCESO, tipoAcceso, contarTipos, filtrarUsuarias, type TipoAcceso } from '@/lib/admin-usuarias'
 import { versionFicha } from '@/lib/admin-profile-update'
 
@@ -86,7 +82,6 @@ function EmailCuenta({ alumna, errorDirectorio }: { alumna: Alumna; errorDirecto
 
 export default function AdminDashboard({ alumnas, stats, errorDirectorio = false }: Props) {
   const router = useRouter()
-  const supabase = createClient()
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todas')
   const [filtroTipo, setFiltroTipo] = useState<TipoAcceso | 'todas'>('todas')
@@ -98,12 +93,6 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
   const [errorFicha, setErrorFicha] = useState('')
   const [mensajeFicha, setMensajeFicha] = useState('')
   const operacionEnCurso = useRef(false)
-
-  async function cerrarSesion() {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
 
   const alumnasFiltradas = filtrarUsuarias(alumnas, { busqueda, estado: filtroEstado, tipo: filtroTipo })
   const cantidadesTipo = contarTipos(alumnas)
@@ -182,20 +171,7 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
 
   return (
     <div className="admin-dashboard min-h-screen bg-[#FAF7F3] text-[#211c19]">
-      <header className="flex h-[76px] items-center justify-between border-b border-[#e7ddd5] bg-[#FAF7F3] px-5 sm:px-8">
-        <a href="/admin" aria-label="Panel de Flor"><img src="/academy-horizontal-color.png" alt="Socias Digitales Academy" className="h-11 w-auto object-contain" /></a>
-        <div className="flex items-center gap-4"><span className="hidden text-xs text-[#746a64] sm:block">Administración</span><a href="/perfil" className="text-sm font-medium text-[#294A38]">Mi perfil</a><button onClick={cerrarSesion} className="text-sm text-[#746a64] hover:text-[#211c19]">Cerrar sesión</button></div>
-      </header>
-
-      <div className="mx-auto grid max-w-[1400px] lg:grid-cols-[220px_minmax(0,1fr)]">
-        <div className="col-span-full lg:hidden"><AdminSectionMenu /></div>
-        <aside className="hidden min-h-[calc(100vh-76px)] border-r border-[#e7ddd5] px-5 py-7 lg:block">
-          <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#746a64]">Panel de Flor</p>
-          <nav className="mt-5 space-y-1.5" aria-label="Navegación de administración">
-            {ADMIN_SECTIONS.map(item => <a key={item.href} href={item.href} aria-current={item.href === '/admin' ? 'page' : undefined} className={`flex items-center justify-between rounded-xl px-3 py-3 text-sm transition ${item.href === '/admin' ? 'bg-[#F4CAD8] font-semibold' : 'text-[#746a64] hover:bg-[#F4EFEA] hover:text-[#211c19]'}`}><span className="flex items-center gap-3"><NavigationIcon name={item.icon} />{item.label}</span>{item.href === '/admin/desafio' && stats.solicitudesDesafioPendientes > 0 ? <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-[#211c19]">{stats.solicitudesDesafioPendientes}</span> : null}</a>)}
-          </nav>
-        </aside>
-
+      <div className="mx-auto max-w-[1160px]">
         <main className="min-w-0 space-y-4 px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div><p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#294A38]">Vista general</p><h1 className="mt-2 font-serif text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">Panel de Flor</h1></div>

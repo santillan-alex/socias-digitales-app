@@ -50,7 +50,7 @@ export default function AgendaAdmin() {
   let vista: HitoEditable | null = null
   try { vista = validarHito({ ...form, publicado: true }) } catch { /* Formulario aún incompleto. */ }
   return <main className="min-h-screen bg-[#F4EFEA] text-[#211C19]" data-platform-role="admin">
-    <header className="border-b border-[#E7DDD5] px-5 py-4"><a href="/admin" className="inline-flex min-h-11 items-center text-sm text-[#294A38]">← Panel de Flor</a></header>
+    <header data-admin-section-header="true" className="border-b border-[#E7DDD5] px-5 py-4"><a href="/admin" className="inline-flex min-h-11 items-center text-sm text-[#294A38]">← Panel de Flor</a></header>
     <AdminSectionMenu />
     <div className="mx-auto max-w-5xl px-5 py-7 sm:px-8">
       <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#294A38]">Agenda</p>

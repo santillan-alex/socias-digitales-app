@@ -81,7 +81,7 @@ export default function SociasSeguimiento({ inicial }: { inicial: ListaSeguimien
     && `${s.nombre ?? ''} ${s.whatsapp ?? ''}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').includes(consulta))
   const resumen = lista.estado === 'lista' && !lista.limitado ? resumenSeguimiento(socias, lista.hoy) : null
   return <main className="min-h-screen bg-[#F4EFEA] text-[#211C19]" data-platform-role="admin">
-    <header className="border-b border-[#E7DDD5] px-5 py-3"><Link href="/admin" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-[#294A38]"><ArrowIcon className="rotate-180" />Panel de Flor</Link></header>
+    <header data-admin-section-header="true" className="border-b border-[#E7DDD5] px-5 py-3"><Link href="/admin" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-[#294A38]"><ArrowIcon className="rotate-180" />Panel de Flor</Link></header>
     <AdminSectionMenu />
     <div className="mx-auto max-w-6xl space-y-5 px-5 py-7 sm:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#294A38]">Seis meses, cerca de cada Socia</p><h1 className="mt-2 text-4xl font-semibold sm:text-5xl">Seguimiento de Socias</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-[#746A64]">Acompañamiento, próximas renovaciones y pagos a revisar.</p></div><button className={boton} disabled={cargando || Boolean(editor)} onClick={() => void (detalle ? abrir(detalle.socia.id) : cargar())}>Actualizar {detalle ? 'ficha' : 'seguimiento'}</button></div>
