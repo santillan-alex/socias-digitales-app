@@ -2,6 +2,14 @@
 
 Corte inicial: **15 de octubre de 2026**, con actualizaciones fechadas hasta el **3 de noviembre**. Documento de continuidad, no una certificación universal ni un anuncio comercial.
 
+## Estética del menú de Flor — cierre del 03/11/2026
+
+Publicado commit `def73bc8ad1d6aa3d3552e729059fd3cb53c634f`, árbol `6341c827759d4cc1d700f65ad2ad2b43e9fe8112`, deployment `dpl_E6USKJm38BdHF5raWw5mhyqvHdcR`, READY con dominios y aliases conservados. El ajuste es visual: fondo uniforme del lateral, grupos sin cajas, títulos en estilo oración, tres iconos de grupo, separadores e indentación; columna de 264 px. Conserva rutas, badges, apertura por ruta, navegación fija y menú móvil. No modifica permisos, datos ni las funciones de Afiliadas publicadas anteriormente.
+
+Validación: 777 pruebas correctas con concurrencia limitada a cuatro, 14 pruebas enfocadas de navegación/mobile correctas, build completo y ESLint sin errores. La primera ejecución de la suite con concurrencia predeterminada tuvo un fallo de preparación de imagen en una prueba de Comunidad; la suite completa con concurrencia cuatro pasó sin cambios en ese módulo. No ocultar ese resultado ni atribuirlo al menú.
+
+En Chrome local se comprobaron anchos CSS 320/360/390/430/1280: fondo calculado transparente, títulos de grupos de una línea, sin desborde, menú fijo en top 100 al desplazarse, cierre móvil con Escape y foco devuelto a Menú; viewport restaurado. En producción se verificaron Vista general activa y Alumnas desplegado: «Seguimiento de Socias» queda en una línea, sin desborde. Captura real recortada al lateral, sin datos de alumnas: `outputs/menu-flor-mejorado-20261103.jpg`, fuera del repositorio. La ruta QA se retiró del build, se detuvo su servidor y se retiró el enlace temporal de configuración.
+
 ## Archivos propios y campañas de Afiliadas — publicación y aceptación administrativa del 03/11/2026, Argentina
 
 **Publicado y READY confirmado.** Commit `5bfdfab03840d054b2e6fe8755d78e2c3cf8b1c6`, árbol `c96cfbf827e702910ec35e54bc0f277d445907b5`, deployment `dpl_BJ25xb7ZCmM7urk8NEJxA6uXgLoQ`. Se conservaron `app.sociasdigitales.com`, `flor.sociasdigitales.com` y los aliases existentes. Este cierre reemplaza el estado preliminar en BUILD de esta ampliación; la navegación `b64446eb6122266f77c12439322688e96f7aa596`, documentada abajo, queda como publicación anterior.

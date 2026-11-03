@@ -46,6 +46,12 @@ No glow, brillos, neón, degradados decorativos, sombras ornamentales fuertes o 
 
 **Decisión vigente del 23/10/2026:** retirar el efecto vidrio y las transparencias de superficies/navegación. Usar fondos sólidos de marca y bordes finos; no reintroducir blur ni glassmorphism. Se conserva el oscurecimiento de fondo habitual de los diálogos, sin desenfoque. Las celebraciones reutilizan `SuccessCelebration`: mensaje confirmado, papelitos breves y deterministas, sin sonidos, vibración ni robo de foco. Con movimiento reducido queda solo el mensaje estático. Las historias para redes reutilizan colores y tipografías de marca, sin nombres, comprobantes ni cifras privadas incorporadas automáticamente.
 
+## Menú administrativo — ajuste del 03/11/2026
+
+`AdminSidebar` mantiene la columna de escritorio de 264 px, con iconos alineados y títulos de grupo en estilo oración a 13 px, sin tracking amplio ni cajas redondeadas alrededor de cada grupo. Usar separadores finos, submenú con línea lateral discreta y selección rosa en la ruta activa. Conservar los 18 destinos y sus iconos; los tres grupos tienen además su propio icono. Evitar recortar o truncar nombres como «Seguimiento de Socias» y «Formación y comunidad».
+
+El fondo de `nav[data-admin-menu]` es transparente mediante una regla limitada a `.sd-admin-shell`: neutraliza el fondo global de nav que creaba el rectángulo claro. No cambiar todos los menús para resolver este caso. Se conservan navegación fija al desplazarse, grupos plegables, badges y diálogo móvil con Escape y devolución de foco. Comprobar tanto Inicio como un grupo desplegado, además de los anchos de celular requeridos.
+
 ## Jerarquía y estados
 
 Mantener un título principal por vista y acciones localizadas. Flor necesita operar: gestionar usuarias, clases, avisos y equipo; la alumna necesita continuar lo suyo. No mezclar menús de administración y estudio para conseguir una captura.
