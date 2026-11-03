@@ -46,7 +46,7 @@ test('acceso de Inicio coincide con el permiso privado y distingue Socias de Des
   assert.equal(home.accesoInicio({ rol: 'admin', estado: 'activa' }).formacion, false)
   assert.equal(home.accesoInicio(null).formacion, false)
 })
-function pagina({ perfil = socia, errorPerfil = null, user = { id: 'propia' }, estrategia = false } = {}) {
+function pagina({ perfil = socia, errorPerfil = null, user = { id: 'propia' }, estrategia = false, afiliadas = { habilitada: false, error: false } } = {}) {
   const calls = [], seleccion = []
   const db = { auth: { getUser: async () => ({ data: { user } }) }, from: table => {
     calls.push('tabla:' + table)
@@ -88,6 +88,7 @@ function pagina({ perfil = socia, errorPerfil = null, user = { id: 'propia' }, e
     '@/lib/results-server': { permisoResultados: permiso('permiso-resultados') },
     '@/lib/metrics-server': { permisoMetricas: permiso('permiso-metricas') },
     '@/lib/my-day-server': { permisoMiDia: permiso('permiso-dia') },
+    '@/lib/affiliate-access-server': { leerAccesoAfiliadas: async (client, id, p) => { assert.equal(client, db); assert.equal(id, 'propia'); assert.equal(p, perfil); calls.push('permiso-afiliadas'); return afiliadas } },
     '@/lib/achievements': { puedeVerLogros: p => p?.estado === 'activa' && (p.tipo_usuario === 'socia' || ['afiliada', 'afiliada_lanzamiento'].includes(p.rol)) },
     './AgendaProvider': { AgendaProvider: wrapper },
     '@/lib/agenda-store': { leerAgenda: async () => { calls.push('agenda'); return { hito: null } } },
@@ -127,6 +128,50 @@ test('SSR Inicio: Socia activa sin flag Desafío recibe campus sin habilitar otr
   assert.ok(p.calls.includes('agenda')); assert.ok(!p.calls.includes('catalogo'))
   assert.equal(p.calls.filter(call => call === 'campus').length, 1)
   assert.match(p.seleccion.find(s => s.table === 'perfiles').columns, /\bestado\b/)
+})
+test('SSR Inicio: Afiliadas se agrega al acceso Socia y conserva campus, calendario y navegación formativa', async () => {
+  const p = pagina({ afiliadas: { habilitada: true, error: false } })
+  const html = renderToStaticMarkup(await p.page())
+  const menu = html.match(/<nav[^>]*aria-label="Navegación principal"[^>]*>([\s\S]*?)<\/nav>/)?.[1]
+  assert.match(html, /data-campus="true" data-acceso="socia"/)
+  assert.match(html, /data-calendario-personal="true"/)
+  assert.match(html, /aria-label="Tu espacio de Afiliadas"/)
+  assert.match(html, /Entrar a Afiliadas/)
+  assert.match(menu, /href="\/afiliadas"/)
+  assert.match(menu, /href="\/clases"/)
+  assert.match(menu, /href="\/lanzamiento"/)
+  assert.match(menu, /href="\/comunidad"/)
+  assert.ok(p.calls.includes('agenda')); assert.ok(p.calls.includes('permiso-afiliadas'))
+  assert.equal(p.calls.filter(call => call === 'campus').length, 1)
+  assert.ok(!html.includes('data-inicio-gratuito')); assert.ok(!html.includes('Quiero ser Socia'))
+})
+test('SSR Inicio: Afiliada gratuita explícita tiene menú y hub sin ofrecer formación privada ni una compra falsa', async () => {
+  const p = pagina({ perfil: { ...socia, tipo_usuario: 'gratuito' }, afiliadas: { habilitada: true, error: false } })
+  const html = renderToStaticMarkup(await p.page())
+  const menu = html.match(/<nav[^>]*aria-label="Navegación principal"[^>]*>([\s\S]*?)<\/nav>/)?.[1]
+  assert.match(html, /aria-label="Tu espacio de Afiliadas"/)
+  assert.match(html, /Entrar a Afiliadas/)
+  assert.match(html, /aria-haspopup="dialog"/)
+  for (const route of ['/inicio', '/afiliadas', '/perfil', '/notificaciones']) assert.ok(menu?.includes(`href="${route}"`), route)
+  for (const route of ['/clases', '/classroom', '/lanzamiento', '/comunidad', '/checklist', '/metricas', '/resultados', '/logros']) assert.ok(!menu?.includes(`href="${route}"`), route)
+  for (const bloque of ['data-campus', 'data-calendario-personal', 'data-proximo-hito="banner"', 'data-inicio-gratuito', 'Quiero ser Socia', 'Herramientas de Socias', 'Otros espacios', 'Tu acceso está en revisión']) assert.ok(!html.includes(bloque), bloque)
+  assert.ok(!p.calls.includes('campus')); assert.ok(!p.calls.includes('agenda'))
+  assert.ok(p.calls.includes('avisos')); assert.ok(p.calls.includes('permiso-afiliadas'))
+})
+test('SSR Inicio: un fallo al comprobar Afiliadas no borra el acceso Socia ni muestra el hub como habilitado', async () => {
+  const p = pagina({ afiliadas: { habilitada: false, error: true } })
+  const html = renderToStaticMarkup(await p.page())
+  const menu = html.match(/<nav[^>]*aria-label="Navegación principal"[^>]*>([\s\S]*?)<\/nav>/)?.[1]
+  assert.match(html, /No pudimos comprobar el acceso a Afiliadas/)
+  assert.match(html, /role="alert"/)
+  assert.match(html, /data-campus="true" data-acceso="socia"/)
+  assert.match(html, /data-calendario-personal="true"/)
+  assert.match(menu, /href="\/clases"/)
+  assert.match(menu, /href="\/notificaciones"/)
+  assert.ok(!menu.includes('href="/afiliadas"'))
+  assert.ok(!html.includes('aria-label="Tu espacio de Afiliadas"'))
+  assert.ok(!html.includes('data-inicio-gratuito')); assert.ok(!html.includes('Quiero ser Socia'))
+  assert.ok(p.calls.includes('campus')); assert.ok(p.calls.includes('agenda')); assert.ok(p.calls.includes('avisos'))
 })
 test('SSR Inicio: Desafío habilitado recibe el mismo campus con su propio acceso, sin pasar por el alta gratuita', async () => {
   const perfil = { ...socia, tipo_usuario: 'desafio', desafio_socias_habilitada: true, desafio_socias_estado: 'habilitada' }
@@ -182,6 +227,7 @@ test('SSR Inicio: gratuita sigue con muestras y no se vuelve Socia por metadata 
     assert.ok(p.calls.includes('catalogo')); assert.ok(!p.calls.includes('agenda'))
     assert.ok(!html.includes('data-campus')); assert.ok(!p.calls.includes('campus'))
     assert.ok(html.includes('Quiero ser Socia')); assert.ok(html.includes('disabled=""'))
+    assert.ok(!html.includes('href="/afiliadas"')); assert.ok(!html.includes('Entrar a Afiliadas'))
   }
 })
 test('SSR Inicio: Desafío pendiente no hereda formación por un rol antiguo de afiliada', async () => {
@@ -207,6 +253,7 @@ test('SSR Inicio: rol antiguo sin tipo de acceso no habilita el campus privado p
   for (const rol of ['afiliada', 'afiliada_lanzamiento']) {
     const p = pagina({ perfil: { ...socia, rol, tipo_usuario: null } }), html = renderToStaticMarkup(await p.page())
     assert.ok(!html.includes('data-campus')); assert.ok(!p.calls.includes('campus')); assert.ok(!p.calls.includes('agenda')); assert.ok(!p.calls.includes('catalogo'))
+    assert.ok(!html.includes('href="/afiliadas"')); assert.ok(!html.includes('aria-label="Tu espacio de Afiliadas"'))
   }
 })
 test('SSR Inicio: perfil ausente o fallido muestra recuperación, no un alta gratuita ni módulos falsamente disponibles', async () => {

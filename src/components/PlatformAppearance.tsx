@@ -6,7 +6,7 @@ import MobileNavigation from './MobileNavigation'
 const PLATFORM_PATHS = [
   '/inicio', '/perfil', '/classroom', '/clases', '/lanzamiento', '/comunidad',
   '/resultados', '/productos', '/objetivos', '/checklist', '/ranking', '/logros',
-  '/metricas', '/admin', '/notificaciones', '/cuenta',
+  '/metricas', '/admin', '/notificaciones', '/cuenta', '/afiliadas',
 ]
 
 export default function PlatformAppearance({ children }: { children: React.ReactNode }) {

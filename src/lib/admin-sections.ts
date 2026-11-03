@@ -1,6 +1,8 @@
 // Misma navegación en Inicio y en cada sección; no se pierden módulos en móvil.
 export const ADMIN_SECTIONS = [
   { href: '/admin', label: 'Vista general', icon: 'inicio' },
+  { href: '/admin/socias', label: 'Seguimiento de Socias', icon: 'calendario' },
+  { href: '/admin/afiliadas', label: 'Afiliadas', icon: 'productos' },
   { href: '/admin/desafio', label: 'Solicitudes', icon: 'solicitudes' },
   { href: '/admin/encuesta', label: 'Encuesta', icon: 'encuesta' },
   { href: '/admin/invitar', label: 'Invitaciones', icon: 'invitaciones' },

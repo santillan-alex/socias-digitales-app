@@ -24,6 +24,7 @@ import { fechaArgentina } from '@/lib/metrics'
 import { puedeUsarComunidad } from '@/lib/community'
 import PersonalCalendar from './PersonalCalendar'
 import { HomeCalendarLoading } from '@/components/HomeCalendar'
+import { leerAccesoAfiliadas } from '@/lib/affiliate-access-server'
 
 async function leerHoraServidor() {
   return Date.now()
@@ -42,13 +43,14 @@ export default async function InicioPage({ searchParams }: { searchParams?: Prom
 
   if (perfil?.rol === 'admin') redirect('/admin')
   if (errorPerfil || !perfil) return <main className="min-h-screen bg-[#F4EFEA] px-5 py-12"><section className="mx-auto max-w-xl rounded-3xl border border-[#E7DDD5] bg-[#FFFDFA] p-6"><h1 className="font-serif text-3xl">No pudimos comprobar tu acceso.</h1><p role="alert" className="mt-4 text-sm leading-6">Volvé a intentarlo. Tu cuenta y tus avances no se modificaron.</p><a href="/inicio" className="mt-6 inline-flex min-h-11 items-center rounded-full bg-[#294A38] px-5 py-3 text-sm font-semibold text-white">Reintentar</a></section></main>
-  const [accesoResultados,accesoMetricas,accesoMiDia] = await Promise.all([permisoResultados(supabase,user.id),permisoMetricas(supabase,user.id),permisoMiDia(supabase,user.id)])
+  const [accesoResultados,accesoMetricas,accesoMiDia,accesoAfiliadas] = await Promise.all([permisoResultados(supabase,user.id),permisoMetricas(supabase,user.id),permisoMiDia(supabase,user.id),leerAccesoAfiliadas(supabase,user.id,perfil)])
   const resumenAvisos = await leerAvisosSinLeer(supabase, user.id)
   const nombre = perfil?.nombre?.trim().split(' ')[0] || user.user_metadata?.nombre || 'Socia'
 
   const acceso = accesoInicio(perfil)
   const tipoUsuario = acceso.nivel
   const habilitada = acceso.formacion
+  const soloAfiliada = accesoAfiliadas.habilitada && !habilitada
   const esDesafio = tipoUsuario === 'desafio'
   const mostrarClase = acceso.formacion
   const { data: accesoEstrategia, error: errorEstrategia } = await supabase.from('accesos_estrategia').select('habilitada').eq('usuaria_id', user.id).maybeSingle()
@@ -58,7 +60,7 @@ export default async function InicioPage({ searchParams }: { searchParams?: Prom
   const ahoraInicial = await leerHoraServidor()
   const mesCalendario = (await searchParams)?.mes
   const esGratuito = acceso.gratuito
-  const clasesGratuitas = esGratuito && perfil ? await leerCatalogoClases(perfil) : []
+  const clasesGratuitas = esGratuito && !soloAfiliada && perfil ? await leerCatalogoClases(perfil) : []
   const accesoCerrado = perfil?.desafio_socias_estado === 'rechazada' || perfil?.desafio_socias_estado === 'bloqueada'
   let hitos: HitoAgenda[] = [], errorAgenda = false
   if (mostrarClase && perfil) {
@@ -66,14 +68,14 @@ export default async function InicioPage({ searchParams }: { searchParams?: Prom
     catch { errorAgenda = true; console.error('agenda_read_failed') }
   }
   return (
-    <StudentShellFrame datos={{ nombre, formacion: mostrarClase, comunidad: puedeUsarComunidad(perfil),
+    <StudentShellFrame datos={{ nombre, formacion: mostrarClase, comunidad: puedeUsarComunidad(perfil), afiliadas: accesoAfiliadas.habilitada,
       herramientas: { resultados: accesoResultados.permitido && !accesoResultados.error, metricas: accesoMetricas.permitido && !accesoMetricas.error, miDia: accesoMiDia.permitido && !accesoMiDia.error, logros: puedeVerLogros(perfil) },
       ahoraInicial, hitos, errorAgenda, avisos: resumenAvisos }}>
 
         <main className="min-w-0 px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#294A38]">{acceso.etiqueta}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#294A38]">{soloAfiliada ? 'Afiliadas' : acceso.etiqueta}</p>
               <h1 className="mt-2 font-serif text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">Hola, {nombre}.</h1>
             </div>
             <Link href="/perfil" className="inline-flex items-center gap-2 text-sm font-medium text-[#294A38]">Mi perfil <ArrowIcon diagonal /></Link>
@@ -81,7 +83,10 @@ export default async function InicioPage({ searchParams }: { searchParams?: Prom
 
           {mostrarClase && <div className="mt-5"><ProximaClase ahoraInicial={ahoraInicial} variante="banner" /></div>}
 
-          {acceso.suspendido ? <section className="mt-7 max-w-3xl rounded-[24px] border border-[#EC9BB6] bg-[#F4CAD8] p-6 sm:p-8"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#211c19]/55">Tu acceso</p><h2 className="mt-3 font-serif text-3xl font-semibold">Tu acceso al contenido pago está pausado.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-[#211c19]/70">Tus datos y avances siguen guardados. Si necesitás revisar tu acceso, comunicate con el equipo de Socias Digitales. Podés seguir entrando a tu perfil y tus avisos.</p><Link href="/perfil" className="mt-6 inline-flex min-h-11 items-center rounded-full bg-[#294A38] px-5 py-3 text-sm font-semibold text-white">Ir a mi perfil <ArrowIcon /></Link></section> : esGratuito ? <FreeStart clases={clasesGratuitas} /> : !habilitada && esDesafio ? (
+          {accesoAfiliadas.habilitada && <section aria-label="Tu espacio de Afiliadas" className="mt-6 flex flex-wrap items-center justify-between gap-5 rounded-[24px] border border-[#EC9BB6] bg-[#F4CAD8] p-6"><div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#294A38]">Para acompañar tus ventas</p><h2 className="mt-2 text-2xl font-semibold">Tu espacio de Afiliadas</h2><p className="mt-2 max-w-xl text-sm leading-6 text-[#746A64]">Mensajes de Flor, textos listos para adaptar y materiales de cada campaña.</p></div><Link href="/afiliadas" prefetch={false} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#294A38] px-5 py-3 text-sm font-semibold text-white">Entrar a Afiliadas <ArrowIcon /></Link></section>}
+          {accesoAfiliadas.error && <p role="alert" className="mt-5 rounded-2xl border border-[#E7DDD5] bg-[#FFFDFA] p-4 text-sm text-[#746A64]">No pudimos comprobar el acceso a Afiliadas. <a href="/inicio" className="inline-flex min-h-11 items-center font-semibold text-[#294A38] underline">Actualizar</a></p>}
+
+          {soloAfiliada ? null : acceso.suspendido ? <section className="mt-7 max-w-3xl rounded-[24px] border border-[#EC9BB6] bg-[#F4CAD8] p-6 sm:p-8"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#211c19]/55">Tu acceso</p><h2 className="mt-3 font-serif text-3xl font-semibold">Tu acceso al contenido pago está pausado.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-[#211c19]/70">Tus datos y avances siguen guardados. Si necesitás revisar tu acceso, comunicate con el equipo de Socias Digitales. Podés seguir entrando a tu perfil y tus avisos.</p><Link href="/perfil" className="mt-6 inline-flex min-h-11 items-center rounded-full bg-[#294A38] px-5 py-3 text-sm font-semibold text-white">Ir a mi perfil <ArrowIcon /></Link></section> : esGratuito ? <FreeStart clases={clasesGratuitas} /> : !habilitada && esDesafio ? (
             <section className="mt-7 max-w-3xl rounded-[24px] bg-[#F4CAD8] p-6 sm:p-8">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#211c19]/55">Inscripción recibida</p>
               <h2 className="mt-3 font-serif text-3xl font-semibold">{accesoCerrado ? 'Tu acceso no está habilitado.' : 'Tu acceso está en revisión.'}</h2>
@@ -107,7 +112,7 @@ export default async function InicioPage({ searchParams }: { searchParams?: Prom
             </>
           )}
           {!habilitada && <UnreadNoticeLink variante="tarjeta" />}
-          <LockedModules compacto={habilitada} erroresPermiso={[...(accesoResultados.error ? ['resultados' as const] : []), ...(accesoMetricas.error ? ['metricas' as const] : []), ...(accesoMiDia.error ? ['checklist' as const] : [])]} venta={esGratuito} resultadosHabilitados={accesoResultados.permitido} metricasHabilitadas={accesoMetricas.permitido} miDiaHabilitado={accesoMiDia.permitido} logrosHabilitados={puedeVerLogros(perfil)} comunidadHabilitada={puedeUsarComunidad(perfil)} />
+          {!soloAfiliada && <LockedModules compacto={habilitada} erroresPermiso={[...(accesoResultados.error ? ['resultados' as const] : []), ...(accesoMetricas.error ? ['metricas' as const] : []), ...(accesoMiDia.error ? ['checklist' as const] : [])]} venta={esGratuito} resultadosHabilitados={accesoResultados.permitido} metricasHabilitadas={accesoMetricas.permitido} miDiaHabilitado={accesoMiDia.permitido} logrosHabilitados={puedeVerLogros(perfil)} comunidadHabilitada={puedeUsarComunidad(perfil)} />}
         </main>
     </StudentShellFrame>
   )

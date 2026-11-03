@@ -7,6 +7,7 @@ export interface StudentNavigationData {
   nombre: string
   formacion: boolean
   comunidad: boolean
+  afiliadas?: boolean
   herramientas: {
     miDia: boolean
     metricas: boolean
@@ -20,10 +21,10 @@ export interface StudentNavigationData {
 }
 
 export interface StudentNavigationItem {
-  id: 'inicio' | 'estrategia' | 'programa' | 'perfil' | 'comunidad' | 'notificaciones' | 'mi-dia' | 'metricas' | 'resultados' | 'logros'
+  id: 'inicio' | 'estrategia' | 'programa' | 'perfil' | 'comunidad' | 'notificaciones' | 'afiliadas' | 'mi-dia' | 'metricas' | 'resultados' | 'logros'
   nombre: string
   href: string
-  icono: 'inicio' | 'lanzamiento' | 'clases' | 'perfil' | 'comunidad' | 'notificaciones' | 'checklist' | 'resultados' | 'logros'
+  icono: 'inicio' | 'lanzamiento' | 'clases' | 'perfil' | 'comunidad' | 'notificaciones' | 'checklist' | 'resultados' | 'logros' | 'productos'
   rutas: readonly string[]
 }
 
@@ -31,6 +32,7 @@ const principales: readonly StudentNavigationItem[] = [
   { id: 'inicio', nombre: 'Inicio', href: '/inicio', icono: 'inicio', rutas: ['/inicio'] },
   { id: 'estrategia', nombre: 'Estrategia', href: '/lanzamiento', icono: 'lanzamiento', rutas: ['/lanzamiento'] },
   { id: 'programa', nombre: 'Programa', href: '/clases', icono: 'clases', rutas: ['/clases', '/classroom'] },
+  { id: 'afiliadas', nombre: 'Afiliadas', href: '/afiliadas', icono: 'productos', rutas: ['/afiliadas'] },
   { id: 'perfil', nombre: 'Mi perfil', href: '/perfil', icono: 'perfil', rutas: ['/perfil', '/cuenta'] },
   { id: 'comunidad', nombre: 'Comunidad', href: '/comunidad', icono: 'comunidad', rutas: ['/comunidad'] },
   { id: 'notificaciones', nombre: 'Notificaciones', href: '/notificaciones', icono: 'notificaciones', rutas: ['/notificaciones'] },
@@ -46,6 +48,8 @@ const herramientas: readonly (StudentNavigationItem & { permiso: keyof StudentNa
 export function seccionesPrincipalesEstudiante(datos: StudentNavigationData): readonly StudentNavigationItem[] {
   return principales.filter(seccion => {
     if (seccion.id === 'estrategia') return datos.formacion
+    if (seccion.id === 'programa' && datos.afiliadas && !datos.formacion) return false
+    if (seccion.id === 'afiliadas') return datos.afiliadas === true
     if (seccion.id === 'comunidad') return datos.comunidad
     return true
   })

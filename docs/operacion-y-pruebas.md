@@ -2,6 +2,62 @@
 
 Fecha: 15/10/2026. Complementa el inventario de `estado-plataforma.md`. No incluye credenciales ni autoriza envíos o cambios sobre usuarias reales.
 
+## Afiliadas y seguimiento de Socias — operación incorporada el 02/11/2026
+
+**Código en revisión, sin publicación confirmada al corte.** Estas instrucciones describen los nuevos módulos para su aceptación y operación después de publicar la versión revisada. Consultar primero el bloque más reciente de `docs/estado-plataforma.md`; no interpretar los cortes históricos como estado actual.
+
+### Acceso adicional a Afiliadas
+
+1. Entrar al Panel de Flor → **Afiliadas** → **Gestionar accesos** (`/admin/afiliadas/accesos`). Buscar la cuenta y comprobar nombre, tipo y estado antes de cambiarla. La búsqueda actúa sobre la lista cargada; si se alcanza el límite de quinientas cuentas, se informa que la vista y las cifras son parciales.
+2. Elegir **Habilitar Afiliadas** o **Retirar acceso**, revisar la cuenta de la confirmación y pulsar **Confirmar acceso**. Solo una cuenta activa puede recibir una nueva habilitación; retirar sigue permitido cuando la cuenta está pausada. La cuenta de prueba se incluye mediante su control explícito y no suma a los indicadores.
+3. Confirmar el mensaje de guardado y volver a comprobar desde la sesión de alumna. Un timeout no demuestra éxito ni rechazo: **Reintentar mismo envío** conserva la operación. Ante conflicto de versión, actualizar la lista y revisar el estado antes de editar de nuevo.
+
+Afiliadas se suma a los permisos existentes: no cambia el tipo Socia/Desafío/Gratuito ni concede clases, herramientas, agenda privada o administración. Una Socia puede tener ambos espacios. Un rol antiguo `afiliada`/`afiliada_lanzamiento` o metadata de registro no sustituye la habilitación explícita. No crear ni promover una administradora para solucionar este acceso.
+
+### Mensajes, copies y materiales de Afiliadas
+
+En `/admin/afiliadas`, usar **Crear recurso +**. Completar Título y Tipo de recurso; Campaña o tema es opcional. Aviso/Copy requieren texto; Video/Archivo/Enlace requieren un enlace HTTPS completo. Se admite título de hasta 140 caracteres, cuerpo de hasta 12.000, campaña de hasta 120 y URL de hasta 2.000. El contenido se muestra como texto plano, sin interpretar HTML.
+
+Los videos y archivos se abren en su **destino externo**: este formulario no sube binarios, no carga videos a R2 y no cambia la privacidad del destino. Revisar que el enlace sea el material autorizado para ese público, sin credenciales en la URL. No confundirlo con el editor de adjuntos privados de las clases, que conserva su circuito independiente.
+
+Elegir Borrador para preparación interna, Publicado para las Afiliadas habilitadas o Archivado para retirarlo sin borrar; **Destacar al comienzo** ordena primero los destacados. Guardar con el botón correspondiente y comprobar la respuesta. **Editar** permite modificar o volver a publicar un archivado. Los conflictos no deben pisar una edición ajena; conservar el mismo intento ante una respuesta ambigua y actualizar antes de cambiar los datos. No hay borrado definitivo desde esta interfaz.
+
+En `/afiliadas`, la alumna puede buscar por texto/campaña, filtrar tipo/campaña, ampliar textos largos, copiar un copy completo y abrir enlaces. **Actualizar recursos** vuelve a leer; un error se distingue de un catálogo vacío. La lista muestra hasta doscientos recursos y avisa si hay más; los filtros solo afectan lo cargado. Publicar, archivar, copiar o abrir no envía emails/push, no confirma una venta y no incorpora seguimiento de descargas o comisiones.
+
+### Seguimiento de acompañamiento de cada Socia
+
+En Panel de Flor → **Seguimiento de Socias** (`/admin/socias`), revisar vigentes, renovaciones en treinta días, acompañamientos vencidos, fechas por confirmar y cobros pendientes/vencidos. Buscar por nombre o WhatsApp, filtrar el estado de acompañamiento y abrir **Ver seguimiento**. Solo se incluyen cuentas con `tipo_usuario='socia'` explícito; Desafío y el permiso Afiliadas se gestionan aparte. Si una lectura es parcial o falla, respetar su advertencia y no presentar cifras incompletas como definitivas.
+
+Para una cuenta sin ciclo, elegir **Confirmar inicio del acompañamiento**. Revisar cuándo ya estaban confirmados el pago y el alta, escribir la fecha y marcar esa comprobación antes de **Confirmar ciclo**. La fecha no puede preceder al alta ni estar en el futuro según Argentina. No usar automáticamente la fecha de creación de la cuenta como fecha de compra. Si aún no está confirmada, dejarla Por confirmar.
+
+El fin se calcula en la base sumando seis meses calendario, ajustando el día al último del mes destino cuando sea necesario. **Renueva el** es un fin exclusivo: por ejemplo, inicio 31/08/2023 → último día incluido 28/02/2024 → renueva 29/02/2024. El cálculo no usa 180 días. La ficha permite **Actualizar o renovar ciclo** después de revisar el acuerdo; conserva los ciclos anteriores en el historial.
+
+Al llegar al fin vence **solo el acompañamiento**, como confirmó el usuario. Clases y herramientas conservan los permisos que ya tienen. Cambiar el ciclo no cobra, acredita pagos, modifica el plan, bloquea la cuenta ni envía recordatorios. No hay renovación automática.
+
+### Cobros operativos e historial
+
+En la ficha, **Pagos y recordatorios → Registrar cobro +** registra lo acordado manualmente: concepto y vencimiento obligatorios; importe/moneda y nota interna opcionales. Dejar importe y moneda ambos vacíos conserva **Importe por definir**. Si se completa un importe, debe ser positivo, de hasta dos decimales y con ARS o USD; no sumar ni convertir monedas distintas.
+
+Los estados son Pendiente, Pagado y Anulado. Usar **Editar o confirmar pago** para revisarlos. Pagado requiere fecha no futura y comprobación humana del pago; los otros estados no conservan una fecha de pago. Anular conserva el registro y su historial. No guardar datos de tarjetas ni contraseñas en la nota. Una ficha sin cobros no prueba que la socia deba o haya pagado.
+
+Este panel no procesa transacciones ni crea una deuda bancaria; tampoco envía recordatorios o integra la suscripción de Mercado Pago. Precios, importes y condiciones comerciales siguen por definir. No mezclar estos cobros de la membresía con los resultados, ventas o comisiones que declaran las alumnas.
+
+**Historial de seguimiento** muestra los últimos treinta cambios de ciclo/cobro, con fecha Argentina y antes/después; avisa si hay cambios anteriores conservados. Es administrativo y no se edita desde la UI/API. El servidor registra a la administradora real; nunca escribir auditoría desde el cliente ni pasar una identidad elegida en el formulario.
+
+### Contrato de datos, aceptación y reversión de esta entrega
+
+Se incorporan `accesos_afiliadas`, `recursos_afiliadas`, `acompanamientos_socias`, `cobros_socias` y `seguimientos_socias_historial`, sin semillas ni conversión de permisos heredados. RLS y servidor verifican sesión/perfil; los guards exigen administradora identificada incluso ante `service_role`. Las versiones y fechas las controla la base. Los reintentos conservan identificador, contenido y versión esperada; un conflicto exige volver a leer, sin sobrescribir.
+
+La migración ya aplicada es el archivo local `20261103020325_afiliadas_y_seguimiento_socias.sql`, registrado remotamente como `20261103021207` en la base de la app. **No volver a aplicarla ni ejecutar un push de todo el historial local por esa diferencia de versión.** La prueba `supabase/tests/afiliadas_y_seguimiento_rls.sql` se ejecuta completa, con rol de mantenimiento y ROLLBACK obligatorio: crea identidades ficticias solo dentro de la transacción, comprueba acceso cruzado, borradores, revocación, fechas, meses calendario, versiones, importes y auditoría. Ante un error, ejecutar ROLLBACK; nunca COMMIT ni registro por red para estas fixtures. La ejecución real al corte pasó y dejó cero identidades QA y cero filas nuevas reales persistidas, sin avisos de seguridad nuevos.
+
+Al corte pasaron **731/731 pruebas**, build completo Turbopack/TypeScript y ESLint sin errores, con un aviso preexistente de imagen del header compartido. La exportación limpia y la instalación de 383 paquetes están comprobadas. El error de tipos del primer build se corrigió, se comprobó la corrección del helper de origen Next/Vercel y la ruta ficticia fue retirada antes del build final. La rama de entrega es `codex/afiliadas-seguimiento-20261102`; consultar su commit de cabecera. La publicación de producción sigue pendiente. Se retiró el enlace temporal de configuración usado para compilar; no se incluyen `.env` ni sus valores en la entrega.
+
+Falta la aceptación exacta 320/360/390/430 px y escritorio, estados vacío/cargado/error, formularios, teclado, foco y sesión administrativa real. El primer ensayo Chrome con datos ficticios midió 355/400/433/477/1422 px CSS al 90 % de zoom sin desborde; tres timeouts posteriores impidieron completarlo. La inspección nativa confirmó **Mac bloqueada**: el usuario debe desbloquearla manualmente. No intentar desbloqueo automático ni usar credenciales. Después, completar la revisión y restaurar viewport/emulación de prueba. No sustituir la matriz requerida por los tamaños anteriores ni afirmar publicación.
+
+Comprobar el recorrido completo: administradora crea borrador → Afiliada no lo ve → publica → Afiliada explícita lo ve/copia/abre → retira acceso → lectura denegada; Socia con Afiliadas conserva su campus y una gratuita explícita no recibe formación/agenda/herramientas ni una falsa compra. Verificar también que un fallo de Afiliadas no elimina los otros accesos. Para seguimiento: confirmar ciclo de prueba, recargar, revisar fin exclusivo, editar cobro y verificar historial, duplicación y conflicto de dos administradoras. Realizar escrituras únicamente en entorno/identidad de prueba autorizados, sin activar campañas ni alterar acuerdos reales.
+
+Reversión de código: recuperar el deployment anterior comprobado retira las nuevas entradas, pero no borra las cinco tablas, auditorías o datos que ya se hayan cargado. No desactivar RLS, eliminar historial ni revertir permisos heredados para ocultar un módulo. Respaldar primero datos y protecciones según `docs/transferencia-plataforma.md`; cualquier reversión de datos necesita su operación específica revisada.
+
 ## Operación de Flor
 
 ### Resumen operativo de Inicio

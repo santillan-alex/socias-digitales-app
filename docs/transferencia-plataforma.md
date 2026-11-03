@@ -2,6 +2,24 @@
 
 Fecha: **15/10/2026**. Este documento reemplaza el estado de transferencia anterior del 08/10. No confirma que se haya movido ningún servicio.
 
+## Actualización de inventario y respaldo — 02/11/2026
+
+GitHub redirige con HTTP 301 desde `Lombardomercato/socias-digitales-app` al **mismo repositorio ID `1411000015`**, ahora `santillan-alex/socias-digitales-app`, público y con `main` predeterminada. Metadata pública y redirección verificadas el 02/11; esta entrega no efectuó ese cambio de propietario. Las referencias al nombre anterior de las secciones históricas no son el destino vigente por defecto. Antes de transferir o desplegar comprobar de nuevo ID, propietario, remoto, rama de producción e integración GitHub/Vercel. El proyecto Vercel y el dominio de la app siguen siendo los mismos; esta comprobación no demuestra que se haya transferido un servicio ni publicado código nuevo.
+
+La entrega de Afiliadas y seguimiento, aún en revisión final, agregó cinco tablas en la base de la app. Incluirlas en el próximo respaldo autorizado de Supabase junto con Auth/perfiles y las dependencias existentes; copiar el repositorio o transferir Vercel no copia estos datos. La migración local `20261103020325_afiliadas_y_seguimiento_socias.sql` está registrada remotamente como `20261103021207`: es la misma incorporación ya aplicada, no dos cambios por repetir.
+
+| Tabla | Qué debe conservarse |
+| --- | --- |
+| `accesos_afiliadas` | Habilitación explícita por cuenta, versión y fecha; ausencia de fila significa sin acceso |
+| `recursos_afiliadas` | Textos, campaña, tipo, destino HTTPS, estado borrador/publicado/archivado, destacado, versiones y fechas |
+| `acompanamientos_socias` | Inicio confirmado y fin exclusivo calculado de seis meses calendario, versión y fecha |
+| `cobros_socias` | Registros administrativos de concepto, vencimiento, importe/moneda opcionales, estado, fecha de pago, nota y versión |
+| `seguimientos_socias_historial` | Auditoría administrativa de antes/después, identidad de quien cambió y fecha; no reconstruirla desde la pantalla ni permitir escritura cliente |
+
+Conservar también RLS, grants restringidos, constraints, índices y las funciones/triggers privados de protección y auditoría. Restaurar con los mismos identificadores y relaciones; no inferir permisos de roles antiguos ni recalcular comienzos a partir de creación de cuentas. La auditoría y los cobros pueden contener información privada: guardar respaldos cifrados, sin incluirlos en Git, capturas públicas o documentos para Claude, con acceso solo a responsables autorizadas. Esta entrega no creó ni certificó una restauración de respaldo.
+
+Los videos/archivos de Afiliadas son enlaces externos en esta etapa, sin binarios nuevos en R2. Respaldar la tabla no traslada ni da propiedad de archivos Drive, videos u otros destinos; revisar esas cuentas y permisos por separado. El fin del acompañamiento no revoca clases/herramientas, y estos cobros no equivalen a una integración de Mercado Pago. No activar campañas, renovaciones o bloqueos durante el traslado. La prueba SQL real terminó en ROLLBACK, sin identidades QA, accesos concedidos o cobros reales nuevos.
+
 ## Recomendación
 
 Transferir primero **el proyecto Vercel existente** al equipo de Flor, manteniendo el mismo dominio y los proveedores actuales. Conservar a nuestro equipo como colaborador técnico con capacidad de despliegue. Luego, en otra ventana controlada, decidir la titularidad de GitHub, Supabase, R2 y Resend. Evitar una migración simultánea de todos los sistemas y de sus credenciales.

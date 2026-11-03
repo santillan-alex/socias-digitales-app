@@ -45,6 +45,6 @@ export default function StudentSidebar({ datos, onNavigate }: { datos: StudentNa
         {utiles.map(seccion => <EnlaceSeccion key={seccion.id} seccion={seccion} pathname={pathname} onNavigate={onNavigate} />)}
       </nav>
     </div>}
-    <ProximaClase ahoraInicial={datos.ahoraInicial} variante="contador" />
+    {datos.formacion && <ProximaClase ahoraInicial={datos.ahoraInicial} variante="contador" />}
   </>
 }

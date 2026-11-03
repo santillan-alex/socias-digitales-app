@@ -5,6 +5,14 @@
 
 Esta es una aplicación operativa con usuarias reales. No reconstruirla como artifact, nueva landing, preview aislada ni proyecto paralelo. El objetivo es extender lo aprobado sin perder funciones, permisos ni datos.
 
+## Precedencia del estado actualizado — 02/11/2026
+
+Los checkpoints del 15/10 y otros cortes antiguos de este archivo son históricos. Ante una diferencia de inventario, módulos, agenda, pruebas o publicación, prevalece el bloque fechado más reciente de `docs/estado-plataforma.md`, junto con la operación vigente de `docs/operacion-y-pruebas.md`. No reutilizar un commit viejo como si fuera la producción actual. La agenda ya se edita desde Próximo hito; Comunidad y Logros tienen desarrollos posteriores al corte inicial.
+
+GitHub redirige ahora `Lombardomercato/socias-digitales-app` al mismo repositorio ID `1411000015`, **`santillan-alex/socias-digitales-app`**, público y con `main` predeterminada; metadata pública y HTTP 301 verificados el 02/11, sin cambio de propiedad realizado en esta entrega. Las referencias al propietario anterior quedan como historia. Antes de operar verificar otra vez el ID, remoto, propietario y rama de producción vigentes; el nombre de `main` o una redirección no demuestran qué está publicado. Vercel y el dominio de la app se conservan.
+
+La entrega del 02/11 incorpora Afiliadas como permiso **adicional**, compatible con Socia, y seguimiento administrativo del acompañamiento. No deducir Afiliadas de roles heredados ni metadata. Al vencer seis meses vence solo el acompañamiento; clases/herramientas conservan sus permisos. No hay cobros ni renovaciones automáticas o precios definidos; videos/archivos de Afiliadas usan enlaces HTTPS externos. Migración aplicada y build correcto; la aceptación exacta en navegador sigue pendiente: **no anunciar esta entrega como terminada o publicada**. Antes de continuar, releer el estado más reciente por si esa revisión ya se cerró.
+
 ## Antes de tocar código
 
 1. Leer `docs/estado-plataforma.md`, `docs/operacion-y-pruebas.md` y, si hay un cambio de infraestructura, `docs/transferencia-plataforma.md`.
