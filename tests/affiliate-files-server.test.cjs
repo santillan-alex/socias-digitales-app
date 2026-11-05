@@ -190,7 +190,7 @@ function apiFixture(options = {}) {
   const admin = s.load('src/app/api/admin/afiliadas/archivos/route.ts'), download = s.load('src/app/api/afiliadas/[id]/archivo/[archivoId]/route.ts')
   const apiUrl = 'https://app.sociasdigitales.com/api/admin/afiliadas/archivos'
   const post = (body, changes = {}) => admin.POST(new Request(apiUrl + (changes.query ?? ''), { method: 'POST', headers: { origin: changes.origin === undefined ? 'https://app.sociasdigitales.com' : changes.origin, 'Content-Type': changes.contentType ?? 'application/json' }, body: changes.raw === undefined ? JSON.stringify(body) : changes.raw }))
-  const open = (fileId, query = '', owner = recursoId) => download.GET(new Request(`https://app.sociasdigitales.com/api/afiliadas/${owner}/archivo/${fileId}${query}`), { params: Promise.resolve({ id: owner, archivoId: fileId }) })
+  const open = (fileId, query = '', owner = recursoId, accept) => download.GET(new Request(`https://app.sociasdigitales.com/api/afiliadas/${owner}/archivo/${fileId}${query}`, { headers: accept ? { Accept: accept } : {} }), { params: Promise.resolve({ id: owner, archivoId: fileId }) })
   return { ...s, resources, dbCalls, admin, download, apiUrl, post, open }
 }
 test('API administrativa verifica sesión/rol, origen, JSON real acotado y claves exactas antes de iniciar multipart', async () => {
@@ -229,4 +229,39 @@ test('descarga comprueba accesoAfiliadas en cada petición y estado/referencia/t
   for (const [options, status] of [[{ user: false }, 401], [{ role: 'alumna', enabled: false }, 403], [{ role: 'alumna', active: false }, 403], [{ role: 'alumna', accessError: {} }, 503]]) { const no = apiFixture(options); assert.equal((await no.open(info.id)).status, status); assert.equal(no.calls.length, 0) }
   const admin = apiFixture(), draft = await admin.start(); admin.upload(draft); const file = (await admin.server.operarArchivoAfiliadas(admin.auth, { action: 'completar', token: draft.token })).archivo
   admin.resources.set(recursoId, { id: recursoId, tipo: 'archivo', estado: 'borrador', url: file.url }); assert.equal((await admin.open(file.id)).status, 307)
+})
+test('errores navegados vuelven al ingreso o Afiliadas con303 y destino fijo del mismo origen; API conserva JSON y status', async () => {
+  const casos = [
+    [{ user: false }, 401, '/login?next=%2Fafiliadas'],
+    [{ role: 'alumna', enabled: false }, 403, '/afiliadas?descarga=no-disponible'],
+    [{ role: 'alumna' }, 404, '/afiliadas?descarga=no-disponible'],
+    [{ role: 'alumna', accessError: {} }, 503, '/afiliadas?descarga=reintentar'],
+    [{ role: 'alumna', resourceError: {} }, 503, '/afiliadas?descarga=reintentar'],
+  ]
+  for (const [options, status, destino] of casos) {
+    const s = apiFixture(options), response = await s.open(archivoId, '', recursoId, 'text/html,application/xhtml+xml;q=0.9')
+    assert.equal(response.status, 303); assert.equal(response.headers.get('location'), destino); assert.equal(await response.text(), '')
+    assert.equal(new URL(response.headers.get('location'), 'https://app.sociasdigitales.com').origin, 'https://app.sociasdigitales.com')
+    assert.equal(response.headers.get('cache-control'), 'private, no-store'); assert.equal(response.headers.get('x-content-type-options'), 'nosniff'); assert.equal(response.headers.get('referrer-policy'), 'no-referrer'); assert.equal(s.calls.length, 0)
+    for (const accept of [undefined, 'application/json', '*/*', 'application/json; profile="text/html"']) {
+      const json = await s.open(archivoId, '', recursoId, accept); assert.equal(json.status, status); assert.equal(json.headers.get('location'), null); assert.equal(typeof (await json.json()).error, 'string')
+    }
+  }
+  const alias = apiFixture({ user: false }), origin = 'https://flor.sociasdigitales.com', url = `${origin}/api/afiliadas/${recursoId}/archivo/${archivoId}`
+  const response = await alias.download.GET(new Request(url, { headers: { Accept: 'TEXT/HTML; charset=utf-8' } }), { params: Promise.resolve({ id: recursoId, archivoId }) })
+  assert.equal(response.status, 303); assert.equal(new URL(response.headers.get('location'), url).origin, origin)
+  const malformed = apiFixture(), invalid = await malformed.open('invalido', '?next=https://otro.example.invalid&mensaje=texto-no-confiable', recursoId, 'text/html')
+  assert.equal(invalid.headers.get('location'), '/afiliadas?descarga=no-disponible'); assert.equal(await invalid.text(), '')
+})
+test('navegación HTML autorizada conserva307 y firma privada de60s; fallo del almacén vuelve a reintentar sin filtrar detalles', async () => {
+  const s = apiFixture({ role: 'alumna' }), started = await s.start(); s.upload(started)
+  const info = (await s.server.operarArchivoAfiliadas(s.auth, { action: 'completar', token: started.token })).archivo
+  s.resources.set(recursoId, { id: recursoId, tipo: 'archivo', estado: 'publicado', url: info.url })
+  const success = await s.open(info.id, '', recursoId, 'text/html')
+  assert.equal(success.status, 307); assert.equal(success.headers.get('cache-control'), 'private, no-store'); assert.equal(success.headers.get('x-content-type-options'), 'nosniff')
+  const signed = new URL(success.headers.get('location')); assert.equal(signed.searchParams.get('X-Amz-Expires'), '60'); assert.equal(signed.searchParams.get('response-content-type'), 'application/octet-stream'); assert.match(signed.searchParams.get('response-content-disposition'), /^attachment;/)
+  const unavailable = apiFixture({ role: 'alumna', response: q => q.method === 'GET' && q.key.startsWith('afiliadas/indices/') ? new Response('No difundir detalle interno', { status: 503 }) : null })
+  unavailable.resources.set(recursoId, { id: recursoId, tipo: 'archivo', estado: 'publicado', url: logic.urlArchivoAfiliadas(recursoId, archivoId) })
+  const html = await unavailable.open(archivoId, '', recursoId, 'text/html'); assert.equal(html.status, 303); assert.equal(html.headers.get('location'), '/afiliadas?descarga=reintentar'); assert.equal(await html.text(), '')
+  const json = await unavailable.open(archivoId, '', recursoId, 'application/json'); assert.equal(json.status, 503); assert.ok(!JSON.stringify(await json.json()).includes('No difundir'))
 })
