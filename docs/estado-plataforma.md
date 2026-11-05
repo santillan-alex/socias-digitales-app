@@ -2,6 +2,14 @@
 
 Corte inicial: **15 de octubre de 2026**, con actualizaciones fechadas hasta el **5 de noviembre**. Documento de continuidad, no una certificación universal ni un anuncio comercial.
 
+## Afiliadas: separación de bloques por color — publicado el 05/11/2026
+
+Commit `b39f9867aa59bf110de9d63aacda84ec90a21661`, árbol `8da41ff21ab2256829096ee33e7dae2a86839a96`, deployment `dpl_5wnPRPq277dMDnT3kT8CZyioHyKu`, **READY**. Cambia únicamente la presentación de la biblioteca de alumnas y su contrato visual: encabezados de campaña verdes con texto blanco, avisos destacados rose, copys blush con área de texto surface, videos surface y archivos crema con borde rose. El tipo determina el color y se conserva al filtrar. Los títulos interiores siguen oscuros; el verde se limita al encabezado plegable. Los secundarios sobre rosas pasan a verde para mantener contraste legible.
+
+Pasaron **787/787 pruebas**, build/TypeScript y ESLint del componente sin diagnósticos. No se agregaron pruebas que reflejaran clases de color. En Chrome se verificaron **20 combinaciones** de catálogo lleno/vacío/error/texto largo y anchos CSS **320/360/390/430/1280**, sin desbordes y campos a 16 px. Se midieron los colores calculados de fondos, bordes, títulos y fechas; se verificaron los plegados. Esta comprobación usa el componente real renderizado estáticamente con CSS del nuevo build y recursos ficticios identificados, en una vista local aislada, sin consultas de Auth, agenda o avisos. No equivale a un nuevo recorrido autenticado con catálogo lleno en producción; la aceptación funcional real anterior sigue documentada debajo.
+
+Capturas fuera del repositorio: `outputs/afiliadas-colores-desktop-20261105.jpg` y `outputs/afiliadas-colores-mobile-20261105.jpg`. Se retiró la emulación, se cerró la muestra y se detuvo su servidor local. El Panel de Flor real se recargó correctamente después de publicar. No se alteraron usuarios, habilitaciones, recursos guardados, archivos, comunicaciones o permisos. Se conserva el cierre previo de QA archivada. Reversión de código de referencia: `6ec94b3932fb221980fbe63c8ba4e57a2f8b0b6e` / `dpl_AntmBT73oLt19vKxnKQCDEH6AZV3`, sin restaurar ni borrar datos.
+
 ## Afiliadas: aceptación real de alumna y mejoras publicadas — 05/11/2026, Argentina
 
 **Publicado y READY.** Commit `6ec94b3932fb221980fbe63c8ba4e57a2f8b0b6e`, árbol `d80790e9c08f03c923bb363e761b54469874e6bd`, deployment `dpl_AntmBT73oLt19vKxnKQCDEH6AZV3`. La respuesta del dominio `app.sociasdigitales.com` confirma el nuevo comportamiento. Este corte completa el recorrido de alumna pendiente en los registros del 03/11; no convierte otras aceptaciones de la plataforma en finalizadas.
