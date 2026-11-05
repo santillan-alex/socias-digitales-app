@@ -6,6 +6,8 @@ Manual: https://socias-digitales-identidad-v5.alekeiii.chatgpt.site/manual
 
 Las referencias del manual y los assets del repositorio prevalecen sobre estilos genéricos. Si el manual externo no carga, partir de estos tokens, los componentes actuales y las capturas; no inventar un reemplazo.
 
+Desde el 05/11, en Afiliadas la confirmación y los errores de copiar pertenecen a la tarjeta del copy, junto al botón; no moverlos a un aviso global que pueda quedar fuera de pantalla. Mantener un anuncio accesible local y **Copiado** solo después de confirmar el portapapeles. La recuperación de una descarga retirada usa un aviso fijo con fondo blush y borde rose dentro del espacio de Afiliadas, conservando navegación y filtros; no mostrar mensajes técnicos crudos ni parámetros de la URL.
+
 ## Tipografías y ritmo
 
 | Uso | Familia | Criterio |

@@ -1,6 +1,22 @@
 # Estado de Socias Digitales
 
-Corte inicial: **15 de octubre de 2026**, con actualizaciones fechadas hasta el **3 de noviembre**. Documento de continuidad, no una certificación universal ni un anuncio comercial.
+Corte inicial: **15 de octubre de 2026**, con actualizaciones fechadas hasta el **5 de noviembre**. Documento de continuidad, no una certificación universal ni un anuncio comercial.
+
+## Afiliadas: aceptación real de alumna y mejoras publicadas — 05/11/2026, Argentina
+
+**Publicado y READY.** Commit `6ec94b3932fb221980fbe63c8ba4e57a2f8b0b6e`, árbol `d80790e9c08f03c923bb363e761b54469874e6bd`, deployment `dpl_AntmBT73oLt19vKxnKQCDEH6AZV3`. La respuesta del dominio `app.sociasdigitales.com` confirma el nuevo comportamiento. Este corte completa el recorrido de alumna pendiente en los registros del 03/11; no convierte otras aceptaciones de la plataforma en finalizadas.
+
+La confirmación de copiar y la ayuda ante un fallo ahora se muestran **en la misma tarjeta**. El botón cambia a **Copiado** solo después de confirmar el portapapeles y permite repetir. Actualizar invalida copias pendientes y limpia el resultado. Una descarga navegada que ya no está disponible vuelve a Afiliadas con un aviso fijo; sin sesión lleva al ingreso y un fallo temporal pide reintentar. Las APIs conservan JSON y sus estados; el éxito conserva la descarga privada con firma de 60 segundos. No se reflejan nombres de archivo, errores ni parámetros arbitrarios en el aviso.
+
+Se ingresó normalmente como Alex Prueba, sin suplantar sesiones ni elevar roles, en el **hostname del deployment de producción**, manteniendo la administración en `app.sociasdigitales.com`. El hostname previo y luego el nuevo permitieron comprobar visibilidad publicada, filtros combinados, limpiar, plegar con Enter, ampliar el texto y copiar **949 caracteres exactos**, con saltos de línea y emojis. Se descargaron desde la interfaz un MP4 técnico de **2324 bytes** y un PDF de **601 bytes**; sus SHA-256 coinciden con los originales. Se repitió copia y descarga en la versión nueva. Esto no prueba un video de 1 GiB ni dispositivos iOS/Android físicos.
+
+La versión nueva se midió con catálogo lleno y con catálogo vacío más aviso de archivo retirado en anchos CSS reales **320/360/390/430/1280**, sin desborde; campos a **16 px**, controles de al menos **46 px**. La confirmación móvil de copia quedó junto al botón y por encima de la navegación inferior. Se retiraron las emulaciones. Capturas privadas fuera del repositorio: `outputs/afiliadas-copy-antes-20261105.jpg` y `outputs/afiliadas-copy-mobile-20261105.jpg`.
+
+Se archivó el video desde Flor y se abrió su enlace anterior como alumna: regresó a `/afiliadas?descarga=no-disponible`, mostró el aviso y excluyó el video. Después se archivaron los otros recursos y se comprobó el catálogo vacío. Se retiró el permiso temporal: la alumna perdió Afiliadas y conservó el campus con **15 clases, 13 pendientes, una en curso, una completada y reanudación desde 0:29**. No se reprodujeron clases ni modificaron avances, planes, acompañamientos o cobros. No hubo emails ni push.
+
+**Estado SQL final:** cero habilitaciones activadas y cero recursos publicados. La cuenta de prueba conserva `rol=alumna`, `tipo_usuario=socia`, `estado=activa`; su grant queda deshabilitado, versión **4**. Los tres registros técnicos existentes se conservan archivados: copy `fa83e6a3-6559-4bcf-a574-a6db4edc8e64`, versión **5**, con el texto largo de ensayo; PDF `8ee0e387-aeef-4785-affd-634bab3474e2` y video `5e50cd1c-2e94-4918-979d-5563c4cdab0e`, ambos versión **3**. No se borraron filas, binarios ni auditorías; no se crearon cuentas o recursos adicionales.
+
+Validación del árbol publicado: **787/787 pruebas correctas**, build/TypeScript completos y ESLint de los seis archivos modificados sin diagnósticos. El lint global conserva **152 errores en tests heredados y 44 advertencias**; no presentarlo como totalmente limpio. La consulta final de error/fatal del nuevo deployment no encontró registros en los diez minutos consultados. Sin nuevas migraciones, proveedores, credenciales ni cambios de dominio. El alias `flor.sociasdigitales.com` no resolvió DNS desde este equipo durante el ensayo; no se cambió su configuración ni se declara validado. Reversión de código de referencia: `def73bc8ad1d6aa3d3552e729059fd3cb53c634f` / `dpl_E6USKJm38BdHF5raWw5mhyqvHdcR`, conservando datos y archivos privados.
 
 ## Estética del menú de Flor — cierre del 03/11/2026
 

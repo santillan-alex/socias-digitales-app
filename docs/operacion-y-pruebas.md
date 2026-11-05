@@ -2,6 +2,16 @@
 
 Fecha: 15/10/2026. Complementa el inventario de `estado-plataforma.md`. No incluye credenciales ni autoriza envíos o cambios sobre usuarias reales.
 
+## Recorrido de Afiliadas completado — 05/11/2026
+
+Producción `6ec94b3932fb221980fbe63c8ba4e57a2f8b0b6e`, deployment `dpl_AntmBT73oLt19vKxnKQCDEH6AZV3`, READY. Consultar el cierre de la misma fecha en `estado-plataforma.md` para evidencia y límites; el recorrido de alumna pendiente que figura más abajo ya se completó.
+
+Flor administra en **Panel de Flor → Afiliadas**. La alumna habilitada entra en **Afiliadas**, elige campaña o tipo y puede buscar un recurso. **Ver texto completo** amplía los copys largos; **Copiar texto completo** copia todo, aunque esté plegado. Solo una copia confirmada muestra **Copiado** y el mensaje local. Si el dispositivo no permite copiar, la ayuda aparece junto a esa tarjeta e indica cómo seleccionar el texto completo y reintentar.
+
+**Descargar video** y **Descargar archivo** corresponden a archivos propios de la app. Los enlaces externos conservan **Abrir** y dependen de sus permisos. Cada descarga propia vuelve a comprobar la sesión, la habilitación y la publicación. Si se retira el material, su enlace anterior vuelve a Afiliadas con un aviso claro; si la sesión terminó, solicita ingresar de nuevo. La API sigue respondiendo JSON a solicitudes sin `Accept: text/html`.
+
+La prueba real utilizó exclusivamente los tres recursos técnicos ya existentes y la cuenta de prueba. Al terminar quedaron **archivados**: copy versión 5, PDF/video versión 3; habilitación temporal **retirada**, versión 4. Cero recursos publicados y cero Afiliadas habilitadas al cierre. Se conservan filas, archivos e historial. No borrar los ensayos ni presentar su publicación temporal como contenido comercial. El panel administrativo queda abierto y se cierran las pestañas de ensayo; no quedan rutas ficticias, servidores QA ni configuración temporal nuevos.
+
 ## Afiliadas: subida de archivos y organización — cierre del 03/11/2026
 
 **Publicado y READY confirmado, con subida y descarga administrativas reales.** Commit `5bfdfab03840d054b2e6fe8755d78e2c3cf8b1c6`, árbol `c96cfbf827e702910ec35e54bc0f277d445907b5`, deployment `dpl_BJ25xb7ZCmM7urk8NEJxA6uXgLoQ`; `app.sociasdigitales.com`, `flor.sociasdigitales.com` y aliases conservados. Las instrucciones de este bloque amplían las de Afiliadas que antes solo admitían enlaces externos; no cambian las reglas de acceso, seguimiento de Socias o comunicaciones. El ensayo se hizo con sesión administrativa desde el origen app, no como alumna.
