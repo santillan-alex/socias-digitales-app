@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { precioProducto } from '@/lib/product-money'
 
 interface Producto {
   id: string
@@ -31,7 +32,7 @@ interface Props {
   productos: Producto[]
   misLinks: LinkAfiliada[]
   userId: string
-  cotizacion: number
+  cotizacion: number | null
 }
 
 const TIPO_EMOJI: Record<string, string> = { fisico: '📦', digital: '💻' }
@@ -113,7 +114,7 @@ export default function ProductosCliente({ productos, misLinks, userId, cotizaci
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtrados.map(p => {
             const link = linksMap[p.id]
-            const comisionEstimada = (p.precio * p.comision_pct / 100).toFixed(2)
+            const comisionEstimada = p.precio * p.comision_pct / 100
 
             return (
               <div key={p.id} className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
@@ -140,14 +141,14 @@ export default function ProductosCliente({ productos, misLinks, userId, cotizaci
                   {/* Precio y comisión */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-lg font-bold text-gray-900">USD ${p.precio.toLocaleString('es-AR')}</span>
-                      {p.moneda === 'USD' && (
-                        <p className="text-xs text-gray-400">$ {(p.precio * cotizacion).toLocaleString('es-AR')} ARS</p>
+                      <span className="text-lg font-bold text-gray-900">{precioProducto(p.precio, p.moneda)}</span>
+                      {p.moneda === 'USD' && cotizacion !== null && (
+                        <p className="text-xs text-gray-400">Aprox. {precioProducto(p.precio * cotizacion, 'ARS')}</p>
                       )}
                     </div>
                     <div className="text-right">
-                      <span className="text-xs text-green-600 font-bold block">+USD ${comisionEstimada}</span>
-                      <span className="text-xs text-gray-400">por venta ({p.comision_pct}%)</span>
+                      <span className="text-xs text-green-600 font-bold block">{precioProducto(comisionEstimada, p.moneda)}</span>
+                      <span className="text-xs text-gray-400">comisión estimada por venta ({p.comision_pct}%)</span>
                     </div>
                   </div>
 

@@ -35,6 +35,30 @@ test('solo alumnas activas habilitadas reciben hito publicado, sin auditoría ni
   assert.equal(logic.hitoParaAlumna(h,{...perfil,tipo_usuario:'socia',desafio_socias_habilitada:false}).length,1)
   assert.deepEqual(logic.hitoParaAlumna({...h,audiencias:['socia']},perfil),[])
 })
+test('audiencia Socias exige tipo explícito; roles y permisos de Afiliadas no lo reemplazan', () => {
+  const hito = { ...logic.HITO_INICIAL, audiencias: ['socia'], enlace: 'https://zoom.us/j/123' }
+  for (const rol of ['alumna', 'afiliada', 'afiliada_lanzamiento', undefined]) {
+    for (const tipo_usuario of ['gratuito', 'desafio', null, undefined]) {
+      const perfil = { rol, tipo_usuario, estado: 'activa', desafio_socias_habilitada: false, afiliadas_habilitada: true }
+      assert.deepEqual(logic.hitoParaAlumna(hito, perfil), [], `No concede Socias por ${rol}/${tipo_usuario}`)
+      assert.deepEqual(logic.hitoParaAlumna(hito, { ...perfil, desafio_socias_habilitada: true }), [], 'Desafío tampoco concede una audiencia exclusiva de Socias')
+    }
+    assert.equal(logic.hitoParaAlumna(hito, { rol, tipo_usuario: 'socia', estado: 'activa', desafio_socias_habilitada: false }).length, 1, 'Tipo Socia explícito conserva su encuentro')
+  }
+})
+test('audiencia Desafío requiere habilitación verdadera y ambas audiencias conservan estado activo y publicación', () => {
+  const hito = { ...logic.HITO_INICIAL, audiencias: ['desafio'] }
+  for (const rol of ['alumna', 'afiliada', 'afiliada_lanzamiento']) {
+    const perfil = { rol, tipo_usuario: 'socia', estado: 'activa' }
+    for (const desafio_socias_habilitada of [false, null, undefined, 'true', 1]) assert.deepEqual(logic.hitoParaAlumna(hito, { ...perfil, desafio_socias_habilitada }), [], 'Ser Socia o un valor truthy no habilita Desafío')
+    assert.equal(logic.hitoParaAlumna(hito, { ...perfil, tipo_usuario: 'gratuito', desafio_socias_habilitada: true }).length, 1)
+    for (const estado of ['pausada', 'cancelada', null, undefined]) {
+      assert.deepEqual(logic.hitoParaAlumna(logic.HITO_INICIAL, { ...perfil, estado, desafio_socias_habilitada: true }), [])
+    }
+    assert.deepEqual(logic.hitoParaAlumna({ ...logic.HITO_INICIAL, publicado: false }, { ...perfil, desafio_socias_habilitada: true }), [])
+  }
+  assert.deepEqual(logic.hitoParaAlumna(logic.HITO_INICIAL, { rol: 'admin', tipo_usuario: 'socia', estado: 'activa', desafio_socias_habilitada: true }), [])
+})
 test('R2: solo 404 inicializa; errores, documentos corruptos o falta de revisión no se sobrescriben', async () => {
   const store = response => load('src/lib/agenda-store.ts', { './r2-upload': { pedirR2: async () => response }, './agenda-management': logic })
   assert.deepEqual((await store(new Response('',{status:404})).leerAgenda()).hito, logic.HITO_INICIAL)
@@ -113,7 +137,11 @@ test('API admin: rechaza sesión/alumna y cuerpo manipulado antes de escribir; c
   assert.equal((await api.PUT(new Request('https://app.test',{method:'PUT',body:JSON.stringify({revision:null,hito:input})}))).status,409)
 })
 test('API alumna requiere sesión y perfil; no devuelve borradores ni metadatos administrativos', async () => {
-  for(const [user,perfil,hito,status,length] of [[null,null,logic.HITO_INICIAL,401,null],[{id:'u'},null,logic.HITO_INICIAL,503,null],[{id:'u'},{rol:'alumna',estado:'activa',tipo_usuario:'socia'},{...logic.HITO_INICIAL,publicado:false},200,0],[{id:'u'},{rol:'alumna',estado:'activa',tipo_usuario:'socia'},logic.HITO_INICIAL,200,1]]) {
+  const soloSocias = { ...logic.HITO_INICIAL, audiencias: ['socia'] }
+  for(const [user,perfil,hito,status,length] of [[null,null,logic.HITO_INICIAL,401,null],[{id:'u'},null,logic.HITO_INICIAL,503,null],[{id:'u'},{rol:'alumna',estado:'activa',tipo_usuario:'socia'},{...logic.HITO_INICIAL,publicado:false},200,0],[{id:'u'},{rol:'alumna',estado:'activa',tipo_usuario:'socia'},logic.HITO_INICIAL,200,1],...[ 'afiliada', 'afiliada_lanzamiento' ].flatMap(rol => [
+    [{id:'u'},{rol,estado:'activa',tipo_usuario:'gratuito',desafio_socias_habilitada:false},soloSocias,200,0],
+    [{id:'u'},{rol,estado:'activa',tipo_usuario:'socia',desafio_socias_habilitada:false},soloSocias,200,1],
+  ])]) {
     const api=load('src/app/api/agenda/route.ts',{'next/server':json,'@/lib/agenda-management':logic,'@/lib/agenda-store':{leerAgenda:async()=>({hito,revision:'privada',administradora:'privada'})},'@/lib/supabase/server':{createClient:async()=>({auth:{getUser:async()=>({data:{user}})},from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:perfil})})})})})}})
     const r=await api.GET(); assert.equal(r.status,status); assert.equal(r.headers['Cache-Control'],'private, no-store')
     if(length!==null)assert.equal(r.body.hitos.length,length)

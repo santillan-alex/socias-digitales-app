@@ -39,12 +39,27 @@ export default function CommunityComments({ publicacionId, nombre, cantidadInici
   const viva = useRef(false), escribiendo = useRef(false), leyendo = useRef(false)
   const controlLectura = useRef<AbortController | null>(null), controlEscritura = useRef<AbortController | null>(null)
   const cantidades = useRef(cantidadInicial)
+  const versionesModeradas = useRef(new Map<string, number>())
   const acceso = useRef(onAcceso)
   acceso.current = onAcceso
 
   const comentariosActuales = comentarioActualizado && comentarioActualizado.publicacion_id === publicacionId && esComentarioComunidad(comentarioActualizado)
     ? comentarios.map(item => item.id === comentarioActualizado.id && comentarioActualizado.version >= item.version ? comentarioActualizado : item)
     : comentarios
+
+  useEffect(() => { cantidades.current = cantidadInicial }, [cantidadInicial])
+
+  useEffect(() => {
+    if (!comentarioActualizado || comentarioActualizado.publicacion_id !== publicacionId || !esComentarioComunidad(comentarioActualizado)) return
+    const anterior = comentarios.find(item => item.id === comentarioActualizado.id)
+    if (!anterior || comentarioActualizado.version <= Math.max(anterior.version, versionesModeradas.current.get(anterior.id) ?? 0)) return
+    // The parent supplies a confirmed moderation, not a new comment. Retain
+    // its version and apply its visibility delta once, including effect replays.
+    versionesModeradas.current.set(anterior.id, comentarioActualizado.version)
+    setComentarios(prev => prev.map(item => item.id === comentarioActualizado.id && item.version < comentarioActualizado.version ? comentarioActualizado : item))
+    const delta = Number(!comentarioActualizado.retirada && !comentarioActualizado.oculta) - Number(!anterior.retirada && !anterior.oculta)
+    if (delta) { cantidades.current = Math.max(0, cantidades.current + delta); onCantidad(cantidades.current) }
+  }, [comentarioActualizado, comentarios, onCantidad, publicacionId])
 
   useEffect(() => {
     viva.current = true
@@ -66,7 +81,7 @@ export default function CommunityComments({ publicacionId, nombre, cantidadInici
       if (!viva.current || controller.signal.aborted || controlLectura.current !== controller) return
       setComentarios(prev => {
         const unicos = new Map((ampliar ? prev : []).map(item => [item.id, item]))
-        for (const item of response.comentarios) unicos.set(item.id, item)
+        for (const item of response.comentarios) if (!unicos.has(item.id) || item.version >= unicos.get(item.id)!.version) unicos.set(item.id, item)
         return [...unicos.values()].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))
       })
       setSiguiente(response.siguiente); setLeido(true)

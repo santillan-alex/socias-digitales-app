@@ -10,7 +10,7 @@ test('listas y consultas globales excluyen pruebas antes de limitar, contar o se
     'src/app/admin/resultados/page.tsx':['id','alumna_id'],
     'src/app/admin/metricas/page.tsx':['id','alumna_id'],
     'src/app/admin/checklist/page.tsx':['id','esCuentaPrueba(r.alumna_id)'],
-    'src/app/admin/lanzamiento/page.tsx':['id','alumna_id'],
+    'src/app/admin/lanzamiento/historico/page.tsx':['id','alumna_id'],
     'src/app/admin/desafio/page.tsx':['id'],
     'src/app/admin/classroom/page.tsx':['id'],
     'src/app/admin/comunidad/page.tsx':['alumna_id','autor_id'],
@@ -24,6 +24,10 @@ test('listas y consultas globales excluyen pruebas antes de limitar, contar o se
     assert.ok(s.includes('FILTRO_CUENTAS_PRUEBA'),file)
   }
   const metrics=read('src/app/admin/metricas/page.tsx')
+  assert.ok(read('src/app/admin/lanzamiento/page.tsx').includes('leerSeguimientoFormacion(auth)'))
+  const formacion=read('src/lib/admin-learning-progress-server.ts')
+  assert.ok(formacion.includes(".not('id', 'in', FILTRO_CUENTAS_PRUEBA)"))
+  assert.ok(formacion.includes(".not('alumna_id', 'in', FILTRO_CUENTAS_PRUEBA)"))
   assert.ok(metrics.indexOf(".not('alumna_id'")<metrics.indexOf('.limit(1000)'))
   const inicio=read('src/app/admin/page.tsx')
   assert.ok(inicio.includes('alumna_id.is.null,alumna_id.not.in.'))

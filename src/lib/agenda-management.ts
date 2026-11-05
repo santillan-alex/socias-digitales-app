@@ -54,7 +54,8 @@ export function hitoParaAlumna(hito: HitoEditable, perfil: {
   rol?: string; tipo_usuario?: string; estado?: string; desafio_socias_habilitada?: boolean
 }): HitoAgenda[] {
   if (!hito.publicado || perfil.rol === 'admin' || perfil.estado !== 'activa') return []
-  const esSocia = perfil.tipo_usuario === 'socia' || ['afiliada', 'afiliada_lanzamiento'].includes(perfil.rol ?? '')
+  // Afiliadas es un acceso independiente: un rol anterior no habilita encuentros de Socias.
+  const esSocia = perfil.tipo_usuario === 'socia'
   const permitido = (hito.audiencias.includes('socia') && esSocia) ||
     (hito.audiencias.includes('desafio') && perfil.desafio_socias_habilitada === true)
   if (!permitido) return []

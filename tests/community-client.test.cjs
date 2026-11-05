@@ -223,3 +223,54 @@ test('leer comentarios impide enviar antes de confirmar la lista y una lectura a
     finish(); await tick(); assert.equal(ui.textarea().props.disabled, false); ui.unmount()
   } finally { n.restore() }
 })
+
+test('moderar comentarios reconcilia el total una sola vez y conserva cada versión antes de comentar', async () => {
+  const initial = comment(11, { propia: false }), second = comment(12, { propia: false })
+  const n = network(call => call.options.method === 'POST'
+    ? response({ ok: true, comentario: comment(13, { id: call.body.id, contenido: call.body.contenido }) })
+    : response({ estado: 'lista', comentarios: [initial, second], siguiente: null }))
+  try {
+    const ui = view(commentsFile, { publicacionId: id(1), cantidadInicial: 2, administracion: true, onModerarComentario() {} }); await tick()
+    const receive = updated => { ui.props.comentarioActualizado = updated; ui.flush() }
+    const hidden = { ...initial, oculta: true, version: 2 }
+    receive(hidden); assert.deepEqual(ui.events.cantidades, [1])
+    ui.flush(); receive({ ...hidden }); assert.deepEqual(ui.events.cantidades, [1])
+    receive({ ...second, oculta: true, version: 2 }); assert.deepEqual(ui.events.cantidades, [1, 0])
+    assert.equal(all(ui.render(), node => node.type === 'button' && text(node).trim() === 'Mostrar comentario').length, 2)
+    receive({ ...initial, oculta: false, version: 3 }); assert.deepEqual(ui.events.cantidades, [1, 0, 1])
+    receive(hidden); assert.deepEqual(ui.events.cantidades, [1, 0, 1])
+    assert.equal(all(ui.render(), node => node.type === 'button' && text(node).trim() === 'Ocultar comentario').length, 1)
+    ui.submit('Gracias por acompañar'); await tick()
+    assert.deepEqual(ui.events.cantidades, [1, 0, 1, 2]); assert.equal(n.calls.length, 2); ui.unmount()
+  } finally { n.restore() }
+})
+
+test('la moderación usa el total actualizado del padre y no vuelve visibles comentarios retirados', async () => {
+  const initial = comment(11, { propia: false }), withdrawn = comment(12, { propia: false, retirada: true, oculta: true })
+  const n = network(call => call.options.method === 'POST'
+    ? response({ ok: true, comentario: comment(13, { id: call.body.id, contenido: call.body.contenido }) })
+    : response({ estado: 'lista', comentarios: [initial, withdrawn], siguiente: null }))
+  try {
+    const ui = view(commentsFile, { publicacionId: id(1), cantidadInicial: 1, administracion: true }); await tick()
+    ui.props.cantidadInicial = 5; ui.flush(); assert.deepEqual(ui.events.cantidades, [])
+    ui.props.comentarioActualizado = { ...initial, oculta: true, version: 2 }; ui.flush(); assert.deepEqual(ui.events.cantidades, [4])
+    ui.props.cantidadInicial = 4; ui.flush(); assert.deepEqual(ui.events.cantidades, [4])
+    ui.props.comentarioActualizado = { ...withdrawn, oculta: false, version: 2 }; ui.flush(); assert.deepEqual(ui.events.cantidades, [4])
+    ui.props.comentarioActualizado = comment(99, { oculta: true, version: 2 }); ui.flush()
+    ui.props.comentarioActualizado = { ...initial, publicacion_id: id(2), oculta: false, version: 3 }; ui.flush(); assert.deepEqual(ui.events.cantidades, [4])
+    ui.submit('Sigo por acá'); await tick(); assert.deepEqual(ui.events.cantidades, [4, 5]); ui.unmount()
+  } finally { n.restore() }
+})
+
+test('una página de comentarios atrasada no reemplaza moderaciones confirmadas por versiones anteriores', async () => {
+  const initial = comment(11, { propia: false }), second = comment(12, { propia: false })
+  const n = network((_call, count) => response({ estado: 'lista', comentarios: count === 1 ? [initial] : [initial, second], siguiente: count === 1 ? domain.cursorComunidad(initial) : null }))
+  try {
+    const ui = view(commentsFile, { publicacionId: id(1), cantidadInicial: 2, administracion: true, onModerarComentario() {} }); await tick()
+    ui.props.comentarioActualizado = { ...initial, oculta: true, version: 2 }; ui.flush()
+    ui.button('Cargar más comentarios').props.onClick(); await tick(); ui.flush()
+    ui.props.comentarioActualizado = { ...second, oculta: true, version: 2 }; ui.flush()
+    assert.equal(all(ui.render(), node => node.type === 'button' && text(node).trim() === 'Mostrar comentario').length, 2)
+    assert.deepEqual(ui.events.cantidades, [1, 0]); assert.equal(n.calls.length, 2); ui.unmount()
+  } finally { n.restore() }
+})

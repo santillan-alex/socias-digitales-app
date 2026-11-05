@@ -51,12 +51,11 @@ export default function AdminLanzamientoCliente({ metricas, afiliadas }: Props) 
 
   function exportarCSV() {
     const filas = [
-      ['Nombre', 'Email', 'Instagram', 'País', 'Registrada', 'Tráfico', 'Inversión USD', 'En grupo', 'En seguimiento', 'Ventas', 'Objetivo USD', 'Ventas necesarias']
+      ['Nombre', 'Email', 'Instagram', 'País', 'Registrada', 'Tráfico', 'Inversión USD', 'En grupo', 'En seguimiento', 'Ventas', 'Objetivo USD']
     ]
 
     afiliadas.forEach(a => {
-      const m = metricasUnicas.find(x => x.perfiles?.email === a.email)
-      const ventasNec = m?.objetivo_septiembre ? Math.ceil(m.objetivo_septiembre / 298.5) : 0
+      const m = metricasUnicas.find(x => x.alumna_id === a.id)
       filas.push([
         a.nombre || '',
         a.email || '',
@@ -69,7 +68,6 @@ export default function AdminLanzamientoCliente({ metricas, afiliadas }: Props) 
         m?.personas_seguimiento?.toString() || '0',
         m?.ventas_realizadas?.toString() || '0',
         m?.objetivo_septiembre?.toString() || '0',
-        ventasNec.toString(),
       ])
     })
 
@@ -99,7 +97,7 @@ export default function AdminLanzamientoCliente({ metricas, afiliadas }: Props) 
 
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-3xl font-semibold" style={{ color: '#211c19' }}>Avances de alumnas</h1>
+            <h2 className="text-3xl font-semibold" style={{ color: '#211c19' }}>Registro del lanzamiento anterior</h2>
             <p className="text-sm text-gray-500 mt-1">{afiliadas.length} afiliadas registradas · {metricasUnicas.length} con métricas cargadas</p>
           </div>
           <button onClick={exportarCSV}
@@ -151,14 +149,12 @@ export default function AdminLanzamientoCliente({ metricas, afiliadas }: Props) 
                 </thead>
                 <tbody>
                   {afiliadas.map(a => {
-                    const m = metricasUnicas.find(x => x.perfiles?.email === a.email)
-                    const ventasNec = m?.objetivo_septiembre ? Math.ceil(m.objetivo_septiembre / 298.5) : null
+                    const m = metricasUnicas.find(x => x.alumna_id === a.id)
                     return (
                       <tr key={a.id} className="border-t border-gray-50 hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
                           <p className="font-semibold text-gray-800">{a.nombre || '—'}</p>
                           <p className="text-xs text-gray-400">{a.email}</p>
-                          <p className="text-xs font-medium" style={{ color: '#337357' }}>Valor $597 · Comisión 50%</p>
                           {a.instagram && <p className="text-xs text-gray-400">@{a.instagram}</p>}
                           {a.pais && <p className="text-xs text-gray-400">📍 {a.pais}</p>}
                           <p className="text-xs text-gray-300 mt-0.5">Registro: {new Date(a.created_at).toLocaleDateString('es-AR')}</p>
@@ -190,7 +186,6 @@ export default function AdminLanzamientoCliente({ metricas, afiliadas }: Props) 
                           {m?.objetivo_septiembre ? (
                             <div>
                               <p className="text-xs text-gray-400">${m.objetivo_septiembre}</p>
-                              <p className="text-sm font-black" style={{ color: '#7c3aed' }}>{ventasNec} ventas</p>
                             </div>
                           ) : <span className="text-gray-300 text-xs">—</span>}
                         </td>

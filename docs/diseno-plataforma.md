@@ -10,6 +10,8 @@ Desde el 05/11, en Afiliadas la confirmación y los errores de copiar pertenecen
 
 Las campañas de Afiliadas se distinguen por un encabezado verde con título blanco y cantidad clara. El verde pertenece solo al `summary`, para no aclarar por cascada los títulos de las tarjetas interiores. Avisos destacados: rose; copys: blush con texto en una superficie blanca cálida; videos: surface; archivos: crema con borde rose. El color depende del tipo de recurso y se conserva al filtrar; no alternarlo por posición. Las etiquetas siguen indicando el tipo, por lo que el color no es la única señal. Los textos secundarios sobre los rosas usan verde (contraste 6,70:1 sobre blush y 4,66:1 sobre rose); reservar el muted para fondos claros. Mantener bordes finos, controles legibles y el interior de cada campaña en paper.
 
+Avances de Formación reutiliza el lateral fijo y muestra cuatro indicadores del recorrido en surface, blush, rose y paper, con texto oscuro/verde y bordes finos. El color acompaña etiquetas, nunca sustituye los estados. Listas como tarjetas, filtros de 16 px y ficha nativa de lectura con scroll interno, Escape y retorno al botón. Mantener separados acceso actual, actividad registrada y completada manual. El catálogo histórico comercial no vuelve a ser la portada de Avances.
+
 ## Tipografías y ritmo
 
 | Uso | Familia | Criterio |
