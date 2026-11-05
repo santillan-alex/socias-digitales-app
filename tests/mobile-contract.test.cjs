@@ -26,13 +26,14 @@ test('navegación móvil: cinco destinos reales, ruta activa correcta y sin prec
   const src = read('src/components/MobileNavigation.tsx')
   assert.ok(src.includes('prefetch={false}')); assert.ok(!src.includes('fetch(')); assert.ok(!src.includes('supabase')); assert.ok(!src.includes('user_metadata'))
 })
-test('Flor dispone de dieciocho destinos desde el lateral y el diálogo móvil, sin pestañas horizontales', () => {
+test('Flor dispone de diecinueve destinos desde el lateral y el diálogo móvil, sin pestañas horizontales', () => {
   const sections = cargar('src/lib/admin-sections.ts')
   const navigation = cargar('src/lib/admin-navigation.ts', { './admin-sections': sections })
   const Sidebar = cargar('src/components/AdminSidebar.tsx', { 'next/link': link, 'next/navigation': { usePathname: () => '/admin/checklist' }, './NavigationIcon': icon, '@/lib/admin-sections': sections, '@/lib/admin-navigation': navigation }).default
   const html = renderToStaticMarkup(React.createElement(Sidebar, { datos: { nombre: 'Flor', solicitudesPendientes: 2 } }))
-  assert.equal(sections.ADMIN_SECTIONS.length, 18)
+  assert.equal(sections.ADMIN_SECTIONS.length, 19)
   for (const s of sections.ADMIN_SECTIONS) assert.ok(html.includes(`href="${s.href}"`))
+  assert.ok(html.includes('href="/admin/alumnas"')); assert.ok(html.includes('Todas las alumnas'))
   assert.ok(html.includes('href="/admin/checklist" aria-current="page"'))
   assert.ok(html.includes('2 solicitudes pendientes'))
   assert.ok(html.includes('<summary')); assert.ok(html.includes('min-h-11'))

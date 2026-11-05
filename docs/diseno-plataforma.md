@@ -52,7 +52,9 @@ No glow, brillos, neón, degradados decorativos, sombras ornamentales fuertes o 
 
 ## Menú administrativo — ajuste del 03/11/2026
 
-`AdminSidebar` mantiene la columna de escritorio de 264 px, con iconos alineados y títulos de grupo en estilo oración a 13 px, sin tracking amplio ni cajas redondeadas alrededor de cada grupo. Usar separadores finos, submenú con línea lateral discreta y selección rosa en la ruta activa. Conservar los 18 destinos y sus iconos; los tres grupos tienen además su propio icono. Evitar recortar o truncar nombres como «Seguimiento de Socias» y «Formación y comunidad».
+`AdminSidebar` mantiene la columna de escritorio de 264 px, con iconos alineados y títulos de grupo en estilo oración a 13 px, sin tracking amplio ni cajas redondeadas alrededor de cada grupo. Usar separadores finos, submenú con línea lateral discreta y selección rosa en la ruta activa. Conservar los 19 destinos y sus iconos; los tres grupos tienen además su propio icono. Evitar recortar o truncar nombres como «Seguimiento de Socias» y «Formación y comunidad».
+
+Desde el 05/11, **Todas las alumnas** (`/admin/alumnas`) es el primer destino de Alumnas y accesos. El menú pasa a 19 destinos. Es el resumen de personas y accesos: no sustituye Seguimiento de Socias, Afiliadas o Solicitudes. Los indicadores de Socias/Desafío/Gratuitas son acceso principal; Afiliadas es adicional. Nunca sumar esos grupos para inventar un total de personas ni convertir un permiso sin comprobar en deshabilitado.
 
 El fondo de `nav[data-admin-menu]` es transparente mediante una regla limitada a `.sd-admin-shell`: neutraliza el fondo global de nav que creaba el rectángulo claro. No cambiar todos los menús para resolver este caso. Se conservan navegación fija al desplazarse, grupos plegables, badges y diálogo móvil con Escape y devolución de foco. Comprobar tanto Inicio como un grupo desplegado, además de los anchos de celular requeridos.
 

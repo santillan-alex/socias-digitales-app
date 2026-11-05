@@ -20,15 +20,25 @@ function frame(options = {}) {
   dialog.props.ref.current = { open: false, showModal() { this.open = true; opened++ }, close() { this.open = false; closed++; dialog.props.onClose() } }
   return { api, render, refs, effects, events, pushes, media, open: () => opened, close: () => closed, route: p => { pathname = p } }
 }
-test('dieciocho secciones únicas y activos correctos sin colisiones ni raíces duplicadas', () => {
+test('diecinueve secciones únicas y activos correctos sin colisiones ni raíces duplicadas', () => {
   const grouped = navigation.ADMIN_NAVIGATION_GROUPS.flatMap(g => navigation.seccionesGrupoAdmin(g.rutas)).map(s => s.href)
-  const all = ['/admin', ...grouped, '/admin/configuracion']; assert.equal(all.length, 18); assert.equal(new Set(all).size, 18); assert.deepEqual([...all].sort(), sections.ADMIN_SECTIONS.map(s => s.href).sort())
-  for (const [ruta, esperado] of [['/admin', '/admin'], ['/admin/?x=1', '/admin'], ['/admin/afiliadas/accesos?x=1', '/admin/afiliadas'], ['/admin/classroom/editar/', '/admin/classroom'], ['/admin/checklist', '/admin/checklist'], ['/admin/afiliadas-ajeno', null], ['/inicio', null], ['/administracion', null]]) assert.equal(navigation.seccionAdminActiva(ruta), esperado)
+  const all = ['/admin', ...grouped, '/admin/configuracion']; assert.equal(all.length, 19); assert.equal(new Set(all).size, 19); assert.deepEqual([...all].sort(), sections.ADMIN_SECTIONS.map(s => s.href).sort())
+  for (const [ruta, esperado] of [['/admin', '/admin'], ['/admin/?x=1', '/admin'], ['/admin/afiliadas/accesos?x=1', '/admin/afiliadas'], ['/admin/alumnas?tipo=socia', '/admin/alumnas'], ['/admin/alumnas/', '/admin/alumnas'], ['/admin/alumnas-ajenas', null], ['/admin/classroom/editar/', '/admin/classroom'], ['/admin/checklist', '/admin/checklist'], ['/admin/afiliadas-ajeno', null], ['/inicio', null], ['/administracion', null]]) assert.equal(navigation.seccionAdminActiva(ruta), esperado)
 })
-test('sidebar conserva dieciocho links, iconos, grupo activo abierto y badge real en todas las secciones', () => {
+test('Todas las alumnas encabeza Alumnas y accesos sin reemplazar Vista general o Afiliadas', () => {
+  assert.deepEqual(sections.ADMIN_SECTIONS[0], { href: '/admin', label: 'Vista general', icon: 'inicio' })
+  const personas = navigation.ADMIN_NAVIGATION_GROUPS.find(g => g.id === 'personas')
+  assert.equal(personas.rutas[0], '/admin/alumnas')
+  assert.deepEqual(navigation.seccionesGrupoAdmin(personas.rutas)[0], { href: '/admin/alumnas', label: 'Todas las alumnas', icon: 'solicitudes' })
+  const Sidebar = sidebar('/admin/alumnas'), html = renderToStaticMarkup(React.createElement(Sidebar, { datos }))
+  assert.ok(html.includes('href="/admin/alumnas" aria-current="page"')); assert.ok(html.indexOf('href="/admin/alumnas"') < html.indexOf('href="/admin/socias"'))
+  assert.equal((html.match(/<details open=""/g) ?? []).length, 1)
+  assert.equal(navigation.seccionAdminActiva('/admin/afiliadas/accesos'), '/admin/afiliadas'); assert.equal(navigation.seccionAdminActiva('/admin'), '/admin')
+})
+test('sidebar conserva diecinueve links, iconos, grupo activo abierto y badge real en todas las secciones', () => {
   for (const s of sections.ADMIN_SECTIONS) {
     const Sidebar = sidebar(s.href), html = renderToStaticMarkup(React.createElement(Sidebar, { datos }))
-    assert.equal((html.match(/href=/g) ?? []).length, 18); assert.equal((html.match(/data-icon=/g) ?? []).length, 21); assert.equal((html.match(/aria-current="page"/g) ?? []).length, 1)
+    assert.equal((html.match(/href=/g) ?? []).length, 19); assert.equal((html.match(/data-icon=/g) ?? []).length, 22); assert.equal((html.match(/aria-current="page"/g) ?? []).length, 1)
     assert.ok(html.includes(`href="${s.href}" aria-current="page"`)); assert.ok(html.includes('4 solicitudes pendientes')); assert.ok(html.includes('group-open:hidden')); assert.ok(!html.includes('<select')); assert.ok(!html.includes('overflow-x'))
     const grupo = navigation.ADMIN_NAVIGATION_GROUPS.find(g => g.rutas.includes(s.href)); assert.equal((html.match(/<details open=""/g) ?? []).length, grupo ? 1 : 0)
     for (const section of sections.ADMIN_SECTIONS) assert.ok(html.includes(`href="${section.href}"`))
@@ -43,7 +53,7 @@ test('marco único: encabezado, sidebar sticky y diálogo cerrado sin repetir na
   assert.ok(html.includes('lg:sticky lg:top-[100px]')); assert.ok(html.includes('lg:max-h-[calc(100dvh-124px)]')); assert.ok(html.includes('lg:overflow-y-auto')); assert.ok(html.includes('safe-area-inset-bottom')); assert.ok(html.includes('safe-area-inset-top'))
   assert.ok(html.includes('Ir al contenido')); assert.ok(html.includes('Menú de administración')); assert.ok(html.includes('data-admin-desktop="true"'))
 })
-test('menú móvil abre una vez, incluye las dieciocho rutas y cierra por enlace, ruta y escritorio', () => {
+test('menú móvil abre una vez, incluye las diecinueve rutas y cierra por enlace, ruta y escritorio', () => {
   const h = frame(); let tree = h.render(), open = by(tree, n => n.type === 'button' && n.props['aria-controls'] === 'sd-admin-menu-dialog').props.onClick
   open(); open(); assert.equal(h.open(), 1); tree = h.render(); assert.equal(by(tree, n => n.type === 'button' && n.props['aria-controls']).props['aria-expanded'], true)
   const mobile = by(tree, n => typeof n.type === 'function' && typeof n.props.onNavigate === 'function'); const html = renderToStaticMarkup(React.createElement(mobile.type, mobile.props)); for (const s of sections.ADMIN_SECTIONS) assert.ok(html.includes(`href="${s.href}"`))
@@ -61,8 +71,8 @@ test('cerrar sesión bloquea doble clic y navega solamente tras confirmación; e
 })
 test('adaptador no duplica navegación dentro del marco; cabeceras de acciones y formularios siguen presentes', () => {
   for (const inside of [false, true]) {
-    const Menu = load('src/components/AdminSectionMenu.tsx', { './AdminSidebar': { default: () => React.createElement('nav', null, '18 rutas') }, './AdminShellFrame': { useAdminShell: () => inside } }).default
-    assert.equal(renderToStaticMarkup(React.createElement(Menu)).includes('18 rutas'), !inside)
+    const Menu = load('src/components/AdminSectionMenu.tsx', { './AdminSidebar': { default: () => React.createElement('nav', null, '19 rutas') }, './AdminShellFrame': { useAdminShell: () => inside } }).default
+    assert.equal(renderToStaticMarkup(React.createElement(Menu)).includes('19 rutas'), !inside)
   }
   const dashboard = read('src/app/admin/AdminDashboard.tsx'); assert.ok(!dashboard.includes('<aside')); assert.ok(!dashboard.includes('<header')); assert.ok(!dashboard.includes('<AdminSectionMenu')); assert.ok(dashboard.includes('aria-label="Cerrar ficha"')); assert.ok(dashboard.includes('guardarFicha'))
   for (const file of ['src/app/admin/classroom/ClassroomAdmin.tsx', 'src/app/admin/productos/ProductosAdmin.tsx', 'src/app/admin/notificaciones/NotificacionesAdmin.tsx', 'src/app/admin/configuracion/ConfiguracionAdmin.tsx']) assert.ok(!read(file).includes('data-admin-section-header'))

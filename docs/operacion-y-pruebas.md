@@ -2,6 +2,16 @@
 
 Fecha: 15/10/2026. Complementa el inventario de `estado-plataforma.md`. No incluye credenciales ni autoriza envíos o cambios sobre usuarias reales.
 
+## Todas las alumnas — directorio unificado incorporado el 05/11/2026
+
+Entrar en **Panel de Flor → Alumnas y accesos → Todas las alumnas** (`/admin/alumnas`). La vista reúne las cuentas de alumnas en una sola lista, sin administradoras ni Alex Prueba. Cada persona aparece una sola vez, con su acceso principal y su permiso adicional de Afiliadas. Los indicadores se pueden pulsar para filtrar; búsqueda por nombre, email, WhatsApp o país, acceso principal, Afiliadas y estado se pueden combinar. **Limpiar filtros** vuelve a la lista completa. Los indicadores generales no cambian al filtrar y no se deben sumar grupos que se superponen.
+
+**Ver ficha** abre una consulta de contacto, email confirmado, alta, último ingreso y habilitaciones. No cambia datos ni permisos: desde ahí se puede ir a Acceso y actividad, a gestionar Afiliadas o al seguimiento de Socias. Las modificaciones siguen usando los circuitos existentes. Último ingreso proviene de Auth; no es una medición de la actividad diaria ni del avance en clases. Una cuenta pausada/cancelada conserva sus permisos asignados, pero eso no significa que pueda usarlos mientras esté suspendida.
+
+**Actualizar** vuelve a verificar la sesión administrativa y la lectura. Un fallo general retira la lista anterior y ofrece Reintentar. Si no se pueden comprobar identidades o permisos de Afiliadas, se muestra una advertencia y valores sin comprobar, nunca ceros o cuentas sin confirmar inventados. Los perfiles se leen por páginas con conteo exacto; los permisos se consultan por lotes y el directorio Auth se restringe a los IDs ya autorizados. El límite técnico es de cinco mil cuentas: si se alcanza o la lectura no se puede completar, se indica lista parcial y los totales quedan sin confirmar. No confundir el límite de esta vista con un límite de altas de la app.
+
+La API `GET /api/admin/alumnas` solo devuelve el DTO mínimo tras comprobar Auth y el rol administrativo desde el perfil. No acepta filtros/identidades por URL ni tiene escrituras. Respuestas `private, no-store`, `nosniff` y `no-referrer`. Conservar la paginación, la distinción entre desconocido y falso y las exclusiones de pruebas/equipo al ampliar la vista; no usar metadata editable para conceder permisos.
+
 ## Recorrido de Afiliadas completado — 05/11/2026
 
 Producción `6ec94b3932fb221980fbe63c8ba4e57a2f8b0b6e`, deployment `dpl_AntmBT73oLt19vKxnKQCDEH6AZV3`, READY. Consultar el cierre de la misma fecha en `estado-plataforma.md` para evidencia y límites; el recorrido de alumna pendiente que figura más abajo ya se completó.

@@ -24,6 +24,7 @@ export interface IdentidadCuenta {
   email: string | null
   email_confirmado: boolean | null
   cuenta_encontrada: boolean
+  ultimo_acceso?: string | null
 }
 
 // Lectura informativa del directorio que ya usa Equipo. La llamada debe estar
@@ -56,6 +57,7 @@ export async function identidadesDeCuentas(
           email,
           email_confirmado: email ? Boolean(user.email_confirmed_at) : null,
           cuenta_encontrada: true,
+          ultimo_acceso: user.last_sign_in_at ?? null,
         })
         pendiente.delete(user.id)
       }
@@ -63,7 +65,7 @@ export async function identidadesDeCuentas(
     if (data.users.length < 1000) { directorioCompleto = true; break }
   }
   if (pendiente.size && !directorioCompleto) throw new Error('No pudimos completar el directorio de cuentas.')
-  for (const id of pendiente) identidades.set(id, { email: null, email_confirmado: null, cuenta_encontrada: false })
+  for (const id of pendiente) identidades.set(id, { email: null, email_confirmado: null, cuenta_encontrada: false, ultimo_acceso: null })
   return identidades
 }
 

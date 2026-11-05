@@ -11,18 +11,18 @@ function auth(pages) {
   const calls = []
   return { calls, client: { auth: { admin: { listUsers: async options => { calls.push(options); const result = pages[options.page - 1]; if (result instanceof Error) throw result; return result || { data: { users: [] }, error: null } } } } } }
 }
-test('directorio devuelve solo email canónico y confirmación de email para los IDs pedidos, no Auth completo ni metadata', async () => {
+test('directorio devuelve email canónico, confirmación y último ingreso para los IDs pedidos, no Auth completo ni metadata', async () => {
   const f = auth([{ data: { users: [
-    { id: 'uno', email: 'Socia@ejemplo.test', email_confirmed_at: '2026-10-01', user_metadata: { email: 'falso@ejemplo.test', rol: 'admin' }, app_metadata: { private: 'not-for-client' }, identities: [{ private: true }] },
+    { id: 'uno', email: 'Socia@ejemplo.test', email_confirmed_at: '2026-10-01', last_sign_in_at: '2026-11-04T18:30:00Z', user_metadata: { email: 'falso@ejemplo.test', rol: 'admin', last_sign_in_at: '2099-01-01T00:00:00Z' }, app_metadata: { private: 'not-for-client' }, identities: [{ private: true }] },
     { id: 'dos', email: 'otra@ejemplo.test', email_confirmed_at: null, confirmed_at: '2026-10-01', user_metadata: { email_confirmed: true } },
     { id: 'tres', email: null, phone_confirmed_at: '2026-10-01' },
     { id: 'ajena', email: 'no-exportar@ejemplo.test', email_confirmed_at: '2026-10-01' },
   ] }, error: null }])
   const map = await directory.identidadesDeCuentas(f.client, ['uno', 'dos', 'tres'])
   assert.deepEqual([...map], [
-    ['uno', { email: 'Socia@ejemplo.test', email_confirmado: true, cuenta_encontrada: true }],
-    ['dos', { email: 'otra@ejemplo.test', email_confirmado: false, cuenta_encontrada: true }],
-    ['tres', { email: null, email_confirmado: null, cuenta_encontrada: true }],
+    ['uno', { email: 'Socia@ejemplo.test', email_confirmado: true, cuenta_encontrada: true, ultimo_acceso: '2026-11-04T18:30:00Z' }],
+    ['dos', { email: 'otra@ejemplo.test', email_confirmado: false, cuenta_encontrada: true, ultimo_acceso: null }],
+    ['tres', { email: null, email_confirmado: null, cuenta_encontrada: true, ultimo_acceso: null }],
   ])
   assert.deepEqual(f.calls, [{ page: 1, perPage: 1000 }])
   assert.ok(!JSON.stringify([...map]).includes('private')); assert.ok(!map.has('ajena'))
@@ -36,7 +36,7 @@ test('paginación alcanza la cuenta exacta sin confundir homónimas ni serializa
 })
 test('cuenta ausente no se presenta como email pendiente; falla de directorio o límite no producen datos parciales', async () => {
   const missing = await directory.identidadesDeCuentas(auth([]).client, ['ausente'])
-  assert.deepEqual(missing.get('ausente'), { email: null, email_confirmado: null, cuenta_encontrada: false })
+  assert.deepEqual(missing.get('ausente'), { email: null, email_confirmado: null, cuenta_encontrada: false, ultimo_acceso: null })
   for (const response of [{ data: { users: [] }, error: new Error('denied') }, new TypeError('network')]) await assert.rejects(() => directory.identidadesDeCuentas(auth([response]).client, ['uno']))
   const full = { data: { users: Array.from({ length: 1000 }, (_, i) => ({ id: 'otra-' + i })) }, error: null }
   const f = auth(Array(20).fill(full))
