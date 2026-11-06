@@ -2,6 +2,8 @@
 
 Estado: propuesta para aprobación antes de implementar.
 
+Para el cambio comercial confirmado el 06/11/2026 —Flor vende y despacha físicos, Afiliadas vende con enlaces propios y Whop como checkout— consultar [Afiliadas · Productos físicos y Whop](./afiliadas-productos-whop.md). Es preparación técnica, no una integración ya activada. El estado real de producción permanece en `estado-plataforma.md`.
+
 ## 1. Principio central
 
 La plataforma tiene **un solo acceso** y tres experiencias. La usuaria no elige un rol al iniciar sesión: el sistema reconoce su cuenta y la lleva al lugar correcto.

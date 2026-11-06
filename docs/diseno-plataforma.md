@@ -12,6 +12,10 @@ Las campañas de Afiliadas se distinguen por un encabezado verde con título bla
 
 Avances de Formación reutiliza el lateral fijo y muestra cuatro indicadores del recorrido en surface, blush, rose y paper, con texto oscuro/verde y bordes finos. El color acompaña etiquetas, nunca sustituye los estados. Listas como tarjetas, filtros de 16 px y ficha nativa de lectura con scroll interno, Escape y retorno al botón. Mantener separados acceso actual, actividad registrada y completada manual. El catálogo histórico comercial no vuelve a ser la portada de Avances.
 
+## Textos de Productos — decisión del 06/11/2026
+
+La interfaz usa nombres concretos y breves: Productos, Materiales, Mi enlace, Precio, Opciones y Comprar. No incluir explicaciones de implementación ni instrucciones genéricas con tono de asistente. La compradora no necesita leer «Continuar a Whop», «Flor arma/vende/despacha tu pedido» ni descripciones de cómo se configurará la plataforma. Whop puede figurar como campo del panel administrativo; el botón de compra se llama **Comprar**. No inventar una descripción comercial para llenar un campo vacío. En una propuesta visual, el aviso de estado pertenece al marco de revisión, fuera de la ficha de venta.
+
 ## Tipografías y ritmo
 
 | Uso | Familia | Criterio |

@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { registrarPush } from '@/lib/push-client'
 
 const POSPONER_NOTIFICACIONES = 'notificaciones-pospuestas-hasta'
-const RUTAS_SIN_AVISO = ['/preview', '/login', '/registro', '/auth', '/crear-contrasena']
+const RUTAS_SIN_AVISO = ['/preview', '/propuesta/afiliadas-productos', '/login', '/registro', '/auth', '/crear-contrasena']
 
 export default function PushNotifications() {
   const pathname = usePathname()
@@ -99,7 +99,7 @@ export default function PushNotifications() {
     setMostrar(false)
   }
 
-  if (!mostrar) return null
+  if (!mostrar || RUTAS_SIN_AVISO.some(ruta => pathname.startsWith(ruta))) return null
 
   return (
     <div className="sd-push-prompt fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-sm">
