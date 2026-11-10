@@ -1,6 +1,16 @@
 # Catálogo de productos para Afiliadas
 
-Guía de operación del catálogo, sus materiales y los permisos por producto. **La publicación y su verificación final están pendientes.** La conexión comercial con Whop sigue pendiente; los enlaces de venta permanecen deshabilitados.
+Guía de operación del catálogo, sus materiales y los permisos por producto. **El catálogo está publicado.** La descarga final de PDF y video sigue pendiente de comprobación en un navegador que permita completar esa operación. La conexión comercial con Whop continúa pendiente y los enlaces de venta permanecen deshabilitados.
+
+## Estado de publicación y verificación
+
+La publicación completó su compilación y **885 pruebas automáticas**. En el recorrido real de Flor se creó una ficha con foto, se guardó como borrador, se publicó, se asociaron un copy, un PDF y un video y se autorizó exclusivamente una cuenta de prueba.
+
+Desde esa cuenta, el borrador permaneció oculto aunque tuviera permiso; al publicarse se mostró el producto autorizado y sus tres materiales. La copia mostró **Copiado** y **Mi enlace** conservó su estado **Pendiente**, con el botón deshabilitado. Al retirar el permiso, el producto dejó de aparecer. Se archivaron la ficha y los materiales de ensayo, se retiraron sus permisos temporales y se conservaron las fichas anteriores.
+
+Las pantallas y sus diálogos se revisaron localmente a anchos de **320, 360, 390, 430 y 1280 píxeles**, con catálogo lleno, texto largo, vacío y error. Esta comprobación local complementa el recorrido autenticado; no representa una prueba en todos los dispositivos físicos.
+
+**Verificación pendiente:** el navegador de revisión bloqueó los intentos de descarga, por lo que no se confirmó la recepción final del PDF y del video. Tampoco se comparó el contenido exacto del portapapeles; se comprobó la confirmación visual de copia. Antes de dar por completada esa aceptación, repetir ambas comprobaciones en un navegador sin ese bloqueo.
 
 ## Flor administra el catálogo
 
@@ -32,10 +42,10 @@ El catálogo y las listas de permisos comprueban conteos completos, con un lími
 
 Las operaciones de administración comprueban la sesión y el rol antes de leer o escribir. Las escrituras validan el origen, el tamaño del envío y los campos permitidos. Las respuestas del catálogo no incluyen contactos, credenciales ni datos del historial administrativo.
 
-## Respaldo y comprobación antes de publicar
+## Respaldo y comprobaciones de futuras entregas
 
 Conservar coordinadamente las fichas, sus imágenes, los permisos generales y específicos, las asociaciones de materiales, sus archivos e índices privados y el historial. Mantener identificadores, relaciones, versiones y reglas de acceso al restaurar; no reconstruir permisos a partir del plan o de un enlace compartido.
 
-Antes de cerrar la entrega, verificar el recorrido de Flor y el de una afiliada: guardar una ficha, asociar materiales, conceder y retirar permisos, copiar textos y descargar archivos. Comprobar dos cuentas con autorizaciones distintas, cuentas sin acceso o inactivas y productos en cada estado. Revisar anchos de celular de 320, 360, 390 y 430 píxeles, además de escritorio, incluyendo contenido largo, carga, vacío y error.
+Antes de cerrar una futura entrega, repetir el recorrido de Flor y el de una afiliada: guardar una ficha, asociar materiales, conceder y retirar permisos, copiar textos y descargar archivos. Comparar el texto copiado y los archivos recibidos con los originales. Comprobar dos cuentas con autorizaciones distintas, cuentas sin acceso o inactivas y productos en cada estado. Revisar anchos de celular de 320, 360, 390 y 430 píxeles, además de escritorio, incluyendo contenido largo, carga, vacío y error.
 
 La publicación del catálogo no equivale a habilitar compras. Checkout, atribución de ventas, comisiones, pedidos y stock sincronizados requieren una aceptación comercial separada.
