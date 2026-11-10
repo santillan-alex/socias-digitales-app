@@ -1,16 +1,34 @@
 # Catálogo de productos para Afiliadas
 
-Guía de operación del catálogo, sus materiales y los permisos por producto. **El catálogo está publicado.** La descarga final de PDF y video sigue pendiente de comprobación en un navegador que permita completar esa operación. La conexión comercial con Whop continúa pendiente y los enlaces de venta permanecen deshabilitados.
+Guía de operación del catálogo, sus materiales y los permisos por producto. **El catálogo está publicado y se comprobó la entrega de los archivos técnicos de prueba.** La vinculación comercial con Whop y Hotmart continúa pendiente; los enlaces de venta permanecen deshabilitados.
 
 ## Estado de publicación y verificación
 
 La publicación completó su compilación y **885 pruebas automáticas**. En el recorrido real de Flor se creó una ficha con foto, se guardó como borrador, se publicó, se asociaron un copy, un PDF y un video y se autorizó exclusivamente una cuenta de prueba.
 
-Desde esa cuenta, el borrador permaneció oculto aunque tuviera permiso; al publicarse se mostró el producto autorizado y sus tres materiales. La copia mostró **Copiado** y **Mi enlace** conservó su estado **Pendiente**, con el botón deshabilitado. Al retirar el permiso, el producto dejó de aparecer. Se archivaron la ficha y los materiales de ensayo, se retiraron sus permisos temporales y se conservaron las fichas anteriores.
+Desde esa cuenta, el borrador permaneció oculto aunque tuviera permiso; al publicarse se mostró el producto autorizado y sus tres materiales. La copia mostró **Copiado** y **Mi enlace** conservó su estado **Pendiente**, con el botón deshabilitado. Al retirar el permiso, el producto dejó de aparecer. En ese ensayo inicial se archivaron la ficha y los materiales, se retiraron sus permisos temporales y se conservaron las fichas anteriores.
 
 Las pantallas y sus diálogos se revisaron localmente a anchos de **320, 360, 390, 430 y 1280 píxeles**, con catálogo lleno, texto largo, vacío y error. Esta comprobación local complementa el recorrido autenticado; no representa una prueba en todos los dispositivos físicos.
 
-**Verificación pendiente:** el navegador de revisión bloqueó los intentos de descarga, por lo que no se confirmó la recepción final del PDF y del video. Tampoco se comparó el contenido exacto del portapapeles; se comprobó la confirmación visual de copia. Antes de dar por completada esa aceptación, repetir ambas comprobaciones en un navegador sin ese bloqueo.
+### Descargas verificadas el 10 de noviembre de 2026
+
+Con una cuenta de alumna habilitada para Afiliadas y autorizada para el producto de prueba, se descargaron realmente un **PDF de 601 bytes** y un **MP4 de 2.324 bytes**, tanto desde Recursos generales como desde Materiales del producto. Los archivos recibidos desde ambos recorridos coincidieron entre sí, byte por byte y en SHA-256. El PDF abrió como documento válido de una página y se renderizó correctamente; el MP4 se decodificó completo, con 25 cuadros, resolución de 320 × 240, 25 cuadros por segundo y un segundo de duración.
+
+La comprobación técnica utilizó la descarga del navegador iniciada con **Alt+clic**. Verifica la entrega de esos dos archivos; no prueba una carga o descarga de un video de gran tamaño, todos los dispositivos ni la captura automática del evento de descarga con un clic simple. Las **20 pruebas enfocadas de archivos** también pasaron, sin cambios de código en esta comprobación.
+
+Antes de retirar el permiso, ambos materiales estaban publicados y disponibles. Después, abrir sus direcciones estables llevó a un aviso de archivo no disponible en Afiliadas. Esta revocación impide nuevas descargas desde la app, sin revocar los archivos ya recibidos. No se enviaron comunicaciones durante el ensayo.
+
+Al cerrar esta comprobación se archivaron de nuevo el producto y los dos materiales técnicos, se restauraron sus asociaciones generales y se retiraron ambos permisos temporales de la cuenta de prueba. La lectura final confirmó los estados esperados y las fichas comerciales anteriores sin cambios.
+
+**Verificación pendiente:** no se comparó el contenido exacto del portapapeles; la aceptación de copia confirma únicamente el estado visual **Copiado**.
+
+## Origen comercial y próxima vinculación
+
+Los productos comerciales se crean y administran en **Whop o Hotmart**. La app debe vincularlos y organizar sus materiales, visibilidad y afiliadas autorizadas. El editor local descrito en esta guía es la interfaz existente; la próxima acción **Vincular producto** todavía no está implementada.
+
+La vinculación futura deberá guardar el proveedor y la referencia externa del producto o variante y consultar únicamente los datos que su API permita comprobar. Precio, moneda, comisión y disponibilidad necesitan una fuente comercial verificada antes de presentarse como sincronizados. No se presume sincronización de stock físico para Hotmart ni equivalencia de funciones entre proveedores.
+
+Cada enlace de afiliada debe ser un enlace real reconocido por el proveedor. El permiso de la app controla el acceso a la ficha y a sus materiales; retirarlo no revoca por sí solo un enlace externo ya compartido. La integración comercial y ese comportamiento de revocación requieren su propia prueba antes de habilitar **Mi enlace**.
 
 ## Flor administra el catálogo
 
