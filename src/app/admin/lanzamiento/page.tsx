@@ -5,7 +5,8 @@ import AvancesFormacion from './AvancesFormacion'
 
 export const metadata = { title: 'Avances de las alumnas' }
 
-export default async function AvancesPage({ searchParams }: { searchParams?: Promise<{ clase?: string | string[] }> } = {}) {
+export default async function AvancesPage(props: { searchParams: Promise<{ clase?: string | string[] }> }) {
+  const searchParams = props?.searchParams
   const auth = await autorizarSeguimientoFormacion()
   if ('error' in auth) {
     if (auth.error.status === 401) redirect('/login?next=%2Fadmin%2Flanzamiento')

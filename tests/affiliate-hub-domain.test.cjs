@@ -50,3 +50,19 @@ test('búsqueda sin acentos combina tipo, campaña y estado; destacados primero 
   assert.deepEqual(d.campanasAfiliadas(recursos), ['Desafío', 'Mujer Digital']); assert.deepEqual(recursos, snapshot)
   assert.equal(d.recursoCoincideAfiliada(fila, datos), true); assert.equal(d.recursoCoincideAfiliada(fila, { ...datos, destacado: true }), false)
 })
+
+test('producto opcional conserva payload general anterior y acepta solo UUID o null explícitos', () => {
+  assert.equal(Object.hasOwn(d.validarDatosRecursoAfiliada(datos), 'producto_id'), false)
+  for (const producto_id of [null, id]) {
+    const validated = d.validarDatosRecursoAfiliada({ ...datos, producto_id })
+    assert.equal(validated.producto_id, producto_id)
+    assert.equal(d.esRecursoAfiliada({ ...fila, producto_id }), true)
+  }
+  for (const producto_id of ['', 'no-id', 42, {}, undefined]) {
+    assert.throws(() => d.validarDatosRecursoAfiliada({ ...datos, producto_id }))
+    assert.equal(d.esRecursoAfiliada({ ...fila, producto_id }), false)
+  }
+  assert.equal(d.recursoCoincideAfiliada({ ...fila, producto_id: id }, datos), false)
+  assert.equal(d.recursoCoincideAfiliada({ ...fila, producto_id: id }, { ...datos, producto_id: id }), true)
+  assert.equal(d.recursoCoincideAfiliada({ ...fila, producto_id: null }, datos), true)
+})

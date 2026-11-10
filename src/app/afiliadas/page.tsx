@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation'
 import { autorizarAfiliadas, leerRecursosAfiliadas } from '@/lib/affiliate-hub-server'
 import AfiliadasCliente from './AfiliadasCliente'
 
-export default async function AfiliadasPage({ searchParams }: { searchParams?: Promise<Record<string, string | string[] | undefined>> } = {}) {
+export default async function AfiliadasPage(props: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const searchParams = props?.searchParams
   const auth = await autorizarAfiliadas()
   if ('error' in auth) {
     if (auth.error.status === 401) redirect('/login?next=%2Fafiliadas')

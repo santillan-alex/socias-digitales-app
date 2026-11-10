@@ -1,0 +1,3 @@
+import { ejecutarProductosAfiliadas, guardarPermisoProductoAfiliadas, leerPermisosProductoAfiliadas, leerJsonAfiliadas, responderProductosAfiliadas } from '@/lib/affiliate-products-server'
+export async function GET(request:Request,context:{params:Promise<{id:string}>}) { return ejecutarProductosAfiliadas(request,true,false,async auth=>responderProductosAfiliadas(await leerPermisosProductoAfiliadas(auth,(await context.params).id))) }
+export async function PATCH(request:Request,context:{params:Promise<{id:string}>}) { return ejecutarProductosAfiliadas(request,true,true,async auth=>responderProductosAfiliadas({permiso:await guardarPermisoProductoAfiliadas(auth,(await context.params).id,await leerJsonAfiliadas(request))})) }

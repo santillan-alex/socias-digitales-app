@@ -181,7 +181,7 @@ test('catálogo heredado conserva moneda del producto en precio y comisión esti
   assert.equal(money.cotizacionProducto('1250'), 1250)
 })
 
-test('ruta de Productos conserva bloqueo alumno y no sustituye cotización faltante/fallida por 1000', async () => {
+test('ruta anterior de Productos conserva bloqueo alumno y administración usa el catálogo real de Afiliadas', async () => {
   async function page(admin, config = { data: [], error: null }) {
     const calls = []
     const client = { auth: { async getUser() { return { data: { user: { id: 'cuenta-ficticia' } } } } }, from(table) {
@@ -199,9 +199,7 @@ test('ruta de Productos conserva bloqueo alumno y no sustituye cotización falta
   }
   const locked = await page(false)
   assert.equal(locked.node.type, locked.Locked); assert.equal(locked.node.props.id, 'productos'); assert.deepEqual(locked.calls, [])
-  assert.equal((await page(true)).node.props.cotizacion, null)
-  assert.equal((await page(true, { data: [{ clave: 'cotizacion_dolar', valor: 1250 }], error: null })).node.props.cotizacion, 1250)
-  assert.equal((await page(true, { data: [{ clave: 'cotizacion_dolar', valor: 1250 }], error: { message: 'fallo' } })).node.props.cotizacion, null)
+  await assert.rejects(page(true), /redirect:\/admin\/afiliadas\/productos/)
 })
 
 test('cerrar ficha devuelve foco a su botón de origen mientras siga en el documento', () => {

@@ -13,9 +13,9 @@ interface Producto {
   tipo: string
   subtipo: string | null
   marca: string | null
-  precio: number
+  precio: number | null
   moneda: string
-  comision_pct: number
+  comision_pct: number | null
   imagen_url: string | null
   link_compra: string | null
   activo: boolean
@@ -34,9 +34,9 @@ const PRODUCTO_VACIO = {
   tipo: 'digital',
   subtipo: 'ebook',
   marca: '',
-  precio: 0,
+  precio: null as number | null,
   moneda: 'USD',
-  comision_pct: 20,
+  comision_pct: null as number | null,
   imagen_url: '',
   link_compra: '',
   activo: true,
@@ -75,7 +75,7 @@ const CAMPOS_PRODUCTO = 'id,nombre,descripcion,tipo,subtipo,marca,precio,moneda,
 function datosCoinciden(fila: Producto | null, id: string, datos: Omit<Producto, 'id'>) {
   return Boolean(fila && fila.id === id && Object.entries(datos).every(([clave, valor]) => {
     const real = fila[clave as keyof Producto]
-    return ['precio', 'comision_pct', 'orden'].includes(clave) ? Number(real) === valor : real === valor
+    return valor === null ? real === null : ['precio', 'comision_pct', 'orden'].includes(clave) ? real !== null && Number(real) === valor : real === valor
   }))
 }
 
@@ -124,10 +124,10 @@ export default function ProductosAdmin({ productos, cotizacion, errorCarga = fal
     bloqueo.current = true; setGuardando(true); setErrorFicha(''); setMensaje('')
     try {
       const { id: editandoId, ...campos } = editando
-      const datos = { ...campos, nombre: campos.nombre.trim(), precio: Number(campos.precio), comision_pct: Number(campos.comision_pct) }
+      const datos = { ...campos, nombre: campos.nombre.trim(), precio: campos.precio === null ? null : Number(campos.precio), comision_pct: campos.comision_pct === null ? null : Number(campos.comision_pct) }
       if (!datos.nombre || datos.nombre.length > 200) throw new ErrorProducto('Escribí un nombre de hasta 200 caracteres.')
-      if (!Number.isFinite(datos.precio) || datos.precio < 0 || datos.precio > 1e9 || Math.abs(datos.precio * 100 - Math.round(datos.precio * 100)) > .00001) throw new ErrorProducto('Revisá el precio: usá hasta dos decimales.')
-      if (!Number.isFinite(datos.comision_pct) || datos.comision_pct < 0 || datos.comision_pct > 100) throw new ErrorProducto('La comisión debe estar entre 0 y 100%.')
+      if (datos.precio !== null && (!Number.isFinite(datos.precio) || datos.precio < 0 || datos.precio > 1e9 || Math.abs(datos.precio * 100 - Math.round(datos.precio * 100)) > .00001)) throw new ErrorProducto('Revisá el precio: usá hasta dos decimales.')
+      if (datos.comision_pct !== null && (!Number.isFinite(datos.comision_pct) || datos.comision_pct < 0 || datos.comision_pct > 100)) throw new ErrorProducto('La comisión debe estar entre 0 y 100%.')
       if (!['USD', 'ARS', 'MXN', 'EUR'].includes(datos.moneda)) throw new ErrorProducto('Elegí una moneda válida.')
       if (datos.link_compra) {
         let url: URL
@@ -193,7 +193,7 @@ export default function ProductosAdmin({ productos, cotizacion, errorCarga = fal
           + Nuevo producto
         </button>
       </nav>
-      <AdminSectionMenu />
+      <AdminSectionMenu /><div className="mx-auto max-w-5xl px-4 pt-5"><a href="/admin/afiliadas/productos" className="inline-flex min-h-11 items-center rounded-full border border-[#E7DDD5] bg-[#FFFDFA] px-5 py-3 text-sm font-semibold text-[#294A38]">Productos para Afiliadas →</a></div>
 
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         {errorCarga && <p role="alert" className="rounded-xl border border-[#EC9BB6] bg-[#F4CAD8] p-4 text-sm">No pudimos cargar el catálogo completo. <button type="button" onClick={() => router.refresh()} className="min-h-11 font-semibold underline">Reintentar</button></p>}
@@ -267,12 +267,12 @@ export default function ProductosAdmin({ productos, cotizacion, errorCarga = fal
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <div>
                       <span className="break-words text-lg font-bold text-rose-600">{precioProducto(p.precio, p.moneda)}</span>
-                      {p.moneda === 'USD' && cotizacion !== null && (
+                      {p.precio !== null && p.moneda === 'USD' && cotizacion !== null && (
                         <p className="text-xs text-gray-500">Aprox. {precioProducto(p.precio * cotizacion, 'ARS')}</p>
                       )}
                     </div>
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                      {p.comision_pct}% comisión
+                      {p.comision_pct === null ? 'Comisión a definir' : `${p.comision_pct}% comisión`}
                     </span>
                   </div>
 
@@ -383,10 +383,10 @@ export default function ProductosAdmin({ productos, cotizacion, errorCarga = fal
                 <div>
                   <label htmlFor="producto-precio" className="block text-xs font-medium text-gray-500 mb-1">Precio en {editando.moneda}</label>
                   <input id="producto-precio" type="number" min={0} step={0.01} placeholder="0.00"
-                    value={editando.precio}
-                    onChange={e => setEditando(p => ({ ...p, precio: parseFloat(e.target.value) || 0 }))}
+                    value={editando.precio ?? ''}
+                    onChange={e => setEditando(p => ({ ...p, precio: e.target.value === '' ? null : Number(e.target.value) }))}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-rose-300" />
-                  {editando.precio > 0 && editando.moneda === 'USD' && cotizacion !== null && (
+                  {editando.precio !== null && editando.precio > 0 && editando.moneda === 'USD' && cotizacion !== null && (
                     <p className="text-xs text-rose-500 font-medium mt-1">
                       Aprox. {precioProducto(editando.precio * cotizacion, 'ARS')}
                     </p>
@@ -395,8 +395,8 @@ export default function ProductosAdmin({ productos, cotizacion, errorCarga = fal
                 <div>
                   <label htmlFor="producto-comision" className="block text-xs font-medium text-gray-500 mb-1">Comisión %</label>
                   <input id="producto-comision" type="number" min={0} max={100} step={0.5}
-                    value={editando.comision_pct}
-                    onChange={e => setEditando(p => ({ ...p, comision_pct: parseFloat(e.target.value) || 0 }))}
+                    value={editando.comision_pct ?? ''}
+                    onChange={e => setEditando(p => ({ ...p, comision_pct: e.target.value === '' ? null : Number(e.target.value) }))}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-rose-300" />
                 </div>
               </div>

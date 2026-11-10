@@ -182,6 +182,8 @@ function apiFixture(options = {}) {
       const requestedId = q.filters.find(([k]) => k === 'id')?.[1]
       if (table === 'perfiles') return { data: options.profile === null || requestedId !== uid ? null : { id: uid, rol: options.role ?? 'admin', estado: options.active === false ? 'pausada' : 'activa' }, error: options.profileError ?? null }
       if (table === 'accesos_afiliadas') return { data: options.accessError ? null : { usuaria_id: uid, habilitada: options.enabled !== false }, error: options.accessError ?? null }
+      if (table === 'productos') return { data: options.product === undefined ? { id: otro, tipo: 'fisico', activo: true, estado_afiliadas: 'publicado' } : options.product, error: options.productError ?? null }
+      if (table === 'afiliadas_productos') return { data: options.productAccess === undefined ? { usuaria_id: uid, producto_id: otro, habilitada: true } : options.productAccess, error: options.productAccessError ?? null }
       assert.equal(table, 'recursos_afiliadas'); return { data: resources.get(requestedId) ?? null, error: options.resourceError ?? null }
     } }; return b
   } }
@@ -220,15 +222,15 @@ test('GET administrativo devuelve solo metadata confirmada, rechaza filtros extr
 test('descarga comprueba accesoAfiliadas en cada petición y estado/referencia/tipo actual antes de firmar60s', async () => {
   const s = apiFixture({ role: 'alumna' }), started = await s.start(), { state } = s.upload(started)
   const completed = await s.server.operarArchivoAfiliadas(s.auth, { action: 'completar', token: started.token }), info = completed.archivo
-  s.resources.set(recursoId, { id: recursoId, tipo: 'archivo', estado: 'publicado', url: info.url })
+  s.resources.set(recursoId, { id: recursoId, producto_id: null, tipo: 'archivo', estado: 'publicado', url: info.url })
   const response = await s.open(state.archivoId); assert.equal(response.status, 307); assert.equal(response.headers.get('cache-control'), 'private, no-store'); assert.equal(response.headers.get('referrer-policy'), 'no-referrer'); assert.equal(response.headers.get('x-content-type-options'), 'nosniff')
   const location = new URL(response.headers.get('location')); assert.equal(location.searchParams.get('X-Amz-Expires'), '60'); assert.equal(location.searchParams.get('response-content-type'), 'application/octet-stream'); assert.match(location.searchParams.get('response-content-disposition'), /attachment;.*filename\*=UTF-8''Gu%C3%ADa/)
   assert.ok(s.dbCalls.filter(q => q.table === 'accesos_afiliadas').length >= 1)
-  for (const changes of [{ estado: 'borrador' }, { estado: 'archivado' }, { tipo: 'video' }, { tipo: 'copy' }, { url: info.url.replace(info.id, otro) }, { url: info.url.replace(recursoId, otro) }, { url: 'https://example.invalid/externo.pdf' }]) { s.resources.set(recursoId, { id: recursoId, tipo: 'archivo', estado: 'publicado', url: info.url, ...changes }); assert.equal((await s.open(info.id)).status, 404) }
+  for (const changes of [{ estado: 'borrador' }, { estado: 'archivado' }, { tipo: 'video' }, { tipo: 'copy' }, { url: info.url.replace(info.id, otro) }, { url: info.url.replace(recursoId, otro) }, { url: 'https://example.invalid/externo.pdf' }]) { s.resources.set(recursoId, { id: recursoId, producto_id: null, tipo: 'archivo', estado: 'publicado', url: info.url, ...changes }); assert.equal((await s.open(info.id)).status, 404) }
   assert.equal((await s.open(info.id, '?download=1')).status, 404); assert.equal((await s.open('invalido')).status, 404)
   for (const [options, status] of [[{ user: false }, 401], [{ role: 'alumna', enabled: false }, 403], [{ role: 'alumna', active: false }, 403], [{ role: 'alumna', accessError: {} }, 503]]) { const no = apiFixture(options); assert.equal((await no.open(info.id)).status, status); assert.equal(no.calls.length, 0) }
   const admin = apiFixture(), draft = await admin.start(); admin.upload(draft); const file = (await admin.server.operarArchivoAfiliadas(admin.auth, { action: 'completar', token: draft.token })).archivo
-  admin.resources.set(recursoId, { id: recursoId, tipo: 'archivo', estado: 'borrador', url: file.url }); assert.equal((await admin.open(file.id)).status, 307)
+  admin.resources.set(recursoId, { id: recursoId, producto_id: null, tipo: 'archivo', estado: 'borrador', url: file.url }); assert.equal((await admin.open(file.id)).status, 307)
 })
 test('errores navegados vuelven al ingreso o Afiliadas con303 y destino fijo del mismo origen; API conserva JSON y status', async () => {
   const casos = [
@@ -256,12 +258,32 @@ test('errores navegados vuelven al ingreso o Afiliadas con303 y destino fijo del
 test('navegación HTML autorizada conserva307 y firma privada de60s; fallo del almacén vuelve a reintentar sin filtrar detalles', async () => {
   const s = apiFixture({ role: 'alumna' }), started = await s.start(); s.upload(started)
   const info = (await s.server.operarArchivoAfiliadas(s.auth, { action: 'completar', token: started.token })).archivo
-  s.resources.set(recursoId, { id: recursoId, tipo: 'archivo', estado: 'publicado', url: info.url })
+  s.resources.set(recursoId, { id: recursoId, producto_id: null, tipo: 'archivo', estado: 'publicado', url: info.url })
   const success = await s.open(info.id, '', recursoId, 'text/html')
   assert.equal(success.status, 307); assert.equal(success.headers.get('cache-control'), 'private, no-store'); assert.equal(success.headers.get('x-content-type-options'), 'nosniff')
   const signed = new URL(success.headers.get('location')); assert.equal(signed.searchParams.get('X-Amz-Expires'), '60'); assert.equal(signed.searchParams.get('response-content-type'), 'application/octet-stream'); assert.match(signed.searchParams.get('response-content-disposition'), /^attachment;/)
   const unavailable = apiFixture({ role: 'alumna', response: q => q.method === 'GET' && q.key.startsWith('afiliadas/indices/') ? new Response('No difundir detalle interno', { status: 503 }) : null })
-  unavailable.resources.set(recursoId, { id: recursoId, tipo: 'archivo', estado: 'publicado', url: logic.urlArchivoAfiliadas(recursoId, archivoId) })
+  unavailable.resources.set(recursoId, { id: recursoId, producto_id: null, tipo: 'archivo', estado: 'publicado', url: logic.urlArchivoAfiliadas(recursoId, archivoId) })
   const html = await unavailable.open(archivoId, '', recursoId, 'text/html'); assert.equal(html.status, 303); assert.equal(html.headers.get('location'), '/afiliadas?descarga=reintentar'); assert.equal(await html.text(), '')
   const json = await unavailable.open(archivoId, '', recursoId, 'application/json'); assert.equal(json.status, 503); assert.ok(!JSON.stringify(await json.json()).includes('No difundir'))
+})
+
+test('material de producto exige grant específico al descargar y revocar evita nueva firma incluso con referencia conocida', async () => {
+  const options = { role: 'alumna' }, s = apiFixture(options), started = await s.start(); s.upload(started)
+  const info = (await s.server.operarArchivoAfiliadas(s.auth, { action: 'completar', token: started.token })).archivo
+  s.resources.set(recursoId, { id: recursoId, producto_id: otro, tipo: 'archivo', estado: 'publicado', url: info.url })
+  assert.equal((await s.open(info.id)).status, 307)
+  assert.ok(s.dbCalls.some(q => q.table === 'afiliadas_productos' && q.filters.some(([k, v]) => k === 'producto_id' && v === otro)))
+  options.productAccess = { usuaria_id: uid, producto_id: otro, habilitada: false }
+  const denied = await s.open(info.id); assert.equal(denied.status, 404); assert.equal(denied.headers.get('location'), null)
+  assert.equal((await s.open(info.id, '', recursoId, 'text/html')).headers.get('location'), '/afiliadas?descarga=no-disponible')
+  options.productAccess = { usuaria_id: uid, producto_id: otro, habilitada: true }
+  options.product = { id: otro, tipo: 'fisico', activo: true, estado_afiliadas: 'archivado' }
+  assert.equal((await s.open(info.id)).status, 404)
+  options.product = { id: otro, tipo: 'fisico', activo: true, estado_afiliadas: 'publicado' }
+  options.productError = { detail: 'no-exponer' }
+  const failed = await s.open(info.id); assert.equal(failed.status, 503); assert.ok(!JSON.stringify(await failed.json()).includes('no-exponer'))
+  delete options.productError
+  s.resources.set(recursoId, { id: recursoId, tipo: 'archivo', estado: 'publicado', url: info.url })
+  assert.equal((await s.open(info.id)).status, 503)
 })

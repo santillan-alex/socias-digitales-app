@@ -1,0 +1,2 @@
+import { ejecutarProductosAfiliadas, guardarProductoAfiliadas, leerJsonAfiliadas, responderProductosAfiliadas } from '@/lib/affiliate-products-server'
+export async function PATCH(request:Request,context:{params:Promise<{id:string}>}) { return ejecutarProductosAfiliadas(request,true,true,async auth=>responderProductosAfiliadas({producto:await guardarProductoAfiliadas(auth,await leerJsonAfiliadas(request),(await context.params).id)})) }

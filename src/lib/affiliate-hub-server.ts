@@ -2,11 +2,11 @@ import 'server-only'
 import { unstable_rethrow } from 'next/navigation'
 import { createClient } from './supabase/server'
 import { origenMetricasPermitido } from './metrics'
-import { esRecursoAfiliada, recursoCoincideAfiliada, validarEntradaAfiliada, type CatalogoAfiliadas, type EntradaRecursoAfiliada, type RecursoAfiliada } from './affiliate-hub'
+import { esIdAfiliadas, esRecursoAfiliada, recursoCoincideAfiliada, validarEntradaAfiliada, type CatalogoAfiliadas, type EntradaRecursoAfiliada, type RecursoAfiliada } from './affiliate-hub'
 import { comprobarVinculoArchivoAfiliadas, ErrorArchivoAfiliadas } from './affiliate-files-server'
 
 export const HEADERS_AFILIADAS = { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' }
-const CAMPOS = 'id,titulo,cuerpo,tipo,campana,url,estado,destacado,version,creado_en,actualizado_en'
+const CAMPOS = 'id,titulo,cuerpo,tipo,campana,url,estado,destacado,version,creado_en,actualizado_en,producto_id'
 export interface SesionAfiliadas { supabase: Awaited<ReturnType<typeof createClient>>; userId: string; admin: boolean }
 export class ErrorAfiliadas extends Error { constructor(public status: number, mensaje: string) { super(mensaje) } }
 export function origenSolicitudAfiliadas(request: Request) {
@@ -27,9 +27,22 @@ export async function autorizarAfiliadas(admin = false): Promise<SesionAfiliadas
   } catch (error) { unstable_rethrow(error); return { error: { status: 503, mensaje: 'No pudimos comprobar tu acceso.' } } }
 }
 function dto(row: RecursoAfiliada): RecursoAfiliada {
-  const result = { id: row.id, titulo: row.titulo, cuerpo: row.cuerpo, tipo: row.tipo, campana: row.campana, url: row.url, estado: row.estado, destacado: row.destacado, version: row.version, creado_en: row.creado_en, actualizado_en: row.actualizado_en }
+  if (row.producto_id !== null && !esIdAfiliadas(row.producto_id)) throw new ErrorAfiliadas(503, 'No pudimos comprobar el producto del material.')
+  const result = { id: row.id, titulo: row.titulo, cuerpo: row.cuerpo, tipo: row.tipo, campana: row.campana, url: row.url, estado: row.estado, destacado: row.destacado, version: row.version, creado_en: row.creado_en, actualizado_en: row.actualizado_en, producto_id: row.producto_id }
   if (!esRecursoAfiliada(result)) throw new ErrorAfiliadas(503, 'El recurso requiere revisión del equipo. Volvé a intentar.')
   return result
+}
+export async function comprobarProductoRecursoAfiliadas(auth: SesionAfiliadas, productoId: unknown) {
+  if (productoId === null) return
+  if (!esIdAfiliadas(productoId)) throw new ErrorAfiliadas(503, 'No pudimos comprobar el producto del material.')
+  const producto = await auth.supabase.from('productos').select('id,tipo,activo,estado_afiliadas').eq('id', productoId).maybeSingle()
+  if (producto.error) throw new ErrorAfiliadas(503, 'No pudimos comprobar el producto del material.')
+  if (!producto.data || producto.data.id !== productoId || producto.data.tipo !== 'fisico') throw new ErrorAfiliadas(auth.admin ? 400 : 404, 'El producto no está disponible.')
+  if (auth.admin) return
+  if (producto.data.activo !== true || producto.data.estado_afiliadas !== 'publicado') throw new ErrorAfiliadas(404, 'El producto no está disponible.')
+  const permiso = await auth.supabase.from('afiliadas_productos').select('usuaria_id,producto_id,habilitada').eq('usuaria_id', auth.userId).eq('producto_id', productoId).maybeSingle()
+  if (permiso.error) throw new ErrorAfiliadas(503, 'No pudimos comprobar tu acceso al producto.')
+  if (permiso.data?.usuaria_id !== auth.userId || permiso.data?.producto_id !== productoId || permiso.data?.habilitada !== true) throw new ErrorAfiliadas(404, 'El producto no está disponible.')
 }
 export async function leerRecursosAfiliadas(auth: SesionAfiliadas): Promise<CatalogoAfiliadas> {
   try {
@@ -55,8 +68,11 @@ export async function guardarRecursoAfiliadas(auth: SesionAfiliadas, entrada: En
   const leer = () => auth.supabase.from('recursos_afiliadas').select(CAMPOS).eq('id', entrada.id).maybeSingle()
   const previa = await leer()
   if (previa.error) throw fallo(previa.error)
+  if (previa.data && previa.data.producto_id !== null && !esIdAfiliadas(previa.data.producto_id)) throw new ErrorAfiliadas(503, 'No pudimos comprobar el producto del material.')
+  if (editar && previa.data?.producto_id && !Object.hasOwn(entrada.datos, 'producto_id')) throw new ErrorAfiliadas(409, 'Abrí la última versión del material para conservar su producto.')
+  await comprobarProductoRecursoAfiliadas(auth, entrada.datos.producto_id ?? null)
   const esperada = editar ? Number(entrada.version) + 1 : 1
-  const igual = (row: unknown): row is RecursoAfiliada => esRecursoAfiliada(row) && row.id === entrada.id && row.version === esperada && recursoCoincideAfiliada(row, entrada.datos)
+  const igual = (row: unknown): row is RecursoAfiliada => esRecursoAfiliada(row) && Object.hasOwn(row, 'producto_id') && row.id === entrada.id && row.version === esperada && recursoCoincideAfiliada(row, entrada.datos)
   if (igual(previa.data)) return dto(previa.data)
   if (previa.data && (!editar || previa.data.version !== entrada.version)) throw new ErrorAfiliadas(409, 'Otra administradora modificó el recurso. Abrí su última versión.')
   if (!previa.data && editar) throw new ErrorAfiliadas(404, 'El recurso ya no está disponible.')

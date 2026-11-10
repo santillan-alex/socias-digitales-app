@@ -8,7 +8,7 @@ const management = load('src/lib/class-management.ts'), materials = load('src/li
 const files = load('src/lib/affiliate-files.ts', { './class-materials': materials, './affiliate-hub': d })
 const fileServer = load('src/lib/affiliate-files-server.ts', { './affiliate-files': files, './affiliate-hub': d, './class-materials': materials, './r2-upload': load('src/lib/r2-upload.ts', { './class-management': management }) })
 const datos = { titulo: 'Mensaje de práctica aislado', cuerpo: 'Un copy de prueba local.', tipo: 'copy', campana: null, url: null, estado: 'publicado', destacado: false }
-const fila = { id, ...datos, version: 1, creado_en: '2026-11-02T12:00:00.123456+00:00', actualizado_en: '2026-11-02T12:00:00.123456+00:00' }
+const fila = { id, ...datos, producto_id: null, version: 1, creado_en: '2026-11-02T12:00:00.123456+00:00', actualizado_en: '2026-11-02T12:00:00.123456+00:00' }
 function fixture(options = {}) {
   const calls = [], rows = structuredClone(options.rows ?? [fila])
   const db = { auth: { getUser: async () => ({ data: { user: options.user === undefined ? { id: uid, user_metadata: { rol: 'admin', afiliada: true } } : options.user }, error: options.authError ?? null }) }, from(table) {
@@ -18,6 +18,8 @@ function fixture(options = {}) {
       calls.push(structuredClone(q))
       if (table === 'perfiles') return { data: options.profile === undefined ? { id: uid, rol: 'alumna', estado: 'activa' } : options.profile, error: options.profileError ?? null }
       if (table === 'accesos_afiliadas') return { data: options.access === undefined ? { usuaria_id: uid, habilitada: true } : options.access, error: options.accessError ?? null }
+      if (table === 'productos') return { data: options.product === undefined ? { id, tipo: 'fisico', activo: true, estado_afiliadas: 'publicado' } : options.product, error: options.productError ?? null }
+      if (table === 'afiliadas_productos') return { data: options.productAccess === undefined ? { usuaria_id: uid, producto_id: id, habilitada: true } : options.productAccess, error: options.productAccessError ?? null }
       assert.equal(table, 'recursos_afiliadas')
       if (options.readError && q.action === 'read') return { data: null, error: { message: 'No difundir detalle privado.' } }
       let data = rows.filter(r => q.filters.every(([k, v]) => r[k] === v))
@@ -106,4 +108,40 @@ test('API acepta URL interna de Next solo con Host y Origin correctos; rechaza e
   assert.equal((await admin.POST(make({ id, recurso: datos }))).status, 200)
   const updated = await item.PATCH(make({ version: 1, recurso: { ...datos, estado: 'archivado' } }, 'https://app.example.invalid', 'PATCH'), { params: Promise.resolve({ id }) })
   assert.equal(updated.status, 200); assert.equal((await updated.json()).recurso.version, 2)
+})
+
+test('DTO exige columna producto comprobada y no transforma una lectura incompleta en material general', async () => {
+  for (const producto_id of [undefined, 'invalido', {}, 4]) {
+    const f = fixture({ rows: [{ ...fila, producto_id }] })
+    assert.equal((await f.api.leerRecursosAfiliadas(f.auth)).estado, 'error')
+  }
+  const f = fixture({ rows: [{ ...fila, producto_id: id }] }), catalog = await f.api.leerRecursosAfiliadas(f.auth)
+  assert.equal(catalog.estado, 'lista'); assert.equal(catalog.recursos[0].producto_id, id)
+  assert.ok(f.calls[0].fields.endsWith(',producto_id'))
+})
+test('guardar material específico comprueba producto físico y protege edición de clientes anteriores', async () => {
+  const entrada = d.validarEntradaAfiliada({ id, recurso: { ...datos, producto_id: id } })
+  const f = fixture({ rows: [] }), saved = await f.api.guardarRecursoAfiliadas(f.auth, entrada)
+  assert.equal(saved.producto_id, id); assert.equal(f.calls.find(c => c.table === 'productos').fields, 'id,tipo,activo,estado_afiliadas')
+  assert.deepEqual(await f.api.guardarRecursoAfiliadas(f.auth, entrada), saved); assert.equal(f.rows.length, 1)
+  const legacy = d.validarEntradaAfiliada({ id, version: 1, recurso: { ...datos, estado: 'archivado' } }, true)
+  await assert.rejects(f.api.guardarRecursoAfiliadas(f.auth, legacy, true), e => e.status === 409)
+  assert.equal(f.rows[0].producto_id, id); assert.equal(f.rows[0].version, 1)
+  const explicit = d.validarEntradaAfiliada({ id, version: 1, recurso: { ...datos, estado: 'archivado', producto_id: id } }, true)
+  assert.equal((await f.api.guardarRecursoAfiliadas(f.auth, explicit, true)).producto_id, id)
+  for (const [options, status] of [[{ product: null }, 400], [{ product: { id, tipo: 'digital' } }, 400], [{ product: { id: uid, tipo: 'fisico' } }, 400], [{ productError: {} }, 503]]) {
+    const no = fixture({ rows: [], ...options })
+    await assert.rejects(no.api.guardarRecursoAfiliadas(no.auth, entrada), e => e.status === status)
+    assert.equal(no.rows.length, 0)
+  }
+})
+test('revalidación de descarga requiere producto y grant propio vigentes, sin confiar en fila leída por error', async () => {
+  const f = fixture(), auth = { ...f.auth, admin: false }
+  await f.api.comprobarProductoRecursoAfiliadas(auth, null); assert.equal(f.calls.length, 0)
+  await f.api.comprobarProductoRecursoAfiliadas(auth, id)
+  assert.deepEqual(f.calls.find(c => c.table === 'afiliadas_productos').filters, [['usuaria_id', uid], ['producto_id', id]])
+  for (const [options, status] of [[{ product: null }, 404], [{ product: { id, tipo: 'digital', activo: true, estado_afiliadas: 'publicado' } }, 404], [{ product: { id, tipo: 'fisico', activo: false, estado_afiliadas: 'publicado' } }, 404], [{ product: { id, tipo: 'fisico', activo: true, estado_afiliadas: 'borrador' } }, 404], [{ productError: {} }, 503], [{ productAccess: null }, 404], [{ productAccess: { usuaria_id: uid, producto_id: id, habilitada: false } }, 404], [{ productAccess: { usuaria_id: id, producto_id: id, habilitada: true } }, 404], [{ productAccess: { usuaria_id: uid, producto_id: uid, habilitada: true } }, 404], [{ productAccessError: {} }, 503]]) {
+    const no = fixture(options); await assert.rejects(no.api.comprobarProductoRecursoAfiliadas({ ...no.auth, admin: false }, id), e => e.status === status)
+  }
+  await assert.rejects(f.api.comprobarProductoRecursoAfiliadas(auth, undefined), e => e.status === 503)
 })

@@ -7,9 +7,10 @@ import type { ProgresoClase } from '@/lib/class-progress'
 import ClassroomRecovery from './ClassroomRecovery'
 import { esUuid } from '@/lib/class-management'
 
-export default async function ClassroomPage({ searchParams }: {
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
-} = {}) {
+export default async function ClassroomPage(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const searchParams = props?.searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')

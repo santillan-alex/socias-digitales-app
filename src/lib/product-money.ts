@@ -1,4 +1,4 @@
-export function precioProducto(precio: number, moneda: string) {
+export function precioProducto(precio: number | null, moneda: string) {
   if (!['USD', 'ARS', 'MXN', 'EUR'].includes(moneda) || precio === null || precio === undefined || !Number.isFinite(Number(precio))) return 'Precio sin comprobar'
   return new Intl.NumberFormat('es-AR', { style: 'currency', currency: moneda, currencyDisplay: 'code', maximumFractionDigits: 2 }).format(Number(precio))
 }

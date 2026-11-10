@@ -11,6 +11,7 @@ export type EstadoRecursoAfiliada = typeof ESTADOS_RECURSO_AFILIADA[number]
 export interface DatosRecursoAfiliada {
   titulo: string; cuerpo: string; tipo: TipoRecursoAfiliada; campana: string | null
   url: string | null; estado: EstadoRecursoAfiliada; destacado: boolean
+  producto_id?: string | null
 }
 export interface RecursoAfiliada extends DatosRecursoAfiliada {
   id: string; version: number; creado_en: string; actualizado_en: string
@@ -37,13 +38,14 @@ export function enlaceAfiliadas(value: unknown): string | null {
   return input.replace(/^https:/i, 'https:')
 }
 export function validarDatosRecursoAfiliada(value: unknown): DatosRecursoAfiliada {
-  if (!objeto(value) || !claves(value, CAMPOS)) throw new Error('El recurso contiene campos no permitidos.')
+  if (!objeto(value) || !(claves(value, CAMPOS) || claves(value, [...CAMPOS, 'producto_id']))) throw new Error('El recurso contiene campos no permitidos.')
+  if (Object.hasOwn(value, 'producto_id') && value.producto_id !== null && !esIdAfiliadas(value.producto_id)) throw new Error('Elegí un producto válido.')
   const titulo = texto(value.titulo, 140), cuerpo = texto(value.cuerpo, 12000, true, true)
   if (!TIPOS_RECURSO_AFILIADA.some(t => t.id === value.tipo) || !ESTADOS_RECURSO_AFILIADA.includes(value.estado as EstadoRecursoAfiliada) || typeof value.destacado !== 'boolean') throw new Error('Elegí un tipo, un estado y un destacado válidos.')
   const tipo = value.tipo as TipoRecursoAfiliada, url = enlaceAfiliadas(value.url)
   if (['video', 'archivo', 'enlace'].includes(tipo) && !url) throw new Error('Agregá el enlace de este recurso. Los archivos y videos se abren en su destino externo.')
   if (['aviso', 'copy'].includes(tipo) && !cuerpo) throw new Error('Escribí el mensaje o el copy antes de guardar.')
-  return { titulo, cuerpo, tipo, campana: value.campana === null || value.campana === '' ? null : texto(value.campana, 120), url, estado: value.estado as EstadoRecursoAfiliada, destacado: value.destacado }
+  return { titulo, cuerpo, tipo, campana: value.campana === null || value.campana === '' ? null : texto(value.campana, 120), url, estado: value.estado as EstadoRecursoAfiliada, destacado: value.destacado, ...(Object.hasOwn(value, 'producto_id') ? { producto_id: value.producto_id as string | null } : {}) }
 }
 export function validarEntradaAfiliada(value: unknown, editar = false): EntradaRecursoAfiliada {
   if (!objeto(value) || !claves(value, editar ? ['id', 'version', 'recurso'] : ['id', 'recurso']) || !esIdAfiliadas(value.id)) throw new Error('El envío no es válido. Conservá el formulario y revisá el recurso.')
@@ -53,13 +55,14 @@ export function validarEntradaAfiliada(value: unknown, editar = false): EntradaR
 export function esRecursoAfiliada(value: unknown): value is RecursoAfiliada {
   if (!objeto(value) || !esIdAfiliadas(value.id) || !Number.isSafeInteger(value.version) || Number(value.version) < 1 || Number(value.version) > 1_000_000_000 ||
     !['creado_en', 'actualizado_en'].every(k => typeof value[k] === 'string' && Number.isFinite(Date.parse(value[k] as string)))) return false
+  if (Object.hasOwn(value, 'producto_id') && value.producto_id !== null && !esIdAfiliadas(value.producto_id)) return false
   try { const datos = validarDatosRecursoAfiliada(Object.fromEntries(CAMPOS.map(c => [c, value[c]]))); return CAMPOS.every(k => datos[k] === value[k]) } catch { return false }
 }
 export function esCatalogoAfiliadas(value: unknown, admin = false): value is Extract<CatalogoAfiliadas, { estado: 'lista' }> {
   return objeto(value) && value.estado === 'lista' && typeof value.limitado === 'boolean' && Array.isArray(value.recursos) && value.recursos.length <= 200 &&
     value.recursos.every(r => esRecursoAfiliada(r) && (admin || r.estado === 'publicado')) && new Set(value.recursos.map(r => r.id)).size === value.recursos.length
 }
-export function recursoCoincideAfiliada(recurso: RecursoAfiliada, datos: DatosRecursoAfiliada) { return CAMPOS.every(k => recurso[k] === datos[k]) }
+export function recursoCoincideAfiliada(recurso: RecursoAfiliada, datos: DatosRecursoAfiliada) { return CAMPOS.every(k => recurso[k] === datos[k]) && (recurso.producto_id ?? null) === (datos.producto_id ?? null) }
 const normalizar = (x: string) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es-AR')
 export function filtrarRecursosAfiliadas(recursos: readonly RecursoAfiliada[], filtros: { busqueda: string; tipo: string; campana: string; estado?: string }) {
   const palabras = normalizar(filtros.busqueda.trim()).split(/\s+/).filter(Boolean)

@@ -1,0 +1,3 @@
+import { ejecutarProductosAfiliadas, guardarProductoAfiliadas, leerCatalogoAdminProductosAfiliadas, leerJsonAfiliadas, responderProductosAfiliadas } from '@/lib/affiliate-products-server'
+export async function GET(request:Request) { return ejecutarProductosAfiliadas(request,true,false,async auth=>{ const r=await leerCatalogoAdminProductosAfiliadas(auth);return responderProductosAfiliadas(r,r.estado==='lista'?200:503) }) }
+export async function POST(request:Request) { return ejecutarProductosAfiliadas(request,true,true,async auth=>responderProductosAfiliadas({producto:await guardarProductoAfiliadas(auth,await leerJsonAfiliadas(request))})) }

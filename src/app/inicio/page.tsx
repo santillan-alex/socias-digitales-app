@@ -30,7 +30,8 @@ async function leerHoraServidor() {
   return Date.now()
 }
 
-export default async function InicioPage({ searchParams }: { searchParams?: Promise<Record<string, string | string[] | undefined>> } = {}) {
+export default async function InicioPage(props: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const searchParams = props?.searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
