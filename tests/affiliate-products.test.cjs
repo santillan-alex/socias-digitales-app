@@ -111,6 +111,33 @@ test('productos: DTO elimina enlace genérico e identidades, mantiene null, filt
   }
   const empty = fixture({ products: [] }); assert.deepEqual(await empty.api.leerProductosAfiliadas(empty.auth), { estado: 'lista', productos: [] })
 })
+test('productos: textos opcionales vacíos heredados se normalizan al leer sin alterar importes, metadata o filas', async () => {
+  const legacy = [
+    { ...row, descripcion: '', imagen_url: '', precio: 15, moneda: 'USD', comision_pct: 25 },
+    { ...row, id: third, nombre: 'Segundo producto de ensayo', descripcion: '', imagen_url: 'https://example.invalid/producto-local.png', precio: 90, moneda: 'USD', comision_pct: 0 },
+  ]
+  assert.equal(products.esProductoAfiliadas(legacy[0]), false)
+  const f = fixture({ products: legacy }), response = await f.routes.admin.GET(new Request('https://app.example.invalid/api/admin/afiliadas/productos'))
+  assert.equal(response.status, 200)
+  const catalog = await response.json(); assert.equal(products.esCatalogoProductosAfiliadas(catalog), true); assert.equal(catalog.productos.length, 2)
+  for (const [index, p] of catalog.productos.entries()) {
+    assert.equal(p.descripcion, null); assert.equal(p.imagen_url, legacy[index].imagen_url || null)
+    for (const field of ['id', 'nombre', 'precio', 'moneda', 'comision_pct', 'version', 'actualizado_en']) assert.equal(p[field], legacy[index][field])
+  }
+  const member = await f.api.leerVentaAfiliadas({ ...f.auth, admin: false })
+  assert.equal(products.esCatalogoVentaAfiliadas(member), true); assert.deepEqual(member.productos, catalog.productos)
+  const permissions = await f.api.leerPermisosProductoAfiliadas(f.auth, id)
+  assert.equal(products.esListaPermisosProductoAfiliadas(permissions), true); assert.deepEqual(permissions.producto, catalog.productos[0])
+  assert.deepEqual(f.rows.productos, legacy); assert.equal(f.writes.length, 0)
+})
+test('productos: adaptar textos heredados no convierte campos malformados ni devuelve un catálogo parcial', async () => {
+  const legacy = { ...row, id: third, descripcion: '', imagen_url: '' }
+  for (const invalid of [{ precio: '15' }, { precio: -1 }, { precio: Infinity }, { comision_pct: '25' }, { comision_pct: 101 }, { activo: 'true' }, { orden: '0' }, { nombre: '' }, { descripcion: undefined }, { descripcion: '\u0000' }, { imagen_url: 'http://example.invalid/imagen.png' }, { moneda: 'CLP' }, { estado_afiliadas: 'desconocido' }, { version: '1' }, { actualizado_en: 'sin-fecha' }]) {
+    const stored = [row, { ...legacy, ...invalid }], f = fixture({ products: stored }), catalog = await f.api.leerCatalogoAdminProductosAfiliadas(f.auth)
+    assert.equal(catalog.estado, 'error', JSON.stringify(invalid)); assert.equal('productos' in catalog, false)
+    assert.deepEqual(f.rows.productos, stored); assert.equal(f.writes.length, 0)
+  }
+})
 test('productos: guardar alta y edición usa CAS y reintento idempotente con respuesta perdida', async () => {
   for (const lostResponse of [false, true]) {
     const f = fixture({ products: [], lostResponse }), input = { id, producto: datos }

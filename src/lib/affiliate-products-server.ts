@@ -13,8 +13,14 @@ const CAMPOS_RECURSOS='id,titulo,cuerpo,tipo,campana,url,estado,destacado,versio
 function dtoProducto(raw:unknown):ProductoAfiliadas {
   if(!raw||typeof raw!=='object'||Array.isArray(raw)) throw new ErrorAfiliadas(503,'No pudimos cargar los productos.')
   const p=Object.fromEntries(CAMPOS_PRODUCTOS_AFILIADAS.split(',').map(k=>[k,(raw as Record<string,unknown>)[k]]))
-  if(!esProductoAfiliadas(p)) throw new ErrorAfiliadas(503,'Una ficha necesita revisión. Actualizá los productos.')
-  return p
+  const {id,version,actualizado_en,...datos}=p
+  let normalizados:DatosProductoAfiliadas
+  // Las fichas heredadas pueden guardar textos opcionales vacíos; normalizar solo el DTO.
+  try { normalizados=validarDatosProductoAfiliadas(datos) }
+  catch { throw new ErrorAfiliadas(503,'Una ficha necesita revisión. Actualizá los productos.') }
+  const producto={id,version,actualizado_en,...normalizados}
+  if(!esProductoAfiliadas(producto)) throw new ErrorAfiliadas(503,'Una ficha necesita revisión. Actualizá los productos.')
+  return producto
 }
 const respuesta=(body:unknown,status=200)=>Response.json(body,{status,headers:HEADERS_AFILIADAS})
 export async function ejecutarProductosAfiliadas(request:Request,admin:boolean,escritura:boolean,fn:(auth:SesionAfiliadas)=>Promise<Response>) {
