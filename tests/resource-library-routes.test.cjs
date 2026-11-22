@@ -51,7 +51,7 @@ test('autorización usa getUser y el perfil propio completo antes de consultar r
   assert.deepEqual(p.calls[1], ['table', 'perfiles'])
   assert.deepEqual(p.calls[3], ['eq', 'id', 'propia'])
   const fields = p.calls[2][1].split(',')
-  assert.deepEqual(fields, ['id', 'rol', 'tipo_usuario', 'estado', 'desafio_socias_habilitada'])
+  assert.deepEqual(fields, ['id', 'rol', 'tipo_usuario', 'estado', 'desafio_socias_habilitada', 'socias_farmaci_habilitada'])
   assert.ok(!Object.hasOwn(result, 'db')); assert.ok(!Object.hasOwn(result, 'user'))
 })
 

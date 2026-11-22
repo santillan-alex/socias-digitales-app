@@ -17,7 +17,7 @@ export default async function ClassroomPage(props: {
 
   const { data: perfil, error: perfilError } = await supabase
     .from('perfiles')
-    .select('nombre, avatar_url, rol, tipo_usuario, estado, plan, desafio_socias_habilitada')
+    .select('nombre, avatar_url, rol, tipo_usuario, estado, plan, desafio_socias_habilitada,socias_farmaci_habilitada')
     .eq('id', user.id)
     .single()
 

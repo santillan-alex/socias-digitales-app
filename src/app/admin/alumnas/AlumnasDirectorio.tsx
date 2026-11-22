@@ -1,4 +1,5 @@
 'use client'
+import FarmaciAccessControl from './FarmaciAccessControl'
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
@@ -132,6 +133,7 @@ export default function AlumnasDirectorio({ inicial }: { inicial: DirectorioAlum
       {seleccionada && <div className="min-w-0 pt-5"><AccesosCuenta cuenta={seleccionada} /><div className="mt-4"><EstadoCuenta cuenta={seleccionada} /></div><dl className="mt-5 grid min-w-0 gap-4 text-sm sm:grid-cols-2"><div className="min-w-0 sm:col-span-2"><dt className="text-xs text-[#746A64]">Email de acceso</dt><dd className="mt-1"><EmailCuenta cuenta={seleccionada} /></dd></div>{[
         ['WhatsApp', seleccionada.whatsapp || 'Sin completar'], ['País', seleccionada.pais || 'Sin completar'], ['Alta en la plataforma', fecha(seleccionada.created_at)], ['Último ingreso', ultimoIngreso(seleccionada, true)], ['Afiliadas', seleccionada.afiliadas_habilitada === null ? 'Sin comprobar' : seleccionada.afiliadas_habilitada ? 'Permiso habilitado' : 'Sin habilitar'], ...(seleccionada.tipo_usuario === 'desafio' ? [['Desafío Socias', seleccionada.desafio_socias_habilitada === null ? 'Sin comprobar' : seleccionada.desafio_socias_habilitada ? 'Habilitado' : 'Sin habilitar']] : []),
       ].map(([etiqueta, valor]) => <div key={etiqueta} className="min-w-0"><dt className="text-xs text-[#746A64]">{etiqueta}</dt><dd className="mt-1 break-words leading-6">{valor}</dd></div>)}</dl>
+      <FarmaciAccessControl key={seleccionada.id} perfilId={seleccionada.id} />
       {['pausada', 'cancelada'].includes(seleccionada.estado || '') && <p className="mt-5 rounded-2xl border border-[#EC9BB6] bg-[#F4EFEA] p-4 text-sm leading-6">La cuenta está {nombreEstado(seleccionada.estado).toLocaleLowerCase('es-AR')}. Los permisos asignados no significan que pueda entrar mientras su cuenta esté suspendida.</p>}
       <section className="mt-5 rounded-2xl border border-[#E7DDD5] bg-[#FAF7F3] p-4"><p className="text-xs leading-6 text-[#746A64]">Esta ficha reúne la información de la cuenta. Los cambios se gestionan desde sus apartados.</p><div className="mt-3 flex flex-wrap gap-2"><Link href="/admin#acceso-actividad" className={boton}>Acceso y actividad<ArrowIcon /></Link><Link href="/admin/afiliadas/accesos" className={boton}>Gestionar Afiliadas<ArrowIcon /></Link>{seleccionada.tipo_usuario === 'socia' && <Link href="/admin/socias" className={boton}>Seguimiento de Socias<ArrowIcon /></Link>}</div></section>
       </div>}

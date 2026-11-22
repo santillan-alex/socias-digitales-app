@@ -28,7 +28,7 @@ function server({ profile = perfil, profileError = null, profileThrow = false, c
 test('reader usa solo perfil protegido propio y lectores del campus con la misma cuenta, sin Auth ni accesos nuevos', async () => {
   const view = server(), result = await view.leerPlanEstudio(view.supabase, 'cuenta-propia')
   assert.equal(result.estado, 'listo'); assert.equal(result.opciones[0].id, clase.id)
-  assert.deepEqual(view.calls, [['tabla', 'perfiles'], ['select', 'rol,tipo_usuario,estado,desafio_socias_habilitada'], ['eq', 'id', 'cuenta-propia'], ['catalogo', perfil], ['progreso', 'cuenta-propia']])
+  assert.deepEqual(view.calls, [['tabla', 'perfiles'], ['select', 'rol,tipo_usuario,estado,desafio_socias_habilitada,socias_farmaci_habilitada'], ['eq', 'id', 'cuenta-propia'], ['catalogo', perfil], ['progreso', 'cuenta-propia']])
 })
 test('admin, sin formación, pausada, cancelada o perfil inválido no inicia lecturas del campus', async () => {
   for (const profile of [null, { ...perfil, rol: 'admin' }, { ...perfil, tipo_usuario: 'gratuito' }, { ...perfil, tipo_usuario: 'desafio' }, { ...perfil, estado: 'pausada' }, { ...perfil, estado: 'cancelada' }, { ...perfil, estado: undefined }, { rol: 'afiliada', estado: 'activa' }]) {

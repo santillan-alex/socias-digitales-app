@@ -82,6 +82,7 @@ function pagina({ perfil = socia, errorPerfil = null, user = { id: 'propia' }, e
     '@/components/StudentShellFrame': { default: Frame },
     '@/components/LockedModules': { default: LockedModules },
     '@/components/FreeStart': { default: ({ clases }) => React.createElement('section', { 'data-inicio-gratuito': true, 'data-clases': clases.length }, 'Clases gratuitas') },
+    '@/lib/class-access': classes,
     '@/lib/class-catalog': { leerCatalogoClases: async p => { calls.push('catalogo'); assert.equal(p, perfil); return [{ id: 'muestra', acceso_gratuito: true, puede_ver: true }] } },
     '@/lib/unread-notices': { leerAvisosSinLeer: async () => { calls.push('avisos'); return { cantidad: 0 } } },
     '@/components/UnreadNotices': notices,

@@ -13,8 +13,8 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return new NextResponse(null, { status: 401, headers })
   const [{ data: perfil }, { data: clase }] = await Promise.all([
-    supabase.from('perfiles').select('rol,tipo_usuario,estado,desafio_socias_habilitada').eq('id', user.id).maybeSingle(),
-    supabase.from('clases').select('video_key,activo,acceso_gratuito').eq('id', id).maybeSingle(),
+    supabase.from('perfiles').select('rol,tipo_usuario,estado,desafio_socias_habilitada,socias_farmaci_habilitada').eq('id', user.id).maybeSingle(),
+    supabase.from('clases').select('video_key,activo,acceso_gratuito,solo_farmaci').eq('id', id).maybeSingle(),
   ])
   if (!clase || !puedeVerClase(perfil, clase)) return new NextResponse(null, { status: 403, headers })
   if (!clase.video_key) return new NextResponse(null, { status: 204, headers })

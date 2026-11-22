@@ -13,8 +13,8 @@ export async function GET(_request:Request,context:{params:Promise<{id:string}>}
   const {data:{user},error}=await supabase.auth.getUser()
   if(error || !user)return NextResponse.json({error:'Iniciá sesión para ver tu progreso.'},{status:401})
   const [{data:perfil,error:perfilError},{data:clase,error:claseError}]=await Promise.all([
-    supabase.from('perfiles').select('rol,tipo_usuario,estado,desafio_socias_habilitada').eq('id',user.id).maybeSingle(),
-    supabase.from('clases').select('activo,acceso_gratuito,video_key,vimeo_url').eq('id',id).maybeSingle(),
+    supabase.from('perfiles').select('rol,tipo_usuario,estado,desafio_socias_habilitada,socias_farmaci_habilitada').eq('id',user.id).maybeSingle(),
+    supabase.from('clases').select('activo,acceso_gratuito,solo_farmaci,video_key,vimeo_url').eq('id',id).maybeSingle(),
   ])
   if(perfilError || claseError)return NextResponse.json({error:'No pudimos verificar tu acceso.'},{status:503,headers:{'Cache-Control':'private, no-store'}})
   if(!clase || !puedeVerClase(perfil,clase) || !(clase.video_key || clase.vimeo_url))return NextResponse.json({error:'Esta clase no está disponible para tu cuenta.'},{status:403,headers:{'Cache-Control':'private, no-store'}})
@@ -36,10 +36,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const supabase=await createClient()
   const {data:{user},error:authError}=await supabase.auth.getUser()
   if(authError || !user) return json({error:'Iniciá sesión para guardar tu progreso.'},401)
-  const {data:perfil,error:perfilError}=await supabase.from('perfiles').select('rol,tipo_usuario,estado,desafio_socias_habilitada').eq('id',user.id).maybeSingle()
+  const {data:perfil,error:perfilError}=await supabase.from('perfiles').select('rol,tipo_usuario,estado,desafio_socias_habilitada,socias_farmaci_habilitada').eq('id',user.id).maybeSingle()
   if(perfilError || !perfil)return json({error:'No pudimos verificar tu acceso.'},403)
   if(perfil.rol==='admin')return json({error:'La vista administrativa no genera progreso de alumna.'},409)
-  const {data:clase,error:claseError}=await supabase.from('clases').select('activo,acceso_gratuito,video_key,vimeo_url').eq('id',id).maybeSingle()
+  const {data:clase,error:claseError}=await supabase.from('clases').select('activo,acceso_gratuito,solo_farmaci,video_key,vimeo_url').eq('id',id).maybeSingle()
   if(claseError || !clase || !puedeVerClase(perfil,clase) || !(clase.video_key || clase.vimeo_url))return json({error:'Esta clase no está disponible para tu cuenta.'},403)
   try {
     const {data,error}=await createAdminClient().rpc('guardar_progreso_clase',{

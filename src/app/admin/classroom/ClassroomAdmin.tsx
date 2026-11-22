@@ -21,6 +21,7 @@ interface Clase {
   modulo: string
   activo: boolean
   acceso_gratuito: boolean
+  solo_farmaci: boolean
 }
 interface Alumna {
   id: string
@@ -36,6 +37,7 @@ type Ficha = {
   orden: number
   activo: boolean
   acceso_gratuito: boolean
+  solo_farmaci: boolean
   tieneVideo: boolean
 }
 const vacia: Ficha = {
@@ -46,6 +48,7 @@ const vacia: Ficha = {
   orden: 0,
   activo: false,
   acceso_gratuito: false,
+  solo_farmaci: false,
   tieneVideo: false,
 }
 const inputStyle =
@@ -144,7 +147,7 @@ export default function ClassroomAdmin({
     }
   }
   async function archivar(c: Clase) {
-    if (!c.activo && !puedePublicarClase({ tieneVideo: Boolean(c.video_key), vimeo_url: c.vimeo_url })) return
+    if (!c.activo && !puedePublicarClase({ tieneVideo: Boolean(c.video_key), vimeo_url: c.vimeo_url, solo_farmaci: c.solo_farmaci })) return
     if (
       !window.confirm(
         `¿${c.activo ? 'Ocultar' : 'Publicar'} “${c.titulo}”? ${c.activo ? 'No se borrará el video ni la ficha.' : ''}`,
@@ -391,7 +394,7 @@ export default function ClassroomAdmin({
                                   </h3>
                                   <p className="mt-2 text-xs leading-5 text-[#746A64]">
                                     {c.activo ? 'Publicada' : 'Borrador'} ·{' '}
-                                    {c.acceso_gratuito
+                                    {c.solo_farmaci ? 'Solo Socias Farmaci' : c.acceso_gratuito
                                       ? 'Acceso gratuito'
                                       : 'Socias / Desafío habilitado'}
                                   </p>
@@ -413,7 +416,7 @@ export default function ClassroomAdmin({
                                 </button>
                                 <button
                                   onClick={() => void archivar(c)}
-                                  disabled={!c.activo && !puedePublicarClase({ tieneVideo: Boolean(c.video_key), vimeo_url: c.vimeo_url })}
+                                  disabled={!c.activo && !puedePublicarClase({ tieneVideo: Boolean(c.video_key), vimeo_url: c.vimeo_url, solo_farmaci: c.solo_farmaci })}
                                   title={!c.activo && !c.video_key && !c.vimeo_url ? 'Cargá el video desde Editar / subir video antes de publicar.' : undefined}
                                   className="min-h-11 rounded-full border border-[#D8CFC8] px-4 py-3 text-xs disabled:cursor-not-allowed disabled:opacity-50"
                                 >
@@ -582,7 +585,7 @@ export default function ClassroomAdmin({
                   className={inputStyle}
                 />
               </label>
-              <details>
+              {!ficha.solo_farmaci && <details>
                 <summary className="min-h-11 cursor-pointer py-3 text-sm text-[#294A38]">
                   Usar enlace de Vimeo en lugar de archivo
                 </summary>
@@ -602,10 +605,18 @@ export default function ClassroomAdmin({
                 <p className="mt-2 text-xs text-[#746A64]">
                   Si hay un video privado cargado, ese video tiene prioridad.
                 </p>
-              </details>
+              </details>}
+              <label className="flex min-h-11 items-center gap-3 text-sm">
+                <input type="checkbox" checked={ficha.solo_farmaci} aria-describedby="farmaci-clase-ayuda"
+                  onChange={e => setFicha({ ...ficha, solo_farmaci: e.target.checked, activo: false,
+                    ...(e.target.checked ? { acceso_gratuito: false, vimeo_url: '' } : {}) })} />
+                Solo Socias Farmaci
+              </label>
+              <p id="farmaci-clase-ayuda" className="text-xs leading-5 text-[#746A64]">Solo la ven alumnas activas con este acceso. Requiere un MP4 privado. Si cambiás el acceso, revisá la publicación antes de guardar.</p>
               <label className="flex min-h-11 items-center gap-3 text-sm">
                 <input
                   type="checkbox"
+                  disabled={ficha.solo_farmaci}
                   checked={ficha.acceso_gratuito}
                   onChange={(e) =>
                     setFicha({ ...ficha, acceso_gratuito: e.target.checked })
@@ -628,7 +639,7 @@ export default function ClassroomAdmin({
               <p id="clase-publicacion-ayuda" className="text-sm text-[#746A64]">
                 {puedePublicar
                   ? 'El video está listo. Activá esta opción y guardá para que las alumnas vean la clase.'
-                  : 'La publicación se habilita cuando cargues el video o agregues un enlace de Vimeo válido. Podés guardar el borrador ahora.'}
+                  : ficha.solo_farmaci ? 'Cargá un MP4 privado antes de publicar. Podés guardar un borrador ahora.' : 'La publicación se habilita cuando cargues el video o agregues un enlace de Vimeo válido. Podés guardar el borrador ahora.'}
               </p>
               {modalError && (
                 <p role="alert" className="text-sm text-[#B01B30]">

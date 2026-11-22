@@ -11,7 +11,7 @@ export async function leerPlanEstudio(supabase: Awaited<ReturnType<typeof create
   if (!userId) return { estado: 'error', opciones: [] }
   try {
     const { data: perfil, error } = await supabase.from('perfiles')
-      .select('rol,tipo_usuario,estado,desafio_socias_habilitada')
+      .select('rol,tipo_usuario,estado,desafio_socias_habilitada,socias_farmaci_habilitada')
       .eq('id', userId).maybeSingle()
     if (error || !perfil || perfil.rol === 'admin' || !puedeVerClasesPrivadas(perfil)) return { estado: 'error', opciones: [] }
     return planEstudioDesdeCampus(await leerCampusAprendizaje(supabase, userId, perfil))

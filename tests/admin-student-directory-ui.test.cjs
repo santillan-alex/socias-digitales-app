@@ -21,7 +21,7 @@ function harness(inicial = lista(), env = {}) {
   assert.ok(d.esDirectorioAlumnas(inicial), 'Fixture debe respetar el contrato real')
   const states = [], refs = [], requests = [], effects = []; let si = 0, ri = 0, opened = 0, closed = 0
   const hooks = { useState(v) { const i = si++; if (!(i in states)) states[i] = typeof v === 'function' ? v() : v; return [states[i], n => { states[i] = typeof n === 'function' ? n(states[i]) : n }] }, useRef(v) { const i = ri++; return refs[i] ??= { current: v } }, useEffect(fn) { effects.push(fn) } }
-  const Component = loader({ react: hooks, 'next/link': { default: Link }, '@/components/ArrowIcon': { default: () => null }, '@/lib/admin-student-directory': d }, { fetch: async (url, opts) => { requests.push({ url, opts }); if (!env.fetch) throw new Error('Sin respuesta simulada'); return env.fetch(url, opts) }, window: { setTimeout, clearTimeout } })('src/app/admin/alumnas/AlumnasDirectorio.tsx').default
+  const Component = loader({ react: hooks, './FarmaciAccessControl': { default: ({ perfilId }) => require('react').createElement('section', { 'data-qa-farmaci': perfilId }, 'Socias Farmaci') }, 'next/link': { default: Link }, '@/components/ArrowIcon': { default: () => null }, '@/lib/admin-student-directory': d }, { fetch: async (url, opts) => { requests.push({ url, opts }); if (!env.fetch) throw new Error('Sin respuesta simulada'); return env.fetch(url, opts) }, window: { setTimeout, clearTimeout } })('src/app/admin/alumnas/AlumnasDirectorio.tsx').default
   const render = () => { si = 0; ri = 0; effects.length = 0; return Component({ inicial }) }
   const dialog = by(render(), n => n.type === 'dialog')
   dialog.props.ref.current = { open: false, showModal() { this.open = true; opened++ }, close() { if (!this.open) return; this.open = false; closed++; dialog.props.onClose() } }
@@ -96,11 +96,11 @@ test('respuesta inválida o duplicada no confirma un directorio; vacío verifica
   }
   const empty = harness(lista([])); assert.equal(tile(empty, 'Todas las alumnas').props['aria-label'], 'Ver Todas las alumnas: 0'); assert.equal(tile(empty, 'Todas las alumnas').props.disabled, false); assert.ok(html(empty).includes('Todavía no hay alumnas para mostrar'))
 })
-test('ficha nativa es solo lectura, conserva destinos, cierra por botón/fondo/Escape y devuelve foco', () => {
+test('ficha nativa conserva datos de solo lectura y control Farmaci puntual, conserva destinos, cierra por botón/fondo/Escape y devuelve foco', () => {
   const h = harness(); let focused = 0
   const open = () => by(cards(h), n => n.type === 'button').props.onClick({ currentTarget: { focus: () => focused++ } })
   open(); assert.equal(h.opened(), 1); const dlg = by(h.render(), n => n.type === 'dialog'), out = renderToStaticMarkup(dlg)
-  assert.ok(out.includes('maria@example.invalid')); assert.ok(out.includes('Seguimiento de Socias')); assert.ok(out.includes('href="/admin/afiliadas/accesos"')); assert.ok(out.includes('href="/admin#acceso-actividad"'))
+  assert.ok(out.includes('Socias Farmaci')); assert.ok(out.includes('maria@example.invalid')); assert.ok(out.includes('Seguimiento de Socias')); assert.ok(out.includes('href="/admin/afiliadas/accesos"')); assert.ok(out.includes('href="/admin#acceso-actividad"'))
   assert.ok(!nodes(dlg).some(n => ['input', 'textarea', 'select', 'form'].includes(n.type))); assert.equal(dlg.props.onCancel, undefined); assert.equal(by(dlg, n => n.type === 'button' && text(n) === 'Cerrar').props.autoFocus, true)
   by(dlg, n => n.type === 'button' && text(n) === 'Cerrar').props.onClick(); assert.equal(h.closed(), 1); assert.equal(focused, 1); assert.ok(!renderToStaticMarkup(by(h.render(), n => n.type === 'dialog')).includes('maria@example.invalid'))
   open(); const next = by(h.render(), n => n.type === 'dialog'); next.props.onClick({ target: {}, currentTarget: next }); assert.equal(h.dialog().open, true); next.props.onClick({ target: next, currentTarget: next }); assert.equal(h.closed(), 2)

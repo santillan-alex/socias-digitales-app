@@ -3,7 +3,7 @@ import { fechaDiaValida, moverDia } from './my-day'
 import type { ClaseCatalogo } from './class-access'
 import type { ProgresoClase } from './class-progress'
 
-export interface PerfilLogros { rol?: string; tipo_usuario?: string | null; estado?: string; desafio_socias_habilitada?: boolean }
+export interface PerfilLogros { rol?: string; tipo_usuario?: string | null; estado?: string; desafio_socias_habilitada?: boolean; socias_farmaci_habilitada?: boolean }
 export function puedeVerLogros(perfil: PerfilLogros | null) {
   return Boolean(perfil && perfil.rol !== 'admin' && perfil.estado === 'activa' &&
     (perfil.tipo_usuario === 'socia' || ['afiliada', 'afiliada_lanzamiento'].includes(perfil.rol ?? '')))

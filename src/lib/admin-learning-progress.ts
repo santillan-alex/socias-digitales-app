@@ -5,12 +5,13 @@ export const LIMITE_ALUMNAS_FORMACION = 5000
 export const LIMITE_CLASES_FORMACION = 1000
 export const LIMITE_PROGRESO_FORMACION = 50000
 
-export interface ClaseSeguimiento { id: string; titulo: string; modulo: string; orden: number; acceso_gratuito: boolean }
+export interface ClaseSeguimiento { id: string; titulo: string; modulo: string; orden: number; acceso_gratuito: boolean; solo_farmaci?: boolean }
 export interface AlumnaSeguimiento {
   id: string; nombre: string | null
   tipo_usuario: 'gratuito' | 'desafio' | 'socia' | null
   estado: 'activa' | 'pausada' | 'cancelada' | null
   desafio_socias_habilitada: boolean | null
+  socias_farmaci_habilitada?: boolean
 }
 export interface ProgresoSeguimiento {
   alumna_id: string; clase_id: string; posicion_seg: number; duracion_seg: number
@@ -26,11 +27,11 @@ const entero = (x: unknown, max: number): x is number => typeof x === 'number' &
 const id = (x: unknown): x is string => esIdAfiliadas(x) && x === x.toLowerCase()
 
 export function esClaseSeguimiento(x: unknown): x is ClaseSeguimiento {
-  return objeto(x) && claves(x, ['id', 'titulo', 'modulo', 'orden', 'acceso_gratuito']) && id(x.id)
+  return objeto(x) && claves(x, ['id', 'titulo', 'modulo', 'orden', 'acceso_gratuito', ...(Object.hasOwn(x, 'solo_farmaci') ? ['solo_farmaci'] : [])]) && (x.solo_farmaci === undefined || typeof x.solo_farmaci === 'boolean') && id(x.id)
     && texto(x.titulo, 180) && texto(x.modulo, 100) && entero(x.orden, 9999) && typeof x.acceso_gratuito === 'boolean'
 }
 export function esAlumnaSeguimiento(x: unknown): x is AlumnaSeguimiento {
-  return objeto(x) && claves(x, ['id', 'nombre', 'tipo_usuario', 'estado', 'desafio_socias_habilitada']) && id(x.id) && !esCuentaPrueba(x.id)
+  return objeto(x) && claves(x, ['id', 'nombre', 'tipo_usuario', 'estado', 'desafio_socias_habilitada', ...(Object.hasOwn(x, 'socias_farmaci_habilitada') ? ['socias_farmaci_habilitada'] : [])]) && (x.socias_farmaci_habilitada === undefined || typeof x.socias_farmaci_habilitada === 'boolean') && id(x.id) && !esCuentaPrueba(x.id)
     && (x.nombre === null || texto(x.nombre, 240))
     && (x.tipo_usuario === null || typeof x.tipo_usuario === 'string' && ['gratuito', 'desafio', 'socia'].includes(x.tipo_usuario))
     && (x.estado === null || typeof x.estado === 'string' && ['activa', 'pausada', 'cancelada'].includes(x.estado))

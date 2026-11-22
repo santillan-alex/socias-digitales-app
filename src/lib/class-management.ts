@@ -43,7 +43,9 @@ export function validarVideo(nombre: unknown, bytes: unknown) {
 export function puedePublicarClase(ficha: {
   tieneVideo: boolean
   vimeo_url: string | null
+  solo_farmaci?: boolean
 }) {
+  if (ficha.solo_farmaci) return ficha.tieneVideo
   return (
     ficha.tieneVideo ||
     /^https:\/\/(?:www\.)?vimeo\.com\/\d+(?:\/\w+)?$/.test(
@@ -77,6 +79,8 @@ export function datosClase(input: Record<string, unknown>) {
     const partes = modulo.split(' › ')
     if (partes.length !== 2 || partes[0].includes('›') || partes[1] !== 'Material de apoyo' || !clasificacionClase(partes[0], 'Material de apoyo')) return null
   }
+  if (input.solo_farmaci !== undefined && typeof input.solo_farmaci !== 'boolean') return null
+  if (input.solo_farmaci === true && (input.acceso_gratuito === true || vimeo_url)) return null
   if (
     vimeo_url &&
     !/^https:\/\/(?:www\.)?vimeo\.com\/\d+(?:\/\w+)?$/.test(vimeo_url)
@@ -90,5 +94,6 @@ export function datosClase(input: Record<string, unknown>) {
     vimeo_url: vimeo_url || null,
     activo: input.activo === true,
     acceso_gratuito: input.acceso_gratuito === true,
+    ...(typeof input.solo_farmaci === 'boolean' ? { solo_farmaci: input.solo_farmaci } : {}),
   }
 }

@@ -13,7 +13,7 @@ export async function autorizarBibliotecaRecursos(): Promise<AccesoRecursos> {
     const { data: { user }, error: errorSesion } = await supabase.auth.getUser()
     if (errorSesion || !user) return { error: { status: 401, mensaje: 'Iniciá sesión para ver tus materiales.' } }
     const { data: perfil, error } = await supabase.from('perfiles')
-      .select('id,rol,tipo_usuario,estado,desafio_socias_habilitada').eq('id', user.id).maybeSingle()
+      .select('id,rol,tipo_usuario,estado,desafio_socias_habilitada,socias_farmaci_habilitada').eq('id', user.id).maybeSingle()
     if (error || !perfil || perfil.id !== user.id) return { error: { status: 503, mensaje: 'No pudimos comprobar tu acceso. Tus datos no se modificaron.' } }
     if (perfil.rol === 'admin') return { error: { status: 403, mensaje: 'Gestioná los materiales desde el panel de clases de Flor.' } }
     return { perfil }

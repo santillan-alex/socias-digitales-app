@@ -49,9 +49,9 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Iniciá sesión para reproducir esta clase.' }, { status: 401 })
 
-  const { data: perfil } = await supabase.from('perfiles').select('rol, tipo_usuario, estado, desafio_socias_habilitada').eq('id', user.id).maybeSingle()
+  const { data: perfil } = await supabase.from('perfiles').select('rol, tipo_usuario, estado, desafio_socias_habilitada,socias_farmaci_habilitada').eq('id', user.id).maybeSingle()
   const esAdmin = perfil?.rol === 'admin'
-  const { data: clase } = await supabase.from('clases').select('video_key, activo, acceso_gratuito').eq('id', id).maybeSingle()
+  const { data: clase } = await supabase.from('clases').select('video_key, activo, acceso_gratuito,solo_farmaci').eq('id', id).maybeSingle()
   if (!clase || (!clase.activo && !esAdmin) || !clase.video_key) return NextResponse.json({ error: 'Esta clase todavía no tiene un video disponible.' }, { status: 404 })
   if (!puedeVerClase(perfil,clase)) return NextResponse.json({ error: 'Esta clase requiere acceso Socias Digitales.' }, { status: 403 })
 

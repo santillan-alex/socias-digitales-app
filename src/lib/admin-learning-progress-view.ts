@@ -27,7 +27,7 @@ export function indiceAprendizaje(progreso: ProgresoSeguimiento[]) {
   return indice
 }
 export function clasePermitida(alumna: AlumnaSeguimiento, clase: ClaseSeguimiento) {
-  return puedeVerClase({ ...alumna, desafio_socias_habilitada: alumna.desafio_socias_habilitada === true }, { activo: true, acceso_gratuito: clase.acceso_gratuito })
+  return puedeVerClase({ ...alumna, desafio_socias_habilitada: alumna.desafio_socias_habilitada === true }, { activo: true, acceso_gratuito: clase.acceso_gratuito, solo_farmaci: clase.solo_farmaci })
 }
 export function filasAprendizaje(alumnas: AlumnaSeguimiento[], clases: ClaseSeguimiento[], indice: ReturnType<typeof indiceAprendizaje>): FilaAprendizaje[] {
   return alumnas.map(alumna => {

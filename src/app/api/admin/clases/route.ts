@@ -35,14 +35,15 @@ export async function POST(request: Request) {
     const datos = datosClase(input)
     if (!datos || (input.id && !esUuid(input.id)))
       return NextResponse.json(
-        { error: 'Revisá título, programa, orden y enlace de Vimeo.' },
+        { error: 'Revisá el título, el programa, el orden y el acceso. Una clase Farmaci no admite Vimeo ni acceso de muestra.' },
         { status: 400 },
       )
     let key: string | null = null
+    let soloFarmaci = datos.solo_farmaci === true
     if (input.id) {
       const { data, error } = await auth.supabase
         .from('clases')
-        .select('video_key')
+        .select('video_key,solo_farmaci')
         .eq('id', input.id)
         .maybeSingle()
       if (error) throw error
@@ -52,8 +53,11 @@ export async function POST(request: Request) {
           { status: 404 },
         )
       key = data.video_key
+      soloFarmaci = datos.solo_farmaci ?? (data.solo_farmaci === true)
     }
-    if (datos.activo && !key && !datos.vimeo_url)
+    if (soloFarmaci && (datos.acceso_gratuito || datos.vimeo_url))
+      return NextResponse.json({ error: 'Una clase de Socias Farmaci debe usar video privado y no puede ser de muestra.' }, { status: 400 })
+    if (datos.activo && !key && (soloFarmaci || !datos.vimeo_url))
       return NextResponse.json(
         { error: 'Cargá el video antes de publicar la clase.' },
         { status: 400 },

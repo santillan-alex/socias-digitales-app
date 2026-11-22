@@ -69,7 +69,7 @@ function alumnaDto(raw: unknown): AlumnaSeguimiento {
     || !(raw.tipo_usuario === null || typeof raw.tipo_usuario === 'string') || !(raw.estado === null || typeof raw.estado === 'string')
     || !(raw.desafio_socias_habilitada === null || typeof raw.desafio_socias_habilitada === 'boolean')) throw new Error('invalid_student')
   const alumna = { id: raw.id.toLowerCase(), nombre: texto(raw.nombre, 240, true), tipo_usuario: ['gratuito', 'desafio', 'socia'].includes(String(raw.tipo_usuario)) ? raw.tipo_usuario as AlumnaSeguimiento['tipo_usuario'] : null,
-    estado: ['activa', 'pausada', 'cancelada'].includes(String(raw.estado)) ? raw.estado as AlumnaSeguimiento['estado'] : null, desafio_socias_habilitada: raw.desafio_socias_habilitada as boolean | null }
+    estado: ['activa', 'pausada', 'cancelada'].includes(String(raw.estado)) ? raw.estado as AlumnaSeguimiento['estado'] : null, desafio_socias_habilitada: raw.desafio_socias_habilitada as boolean | null, ...(raw.socias_farmaci_habilitada === true ? { socias_farmaci_habilitada: true } : {}) }
   if (!esAlumnaSeguimiento(alumna)) throw new Error('invalid_student')
   return alumna
 }
@@ -83,13 +83,13 @@ export async function leerSeguimientoFormacion(auth: SesionSeguimientoFormacion)
     if (auth.admin !== true || !esIdAfiliadas(auth.userId)) throw new Error('invalid_admin_session')
     const hasta = Date.now() + TIEMPO_TOTAL_MS, db = auth.supabase
     const [rawClases, rawAlumnas] = await Promise.all([
-      leerPaginas((desde, fin, signal) => db.from('clases').select('id,titulo,modulo,orden,acceso_gratuito,activo,video_key,vimeo_url', { count: 'exact' }).eq('activo', true).or('video_key.not.is.null,vimeo_url.not.is.null').order('id').range(desde, fin).abortSignal(signal), LIMITE_CLASES_FORMACION, claveId, hasta),
-      leerPaginas((desde, fin, signal) => db.from('perfiles').select('id,nombre,tipo_usuario,estado,desafio_socias_habilitada,rol', { count: 'exact' }).or('rol.neq.admin,rol.is.null').not('id', 'in', FILTRO_CUENTAS_PRUEBA).order('id').range(desde, fin).abortSignal(signal), LIMITE_ALUMNAS_FORMACION, claveId, hasta),
+      leerPaginas((desde, fin, signal) => db.from('clases').select('id,titulo,modulo,orden,acceso_gratuito,solo_farmaci,activo,video_key,vimeo_url', { count: 'exact' }).eq('activo', true).or('video_key.not.is.null,vimeo_url.not.is.null').order('id').range(desde, fin).abortSignal(signal), LIMITE_CLASES_FORMACION, claveId, hasta),
+      leerPaginas((desde, fin, signal) => db.from('perfiles').select('id,nombre,tipo_usuario,estado,desafio_socias_habilitada,socias_farmaci_habilitada,rol', { count: 'exact' }).or('rol.neq.admin,rol.is.null').not('id', 'in', FILTRO_CUENTAS_PRUEBA).order('id').range(desde, fin).abortSignal(signal), LIMITE_ALUMNAS_FORMACION, claveId, hasta),
     ])
     const revisiones = new Map<string, string>()
     const clases: ClaseSeguimiento[] = rawClases.map(raw => {
       if (!objeto(raw) || !esIdAfiliadas(raw.id) || raw.activo !== true) throw new Error('invalid_class')
-      const clase = { id: raw.id.toLowerCase(), titulo: texto(raw.titulo, 180), modulo: texto(raw.modulo, 100), orden: raw.orden, acceso_gratuito: raw.acceso_gratuito }
+      const clase = { id: raw.id.toLowerCase(), titulo: texto(raw.titulo, 180), modulo: texto(raw.modulo, 100), orden: raw.orden, acceso_gratuito: raw.acceso_gratuito, ...(raw.solo_farmaci === true ? { solo_farmaci: true } : {}) }
       if (!esClaseSeguimiento(clase)) throw new Error('invalid_class')
       revisiones.set(clase.id, revision(raw))
       return clase
