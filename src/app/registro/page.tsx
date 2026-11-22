@@ -39,7 +39,7 @@ export default function RegistroPage() {
       setMensaje(esDesafio
         ? 'Revisá tu correo para confirmar la cuenta. Flor habilitará tu acceso al Desafío Socias; cuando lo haga, vas a recibir la bienvenida y podrás entrar a lanzamiento y clases.'
         : esFarmasi
-          ? 'Revisá tu correo para confirmar tu cuenta y volver a Socias Farmasi. Si ya tenés una cuenta confirmada, ingresá con tu contraseña.'
+          ? 'Confirmá tu correo para enviar tu solicitud a Socias Farmasi. Si ya tenés una cuenta confirmada, ingresá con tu contraseña.'
           : esSocias
           ? 'Revisá tu correo para confirmar la cuenta. Tu cuenta se crea con acceso gratuito; Flor activará tu plan Socias desde tu ficha.'
           : 'Revisá tu correo para confirmar la cuenta. Si ya te registraste y confirmaste antes, ingresá con tu contraseña desde el login.')
@@ -88,7 +88,7 @@ export default function RegistroPage() {
           <div className="mb-8">
             <p className="mb-3 font-impact text-xs font-semibold uppercase tracking-[0.16em] text-[#294A38]">{esDesafio ? 'Desafío Socias' : esSocias ? 'Plan Socias' : esFarmasi ? 'Socias Farmasi' : 'Acceso gratuito'}</p>
             <h2 className="font-serif text-4xl leading-tight tracking-[-0.035em] text-[#171413]">Crear <span className="italic text-[#294A38]">cuenta.</span></h2>
-            <p className="mt-3 text-sm leading-6 text-[#655B56]">{esSocias ? 'Completá tus datos. El plan Socias se activa cuando Flor lo habilita; registrarte no realiza una compra.' : esFarmasi ? 'Creá tu cuenta y confirmá tu email para solicitar el acceso. Flor revisará tu solicitud.' : 'Completá tus datos para registrarte.'}</p>
+            <p className="mt-3 text-sm leading-6 text-[#655B56]">{esSocias ? 'Completá tus datos. El plan Socias se activa cuando Flor lo habilita; registrarte no realiza una compra.' : esFarmasi ? 'Creá tu cuenta. Al confirmar tu email, tu solicitud se enviará a Flor para que la revise.' : 'Completá tus datos para registrarte.'}</p>
           </div>
 
           <form onSubmit={handleRegistro} className="space-y-4">

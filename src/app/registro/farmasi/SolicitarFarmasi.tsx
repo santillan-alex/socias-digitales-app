@@ -3,17 +3,17 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { DESTINO_INGRESO_FARMASI } from '@/lib/farmasi-registration'
+import { registrarSolicitudFarmasi } from '@/lib/farmasi-request-client'
+import { DESTINO_INGRESO_FARMASI, RUTA_AULA_FARMASI, RUTA_FARMASI } from '@/lib/farmasi-registration'
 
-type Estado = 'lista' | 'admin' | 'inactiva' | 'sin_confirmar' | 'pendiente' | 'habilitada' | 'error'
+type Estado = 'lista' | 'admin' | 'inactiva' | 'sin_confirmar' | 'pendiente' | 'error'
 
 const textos: Record<Estado, string> = {
   lista: 'Solicitá acceso a las clases de Socias Farmasi. Flor revisará tu solicitud; tus otros accesos no cambian.',
   admin: 'Tu cuenta es de administración. Podés gestionar las solicitudes desde Invitaciones.',
   inactiva: 'Para enviar una solicitud, tu cuenta tiene que estar activa. Si necesitás ayuda, contactá al equipo de Socias Digitales.',
   sin_confirmar: 'Confirmá el email de tu cuenta antes de solicitar acceso.',
-  pendiente: 'Tu solicitud está pendiente. Cuando Flor la apruebe, vas a ver las clases disponibles en tu biblioteca.',
-  habilitada: 'Tu acceso a Socias Farmasi está habilitado.',
+  pendiente: 'Tu solicitud está pendiente. Cuando Flor la apruebe, este mismo enlace te llevará directo a tus clases Farmasi.',
   error: 'No pudimos comprobar el estado de tu solicitud. Volvé a cargar la página para intentarlo de nuevo.',
 }
 
@@ -25,11 +25,9 @@ export default function SolicitarFarmasi({ inicial }: { inicial: Estado }) {
     if (enviando || estado !== 'lista') return
     setEnviando(true); setError('')
     try {
-      const respuesta = await fetch('/api/farmasi/solicitud', { method: 'POST' })
-      const dato = await respuesta.json()
-      if (!respuesta.ok || !['pendiente', 'habilitada'].includes(dato.estado))
-        throw new Error(typeof dato.error === 'string' ? dato.error : 'No pudimos enviar la solicitud.')
-      setEstado(dato.estado)
+      const estado = await registrarSolicitudFarmasi()
+      if (estado === 'habilitada') { window.location.replace(RUTA_AULA_FARMASI); return }
+      setEstado(estado)
     } catch (causa) {
       setError(causa instanceof Error ? causa.message : 'No pudimos enviar la solicitud. Intentá de nuevo.')
     } finally {
@@ -46,8 +44,7 @@ export default function SolicitarFarmasi({ inicial }: { inicial: Estado }) {
       {error && <p role="alert" className="mt-5 text-sm text-[#7C1D2A]">{error}</p>}
       <div className="mt-6">
         {estado === 'lista' && <button type="button" disabled={enviando} onClick={() => void solicitar()} className={boton}>{enviando ? 'Enviando…' : 'Solicitar acceso Farmasi'}</button>}
-        {estado === 'habilitada' && <Link className={boton} href="/classroom">Ver mis clases</Link>}
-        {estado === 'pendiente' && <Link className={boton} href="/inicio">Ir a Inicio</Link>}
+        {estado === 'pendiente' && <button type="button" className={boton} onClick={() => window.location.replace(RUTA_FARMASI)}>Volver a revisar</button>}
         {estado === 'admin' && <Link className={boton} href="/admin/invitar">Revisar solicitudes</Link>}
         {estado === 'sin_confirmar' && <Link className={boton} href={DESTINO_INGRESO_FARMASI}>Ir a Ingresar</Link>}
       </div>

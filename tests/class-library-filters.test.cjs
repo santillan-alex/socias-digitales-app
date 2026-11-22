@@ -10,7 +10,7 @@ const { renderToStaticMarkup } = require('react-dom/server')
 const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8')
 function load(file, deps = {}) {
   const m = { exports: {} }
-  new Function('require', 'module', 'exports', ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText)(n => n in deps ? deps[n] : require(n), m, m.exports)
+  new Function('require', 'module', 'exports', ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText)(n => n in deps ? deps[n] : n === '@/lib/farmasi-registration' ? load('src/lib/farmasi-registration.ts') : require(n), m, m.exports)
   return m.exports
 }
 const management = load('src/lib/class-management.ts')

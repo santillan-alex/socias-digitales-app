@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { FLUJO_FARMASI, RUTA_FARMASI } from '@/lib/farmasi-registration'
+import { continuarAutenticacionFarmasi } from '@/lib/farmasi-request-client'
 import { createClient } from '@/lib/supabase/client'
 
 function LoginForm() {
@@ -38,6 +39,10 @@ function LoginForm() {
         setError(error.code === 'email_not_confirmed'
           ? 'Te falta confirmar tu email. Usá “Reenviar confirmación” debajo para recibir otro correo.'
           : 'Email o contraseña incorrectos. Si todavía no confirmaste tu cuenta, podés reenviar el correo debajo.')
+        return
+      }
+      if (esFarmasi) {
+        window.location.replace(await continuarAutenticacionFarmasi())
         return
       }
       router.push(destinoSeguro())
@@ -104,9 +109,9 @@ function LoginForm() {
           </div>
 
           <div className="mb-8">
-            <p className="mb-3 font-impact text-xs font-semibold uppercase tracking-[0.16em] text-[#294A38]">Tu espacio</p>
+            <p className="mb-3 font-impact text-xs font-semibold uppercase tracking-[0.16em] text-[#294A38]">{esFarmasi ? 'Socias Farmasi' : 'Tu espacio'}</p>
             <h2 className="font-serif text-4xl leading-tight tracking-[-0.035em] text-[#171413]">Qué lindo verte <span className="italic text-[#EC9BB6]">de nuevo.</span></h2>
-            <p className="mt-3 text-sm leading-6 text-[#655B56]">Ingresá con el email que usaste al registrarte.</p>
+            <p className="mt-3 text-sm leading-6 text-[#655B56]">{esFarmasi ? 'Ingresá con tu cuenta para solicitar acceso a Socias Farmasi. Si ya está habilitado, vas directo a tus clases.' : 'Ingresá con el email que usaste al registrarte.'}</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
@@ -123,7 +128,7 @@ function LoginForm() {
             {error && <p role="alert" className="rounded-xl border border-[#B01B30]/20 bg-[#F4CAD8]/35 px-4 py-3 text-sm text-[#7C1D2A]">{error}</p>}
 
             <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#294A38] px-5 py-3.5 font-impact text-sm font-semibold text-white transition-colors hover:bg-[#203B2D] disabled:opacity-60">
-              {loading ? 'Ingresando…' : 'Ingresar'}
+              {loading ? 'Ingresando…' : esFarmasi ? 'Ingresar a Socias Farmasi' : 'Ingresar'}
             </button>
           </form>
 

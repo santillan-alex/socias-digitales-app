@@ -9,7 +9,7 @@ const { renderToStaticMarkup } = require('react-dom/server')
 const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8')
 function load(file, deps = {}) {
   const m = { exports: {} }
-  new Function('require', 'module', 'exports', ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText)(name => name in deps ? deps[name] : require(name), m, m.exports)
+  new Function('require', 'module', 'exports', ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText)(name => name in deps ? deps[name] : name === '@/lib/farmasi-registration' ? load('src/lib/farmasi-registration.ts') : require(name), m, m.exports)
   return m.exports
 }
 const management = load('src/lib/class-management.ts')
@@ -31,6 +31,7 @@ function servidor({ user = { id: 'cuenta-ficticia' }, profile = perfil, falloPer
   const Recovery = () => null
   const Classroom = () => null
   const page = load('src/app/classroom/page.tsx', {
+      '@/lib/class-access': access,
     '@/lib/supabase/server': { createClient: async () => ({ auth: { getUser: async () => { calls.auth++; return { data: { user } } } }, from: table => { calls.tablas.push(table); return { select: () => ({ eq: () => ({ single: async () => ({ data: profile, error: falloPerfil ? {} : null }) }) }) } } }) },
     'next/navigation': { redirect: href => { throw new Error('redirect:' + href) } },
     './ClassroomCliente': { default: Classroom }, './ClassroomRecovery': { default: Recovery },
@@ -204,4 +205,27 @@ test('navegar a otro enlace abre su clase una sola vez; respuesta tras desmontar
     resolver({ ok: true, json: async () => ({ url: '/fixture-despues-de-salir.mp4' }) }); await closed.settle()
     assert.equal(closed.player(), undefined)
   } finally { network.restore() }
+})
+
+test('aula Farmasi requiere permiso vigente y no entrega catálogo o progreso de otra audiencia', async () => {
+  const q = { searchParams: Promise.resolve({ espacio: 'farmasi', clase: SAMPLE }) }
+  for (const profile of [perfil, { ...perfil, estado: 'pausada', socias_farmaci_habilitada: true }]) {
+    const view = servidor({ profile })
+    await assert.rejects(() => view.page(q), /redirect:\/registro\/farmasi/)
+    assert.equal(view.calls.catalogo, 0)
+    assert.equal(view.calls.progreso, 0)
+  }
+  const original = catalogo[0]
+  catalogo[0] = { ...original, solo_farmaci: true }
+  try {
+    const view = servidor({ profile: { rol: 'alumna', estado: 'activa', tipo_usuario: 'gratuito', socias_farmaci_habilitada: true } })
+    const out = await view.page(q)
+    assert.equal(out.props.espacioFarmasi, true)
+    assert.deepEqual(out.props.clases.map(clase => clase.id), [ID])
+    assert.deepEqual(out.props.progresoInicial, [avance])
+    assert.equal(out.props.claseInicialId, null)
+    assert.ok(out.props.avisoClaseInicial)
+  } finally {
+    catalogo[0] = original
+  }
 })

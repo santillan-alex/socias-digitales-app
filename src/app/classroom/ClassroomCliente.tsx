@@ -8,6 +8,7 @@ import { claseParaContinuar, tiempoClase, type ProgresoClase } from '@/lib/class
 import { puedeVerClasesPrivadas } from '@/lib/class-access'
 import { FILTROS_AVANCE_CLASES, filtrarBibliotecaClases, type FiltroAvanceClase } from '@/lib/class-library-filters'
 import Link from 'next/link'
+import { RUTA_AULA_FARMASI } from '@/lib/farmasi-registration'
 
 export interface Clase {
   id: string
@@ -39,6 +40,7 @@ interface Props {
   clases: Clase[]
   esAdmin: boolean
   perfil: Perfil | null
+  espacioFarmasi?: boolean
   progresoInicial?: ProgresoClase[]
   errorProgreso?: boolean
   claseInicialId?: string | null
@@ -53,7 +55,7 @@ function Icon({ name, className = 'h-5 w-5' }: { name: 'play' | 'arrow' | 'book'
   return <svg {...props}><path d="M5 4.5h10.5A3.5 3.5 0 0 1 19 8v12H8.5A3.5 3.5 0 0 0 5 23V4.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M5 4.5v15A3.5 3.5 0 0 1 8.5 16H19" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>
 }
 
-export default function ClassroomCliente({ clases, esAdmin, perfil, progresoInicial = [], errorProgreso = false, claseInicialId = null, avisoClaseInicial = null }: Props) {
+export default function ClassroomCliente({ clases, esAdmin, perfil, espacioFarmasi = false, progresoInicial = [], errorProgreso = false, claseInicialId = null, avisoClaseInicial = null }: Props) {
   const [claseAbierta, setClaseAbierta] = useState<Clase | null>(null)
   const [videoSeguroUrl, setVideoSeguroUrl] = useState<string | null>(null)
   const [cargandoVideo, setCargandoVideo] = useState<string | null>(null)
@@ -73,7 +75,7 @@ export default function ClassroomCliente({ clases, esAdmin, perfil, progresoInic
   const accesoPausado = !esAdmin && (perfil?.estado === 'pausada' || perfil?.estado === 'cancelada')
   const modulos = [...new Set(clases.map(clase => ubicacionClase(clase.modulo).programa))].sort((a,b) => a === 'Bienvenida' ? -1 : b === 'Bienvenida' ? 1 : a.localeCompare(b, 'es'))
   const continuar = esAdmin || errorProgreso ? null : claseParaContinuar(clases,progreso)
-  const programaInicial = continuar ? ubicacionClase(continuar.clase.modulo).programa : !esAdmin && !errorProgreso && progreso.length === 0 ? 'Bienvenida' : null
+  const programaInicial = continuar ? ubicacionClase(continuar.clase.modulo).programa : !esAdmin && !errorProgreso && progreso.length === 0 ? (espacioFarmasi ? modulos[0] ?? null : 'Bienvenida') : null
   const disponibles = ordenarClases(clases.filter(c => (c.puede_ver ?? tieneAcceso) && (c.tiene_video_privado || c.vimeo_url)))
   const siguientes = claseAbierta ? disponibles.filter(c=>ubicacionClase(c.modulo).programa===ubicacionClase(claseAbierta.modulo).programa && ubicacionClase(c.modulo).seccion===ubicacionClase(claseAbierta.modulo).seccion) : []
   const siguiente = claseAbierta ? siguientes[siguientes.findIndex(c=>c.id===claseAbierta.id)+1] : undefined
@@ -154,8 +156,9 @@ export default function ClassroomCliente({ clases, esAdmin, perfil, progresoInic
         <section className="grid gap-5 md:grid-cols-[minmax(0,1fr)_260px] md:items-end">
           <div>
             <p className="font-impact text-[10px] font-semibold uppercase tracking-[0.22em] text-[#294A38]">Tu programa</p>
-            <h1 className="mt-2 max-w-3xl font-serif text-4xl leading-[1.04] tracking-[-0.04em] sm:text-5xl">Tus clases</h1>
-            {!tieneAcceso && <p className="mt-3 max-w-xl text-sm leading-6 text-[#746A64]">{accesoPausado ? 'Tu acceso pago está pausado. Tus avances se conservan y las clases de muestra siguen disponibles.' : tieneFarmaciVisible ? 'Acá encontrás tus clases de Socias Farmasi y las clases de muestra.' : 'Empezá con las clases gratuitas y explorá el plan Socias.'}</p>}
+            <h1 className="mt-2 max-w-3xl font-serif text-4xl leading-[1.04] tracking-[-0.04em] sm:text-5xl">{espacioFarmasi ? 'Socias Farmasi' : 'Tus clases'}</h1>
+            {espacioFarmasi && <p className="mt-3 text-sm leading-6 text-[#746A64]">Tus clases Farmasi y sus materiales, dentro de cada clase.</p>}
+            {!espacioFarmasi && !tieneAcceso && <p className="mt-3 max-w-xl text-sm leading-6 text-[#746A64]">{accesoPausado ? 'Tu acceso pago está pausado. Tus avances se conservan y las clases de muestra siguen disponibles.' : tieneFarmaciVisible ? 'Acá encontrás tus clases de Socias Farmasi y las clases de muestra.' : 'Empezá con las clases gratuitas y explorá el plan Socias.'}</p>}
           </div>
           <div className="flex items-center gap-4 rounded-[22px] bg-[#294A38] p-5 text-white">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#F4CAD8] text-[#294A38]"><Icon name="book" className="h-6 w-6" /></span>
@@ -164,8 +167,8 @@ export default function ClassroomCliente({ clases, esAdmin, perfil, progresoInic
         </section>
 
         {!esAdmin && <nav aria-label="Contenido del programa" className="mt-6 flex flex-wrap gap-2">
-          <Link href="/classroom" aria-current="page" className="inline-flex min-h-11 items-center rounded-full border border-[#294A38] bg-[#294A38] px-5 py-3 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38]">Clases</Link>
-          <Link href="/clases/materiales" prefetch={false} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#E7DDD5] bg-[#FFFDFA] px-5 py-3 text-sm font-medium text-[#294A38] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38]">Materiales <Icon name="arrow" className="h-4 w-4" /></Link>
+          <Link href={espacioFarmasi ? RUTA_AULA_FARMASI : '/classroom'} aria-current="page" className="inline-flex min-h-11 items-center rounded-full border border-[#294A38] bg-[#294A38] px-5 py-3 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38]">Clases</Link>
+          {!espacioFarmasi && <Link href="/clases/materiales" prefetch={false} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#E7DDD5] bg-[#FFFDFA] px-5 py-3 text-sm font-medium text-[#294A38] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38]">Materiales <Icon name="arrow" className="h-4 w-4" /></Link>}
         </nav>}
         {avisoEnlace && <p role="status" className="mt-5 rounded-2xl border border-[#E7DDD5] bg-[#FAF7F3] p-4 text-sm leading-6 text-[#746A64]">{avisoEnlace}</p>}
         {errorProgreso && <p role="alert" className="mt-5 rounded-2xl border border-[#EC9BB6] bg-[#FAF7F3] p-4 text-sm">No pudimos cargar tu progreso. Recargá para retomarlo; las clases siguen disponibles.</p>}
@@ -176,7 +179,7 @@ export default function ClassroomCliente({ clases, esAdmin, perfil, progresoInic
         {clases.length>0 && <div className="mt-7 grid gap-3 sm:grid-cols-2"><label className="text-xs text-[#746A64]">Programa<select value={filtro} onChange={e=>setFiltro(e.target.value)} className="mt-2 min-h-11 w-full rounded-xl border border-[#D8CFC8] bg-[#FAF7F3] px-3 py-3 text-base text-[#211C19]"><option>Todos</option>{modulos.map(m=><option key={m}>{m}</option>)}</select></label><label className="text-xs text-[#746A64]">Buscar clase<input type="search" value={buscar} onChange={e=>setBuscar(e.target.value)} maxLength={120} placeholder="Nombre de la clase" className="mt-2 min-h-11 w-full rounded-xl border border-[#D8CFC8] bg-[#FAF7F3] px-3 py-3 text-base text-[#211C19]" /></label></div>}
         {!esAdmin && clases.length>0 && <section aria-label="Filtrar clases por avance" className="mt-5 rounded-2xl border border-[#E7DDD5] bg-[#FAF7F3] p-4">
           <p className="text-sm font-semibold">Tu avance</p>
-          <p id="ayuda-filtros-avance" className="mt-1 text-xs leading-5 text-[#746A64]">Los conteos incluyen solo las clases disponibles según tu programa y búsqueda. Todas también muestra contenido con acceso Socias.</p>
+          <p id="ayuda-filtros-avance" className="mt-1 text-xs leading-5 text-[#746A64]">Los conteos incluyen solo las clases disponibles según tu programa y búsqueda.{!espacioFarmasi && ' Todas también muestra contenido con acceso Socias.'}</p>
           <div role="group" aria-label="Estado de las clases" aria-describedby="ayuda-filtros-avance" className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {FILTROS_AVANCE_CLASES.map(item => <button key={item.id} type="button" aria-pressed={avanceAplicado === item.id} disabled={errorProgreso && item.id !== 'todas'} onClick={() => setAvance(item.id)} className={`flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border px-2 py-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#294A38] disabled:cursor-not-allowed disabled:text-[#746A64] ${avanceAplicado === item.id ? 'border-[#294A38] bg-[#294A38] text-white' : 'border-[#E7DDD5] bg-[#FFFDFA] text-[#294A38]'}`}>
               <span>{item.etiqueta}</span><span className="font-impact" aria-label={biblioteca.conteos[item.id] === null ? 'Progreso no disponible' : `${biblioteca.conteos[item.id]} ${biblioteca.conteos[item.id] === 1 ? 'clase disponible' : 'clases disponibles'}`}>{biblioteca.conteos[item.id] ?? '—'}</span>

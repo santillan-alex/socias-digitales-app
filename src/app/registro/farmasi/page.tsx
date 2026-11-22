@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+import { RUTA_AULA_FARMASI } from '@/lib/farmasi-registration'
 import { createClient } from '@/lib/supabase/server'
 import RegistroPage from '../page'
 import SolicitarFarmasi from './SolicitarFarmasi'
@@ -15,7 +17,7 @@ export default async function RegistroFarmasiPage() {
   if (error) return <SolicitarFarmasi inicial="error" />
   if (perfil?.rol === 'admin') return <SolicitarFarmasi inicial="admin" />
   if (perfil?.estado !== 'activa') return <SolicitarFarmasi inicial="inactiva" />
-  if (perfil.socias_farmaci_habilitada) return <SolicitarFarmasi inicial="habilitada" />
+  if (perfil.socias_farmaci_habilitada) redirect(RUTA_AULA_FARMASI)
 
   const solicitud = await supabase.from('solicitudes_socias_farmasi')
     .select('usuaria_id').eq('usuaria_id', user.id).maybeSingle()

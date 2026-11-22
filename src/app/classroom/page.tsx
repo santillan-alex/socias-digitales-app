@@ -5,12 +5,15 @@ import { leerCatalogoClases } from '@/lib/class-catalog'
 import { leerProgresoClases } from '@/lib/class-progress-server'
 import type { ProgresoClase } from '@/lib/class-progress'
 import ClassroomRecovery from './ClassroomRecovery'
+import { tieneAccesoFarmaci } from '@/lib/class-access'
+import { FLUJO_FARMASI, RUTA_FARMASI, soloClasesFarmasi } from '@/lib/farmasi-registration'
 import { esUuid } from '@/lib/class-management'
 
 export default async function ClassroomPage(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const searchParams = props?.searchParams
+  const consulta = await props?.searchParams
+  const espacioFarmasi = consulta?.espacio === FLUJO_FARMASI
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -22,8 +25,12 @@ export default async function ClassroomPage(props: {
     .single()
 
   if (perfilError || !perfil) return <ClassroomRecovery esAdmin={false} />
+  if (espacioFarmasi && !tieneAccesoFarmaci(perfil)) redirect(RUTA_FARMASI)
   let clasesParaVista: Awaited<ReturnType<typeof leerCatalogoClases>>
-  try { clasesParaVista = await leerCatalogoClases(perfil) }
+  try {
+    const catalogo = await leerCatalogoClases(perfil)
+    clasesParaVista = espacioFarmasi ? soloClasesFarmasi(catalogo) : catalogo
+  }
   catch {
     console.error('class_catalog_read_failed')
     return <ClassroomRecovery esAdmin={perfil.rol === 'admin'} />
@@ -35,7 +42,10 @@ export default async function ClassroomPage(props: {
     catch { errorProgreso = true }
   }
 
-  const consulta = await searchParams
+  if (espacioFarmasi) {
+    const idsFarmasi = new Set(clasesParaVista.map(clase => clase.id))
+    progreso = progreso.filter(avance => idsFarmasi.has(avance.clase_id))
+  }
   const solicitada = consulta?.clase
   const idSolicitado = typeof solicitada === 'string' && esUuid(solicitada) ? solicitada.toLowerCase() : null
   // El parámetro selecciona del catálogo autorizado: nunca consulta otra clase
@@ -47,6 +57,7 @@ export default async function ClassroomPage(props: {
 
   return (
     <ClassroomCliente
+      espacioFarmasi={espacioFarmasi}
       clases={clasesParaVista}
       esAdmin={perfil?.rol === 'admin'}
       perfil={perfil}

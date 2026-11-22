@@ -61,3 +61,43 @@ test('POST solicita con identidad propia confirmada y no permite parámetros que
   assert.equal(error.status, 503)
   assert.doesNotMatch(await error.text(), /privado/)
 })
+
+test('conserva la bienvenida obligatoria y permite volver solamente a un aula fija', () => {
+  assert.equal(farmasi.destinoTrasBienvenida('farmasi'), '/classroom?espacio=farmasi')
+  for (const otro of [undefined, ['farmasi'], '/admin', 'https://otro.example.invalid'])
+    assert.equal(farmasi.destinoTrasBienvenida(otro), '/inicio')
+  const proxy = src('src/proxy.ts')
+  assert.match(proxy, /necesitaBienvenida\(bienvenida,perfil\?\.rol\)/)
+  assert.match(proxy, /aulaFarmasi \? RUTA_BIENVENIDA_FARMASI : '\/bienvenida'/)
+})
+
+test('continuación Farmasi usa el POST existente, abre aula solo para aprobadas y reintenta en la pantalla especializada', async t => {
+  const helper = load('src/lib/farmasi-request-client.ts', { './farmasi-registration': farmasi })
+  const fetch = t.mock.method(globalThis, 'fetch', async () => Response.json({ estado: 'pendiente' }))
+  assert.equal(await helper.continuarAutenticacionFarmasi(), '/registro/farmasi')
+  const [path, options] = fetch.mock.calls[0].arguments
+  assert.equal(path, '/api/farmasi/solicitud')
+  assert.equal(options.method, 'POST')
+  assert.equal(options.credentials, 'same-origin')
+  assert.equal(options.body, undefined)
+  assert.ok(options.signal instanceof AbortSignal)
+  fetch.mock.mockImplementation(async () => Response.json({ estado: 'habilitada' }))
+  assert.equal(await helper.continuarAutenticacionFarmasi(), '/classroom?espacio=farmasi')
+  fetch.mock.mockImplementation(async () => Response.json({ error: 'Iniciá sesión' }, { status: 401 }))
+  assert.equal(await helper.continuarAutenticacionFarmasi(), '/registro/farmasi')
+  fetch.mock.mockImplementation(async () => { throw new Error('red interrumpida') })
+  assert.equal(await helper.continuarAutenticacionFarmasi(), '/registro/farmasi')
+  assert.match(src('src/lib/farmasi-request-client.ts'), /setTimeout\(\(\) => controller\.abort\(\), 6000\)/)
+})
+
+test('confirmación y login genérico no registran solicitudes; GET de inscripción solo lee', () => {
+  const confirm = src('src/app/confirmar/page.tsx')
+  const login = src('src/app/login/page.tsx')
+  const page = src('src/app/registro/farmasi/page.tsx')
+  assert.match(confirm, /flujo === FLUJO_FARMASI \? await continuarAutenticacionFarmasi\(\) : destinoConfirmacion\(flujo\)/)
+  assert.ok(confirm.indexOf('if (error)') < confirm.indexOf('await continuarAutenticacionFarmasi()'))
+  assert.match(login, /if \(esFarmasi\) \{\s*window\.location\.replace\(await continuarAutenticacionFarmasi\(\)\)/)
+  assert.ok(login.indexOf('signInWithPassword') < login.indexOf('if (esFarmasi)'))
+  assert.doesNotMatch(page, /registrarSolicitudFarmasi|INSERT|\'POST\'/)
+  assert.match(page, /if \(perfil\.socias_farmaci_habilitada\) redirect\(RUTA_AULA_FARMASI\)/)
+})

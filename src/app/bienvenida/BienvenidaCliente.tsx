@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { OCUPACIONES, INGRESOS, PASOS_PERFIL, pasosVisibles, normalizarRespuestaBienvenida, normalizarNombre, type RespuestasPerfil, type ValorPerfil } from '@/lib/perfil-preguntas'
 import ArrowIcon from '@/components/ArrowIcon'
 
-export default function BienvenidaCliente({userId,datosIniciales,pasoInicial}: {userId:string;datosIniciales:RespuestasPerfil;pasoInicial:number}) {
+export default function BienvenidaCliente({userId,datosIniciales,pasoInicial,destino = '/inicio'}: {userId:string;datosIniciales:RespuestasPerfil;pasoInicial:number;destino?:string}) {
   const [datos,setDatos] = useState({...datosIniciales,nombre:normalizarNombre(String(datosIniciales.nombre ?? ''))})
   const [paso,setPaso] = useState(Math.max(0,Math.min(pasoInicial,PASOS_PERFIL.length-1)))
   const [guardando,setGuardando] = useState(false)
@@ -55,7 +55,7 @@ export default function BienvenidaCliente({userId,datosIniciales,pasoInicial}: {
       const res=await fetch('/api/cuenta/bienvenida',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({campo,valor:respuesta,eleccion_explicita:eleccionExplicita}),keepalive:true,signal:controlador.signal})
       const body=await res.json()
       if(!res.ok) throw new Error(body.error || 'No pudimos guardar.')
-      if(ultimo && body.completado) {window.location.assign('/inicio');return}
+      if(ultimo && body.completado) {window.location.assign(destino);return}
       if(ultimo) throw new Error('Todavía faltan respuestas por guardar. Volvé a intentar.')
       if(body.paso!==siguiente) setPaso(body.paso)
     } catch(causa) {

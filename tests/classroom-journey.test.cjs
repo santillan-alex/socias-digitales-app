@@ -10,7 +10,7 @@ const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8')
 function load(file, deps = {}) {
   const m = { exports: {} }
   const code = ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText
-  new Function('require', 'module', 'exports', code)(n => n in deps ? deps[n] : require(n), m, m.exports)
+  new Function('require', 'module', 'exports', code)(n => n in deps ? deps[n] : n === '@/lib/farmasi-registration' ? load('src/lib/farmasi-registration.ts') : require(n), m, m.exports)
   return m.exports
 }
 const link = { default: props => React.createElement('a', props) }
@@ -38,6 +38,7 @@ test('error de catálogo es recuperación explícita; una biblioteca realmente v
     const recovery = () => React.createElement('p', null, 'Recuperar biblioteca')
     const catalogo = props => React.createElement('p', null, 'Clases:' + props.clases.length)
     const page = load('src/app/classroom/page.tsx', {
+      '@/lib/class-access': load('src/lib/class-access.ts'),
       '@/lib/supabase/server': { createClient: async () => client.db },
       'next/navigation': { redirect },
       './ClassroomCliente': { default: catalogo },

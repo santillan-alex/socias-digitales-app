@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { obtenerRutaInicio } from '@/lib/access'
 import { necesitaBienvenida } from '@/lib/perfil-preguntas'
+import { FLUJO_FARMASI, RUTA_BIENVENIDA_FARMASI, RUTA_FARMASI } from '@/lib/farmasi-registration'
 import { puedeVerClasesPrivadas, type PerfilClases } from '@/lib/class-access'
 
 export async function proxy(request: NextRequest) {
@@ -64,13 +65,19 @@ export async function proxy(request: NextRequest) {
     return redirectConCookies('/crear-contrasena')
   }
 
+  if (userId && pathname === '/login' && request.nextUrl.searchParams.get('next') === RUTA_FARMASI)
+    return redirectConCookies(RUTA_FARMASI)
+
   // Toda alumna completa la encuesta antes del panel; las exenciones antiguas
   // no permiten saltearla. Completarla no habilita clases ni administración.
   if (userId && perfil?.rol !== 'admin' && pathname !== '/bienvenida'
     && (rutasProtegidas.some(r => pathname.startsWith(r)) || ['/login','/registro','/registro/desafio','/registro/socias'].includes(pathname))) {
     const { data: bienvenida, error } = await supabase.from('bienvenida_perfiles').select('exenta,completado_at').eq('usuaria_id',userId).maybeSingle()
     if (error) return new NextResponse('No pudimos cargar tu perfil. Intentá nuevamente.', { status:503 })
-    if (necesitaBienvenida(bienvenida,perfil?.rol)) return redirectConCookies('/bienvenida')
+    if (necesitaBienvenida(bienvenida,perfil?.rol)) {
+      const aulaFarmasi = pathname === '/classroom' && request.nextUrl.searchParams.get('espacio') === FLUJO_FARMASI
+      return redirectConCookies(aulaFarmasi ? RUTA_BIENVENIDA_FARMASI : '/bienvenida')
+    }
   }
 
   // Si ya está logueada, llevarla al espacio asignado.
