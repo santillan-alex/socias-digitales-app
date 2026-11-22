@@ -15,7 +15,8 @@ function load(file, deps = {}) {
 const management = load('src/lib/class-management.ts')
 const nueva = { titulo: 'Abrí tu cuenta en Hotmart', modulo: 'Desafío Socias en vivo', descripcion: '', orden: 1, vimeo_url: '', tieneVideo: false, activo: false, acceso_gratuito: false }
 function editor(ficha, extra = {}, busy = false, materialStates = []) {
-  const updates = [], values = ['clases', 'Todos', ficha, busy, false, '', '', '', [], ...materialStates]
+  // null = no newer, server-confirmed Farmasi group list; material state follows it.
+  const updates = [], values = ['clases', 'Todos', ficha, busy, false, '', '', '', [], null, ...materialStates]
   let index = 0
   const Component = load('src/app/admin/classroom/ClassroomAdmin.tsx', {
     react: { ...React, useEffect: () => {}, useRef: () => ({ current: null }), useState: initial => { const n = index++; return [n < values.length ? values[n] : initial, value => updates.push([n, value])] } },
@@ -28,6 +29,7 @@ function editor(ficha, extra = {}, busy = false, materialStates = []) {
     './ClassProgressAdmin': { default: () => null },
     '@/components/ClassVideoThumbnail': { default: () => null },
     './ClassMaterialsEditor': { default: props => React.createElement('section', { 'data-materials-for': props.claseId }, 'Materiales de la clase') },
+    './FarmasiSubmodulosAdmin': { default: () => null },
   }).default
   const tree = Component({ clases: [], alumnas: [], ...extra })
   function find(predicate, node = tree) {
@@ -144,7 +146,7 @@ test('cerrar y Escape conservan materiales pendientes salvo confirmación explí
     allow = true
     view.find(n => n.props?.['aria-label'] === 'Cerrar editor').props.onClick()
     assert.deepEqual(view.updates.at(-1), [2, null])
-    assert.ok(view.updates.some(([n, v]) => n === 10 && v === false))
+    assert.deepEqual(view.updates.slice(-2), [[11, false], [2, null]])
     const clean = editor({ ...nueva, id: 'fixture' })
     clean.find(n => n.props?.['aria-label'] === 'Cerrar editor').props.onClick()
     assert.equal(confirms, 3)

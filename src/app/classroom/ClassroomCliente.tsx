@@ -9,6 +9,7 @@ import { puedeVerClasesPrivadas } from '@/lib/class-access'
 import { FILTROS_AVANCE_CLASES, filtrarBibliotecaClases, type FiltroAvanceClase } from '@/lib/class-library-filters'
 import Link from 'next/link'
 import { RUTA_AULA_FARMASI } from '@/lib/farmasi-registration'
+import type { GrupoClasesFarmasi } from '@/lib/farmasi-class-groups'
 
 export interface Clase {
   id: string
@@ -41,6 +42,7 @@ interface Props {
   esAdmin: boolean
   perfil: Perfil | null
   espacioFarmasi?: boolean
+  submodulosFarmasi?: GrupoClasesFarmasi[]
   progresoInicial?: ProgresoClase[]
   errorProgreso?: boolean
   claseInicialId?: string | null
@@ -55,7 +57,7 @@ function Icon({ name, className = 'h-5 w-5' }: { name: 'play' | 'arrow' | 'book'
   return <svg {...props}><path d="M5 4.5h10.5A3.5 3.5 0 0 1 19 8v12H8.5A3.5 3.5 0 0 0 5 23V4.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M5 4.5v15A3.5 3.5 0 0 1 8.5 16H19" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>
 }
 
-export default function ClassroomCliente({ clases, esAdmin, perfil, espacioFarmasi = false, progresoInicial = [], errorProgreso = false, claseInicialId = null, avisoClaseInicial = null }: Props) {
+export default function ClassroomCliente({ clases, esAdmin, perfil, espacioFarmasi = false, submodulosFarmasi, progresoInicial = [], errorProgreso = false, claseInicialId = null, avisoClaseInicial = null }: Props) {
   const [claseAbierta, setClaseAbierta] = useState<Clase | null>(null)
   const [videoSeguroUrl, setVideoSeguroUrl] = useState<string | null>(null)
   const [cargandoVideo, setCargandoVideo] = useState<string | null>(null)
@@ -76,8 +78,13 @@ export default function ClassroomCliente({ clases, esAdmin, perfil, espacioFarma
   const modulos = [...new Set(clases.map(clase => ubicacionClase(clase.modulo).programa))].sort((a,b) => a === 'Bienvenida' ? -1 : b === 'Bienvenida' ? 1 : a.localeCompare(b, 'es'))
   const continuar = esAdmin || errorProgreso ? null : claseParaContinuar(clases,progreso)
   const programaInicial = continuar ? ubicacionClase(continuar.clase.modulo).programa : !esAdmin && !errorProgreso && progreso.length === 0 ? (espacioFarmasi ? modulos[0] ?? null : 'Bienvenida') : null
+  const gruposVisibles = espacioFarmasi && submodulosFarmasi?.length ? submodulosFarmasi : undefined
+  const grupoPorClase = new Map(gruposVisibles?.flatMap(grupo => grupo.claseIds.map(id => [id, grupo.id] as const)))
   const disponibles = ordenarClases(clases.filter(c => (c.puede_ver ?? tieneAcceso) && (c.tiene_video_privado || c.vimeo_url)))
-  const siguientes = claseAbierta ? disponibles.filter(c=>ubicacionClase(c.modulo).programa===ubicacionClase(claseAbierta.modulo).programa && ubicacionClase(c.modulo).seccion===ubicacionClase(claseAbierta.modulo).seccion) : []
+  const grupoAbierto = claseAbierta ? grupoPorClase.get(claseAbierta.id) : undefined
+  const siguientes = claseAbierta ? disponibles.filter(c => grupoAbierto
+    ? grupoPorClase.get(c.id) === grupoAbierto
+    : !grupoPorClase.has(c.id) && ubicacionClase(c.modulo).programa === ubicacionClase(claseAbierta.modulo).programa && ubicacionClase(c.modulo).seccion === ubicacionClase(claseAbierta.modulo).seccion) : []
   const siguiente = claseAbierta ? siguientes[siguientes.findIndex(c=>c.id===claseAbierta.id)+1] : undefined
   const avanceAplicado = esAdmin || errorProgreso ? 'todas' : avance
   const biblioteca = filtrarBibliotecaClases(clases, progreso, { programa: filtro, buscar, avance: avanceAplicado, tieneAcceso, errorProgreso })
@@ -196,7 +203,7 @@ export default function ClassroomCliente({ clases, esAdmin, perfil, espacioFarma
           </section>
         ) : (
           <div className="mt-7 space-y-4">
-            {modulos.filter(m=>filtro==='Todos'||filtro===m).map((modulo) => {
+            {gruposVisibles ? <ClassroomProgram programa="Contenido de Farmasi" clases={clases} gruposFarmasi={gruposVisibles} progreso={progreso} buscar={buscar} esAdmin={esAdmin} tieneAcceso={tieneAcceso} cargando={Boolean(cargandoVideo)} abierto idsVisibles={biblioteca.idsVisibles} filtrandoAvance={avanceAplicado !== 'todas'} errorProgreso={errorProgreso} onAbrir={clase => void abrirClase(clase)} /> : modulos.filter(m=>filtro==='Todos'||filtro===m).map((modulo) => {
               const clasesDelModulo = clases.filter(clase => ubicacionClase(clase.modulo).programa === modulo)
               const visibles=clasesDelModulo.filter(c=>idsVisibles.has(c.id))
               if(!visibles.length)return null

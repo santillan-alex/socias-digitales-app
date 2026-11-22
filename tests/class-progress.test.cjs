@@ -97,7 +97,7 @@ test('migración RLS de lectura propia, sin escritura ni RPC público y sin borr
 })
 test('seguimiento excluye prueba y admins, y no pagina ni inventa cifras históricas',()=>{
   const page=read('src/app/admin/classroom/page.tsx'),sql=read('supabase/migrations/20261014162354_classroom_learning_progress.sql'),ui=read('src/app/admin/classroom/ClassProgressAdmin.tsx')
-  assert.ok(page.includes('p_excluir:[...CUENTAS_PRUEBA_IDS]'));assert.ok(sql.includes("p.rol<>'admin'"));assert.ok(sql.includes('not(pc.alumna_id=any(p_excluir))'))
+  assert.match(page,/\.rpc\(\s*['"]estadisticas_progreso_clases['"]\s*,\s*\{\s*p_excluir\s*:\s*\[\s*\.\.\.\s*CUENTAS_PRUEBA_IDS\s*\]\s*,?\s*\}\s*\)/);assert.ok(sql.includes("p.rol<>'admin'"));assert.ok(sql.includes('not(pc.alumna_id=any(p_excluir))'))
   assert.ok(ui.includes('desde que se habilitó el seguimiento'));assert.ok(ui.includes('no una certificación'))
 })
 test('reproductor accesible, mobile, reintento y guardado acotado, sin dependencias nuevas',()=>{

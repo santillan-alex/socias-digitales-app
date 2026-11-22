@@ -9,6 +9,8 @@ import VideoUpload from './VideoUpload'
 import ClassProgressAdmin, {type EstadisticaClase} from './ClassProgressAdmin'
 import ClassVideoThumbnail from '@/components/ClassVideoThumbnail'
 import ClassMaterialsEditor from './ClassMaterialsEditor'
+import FarmasiSubmodulosAdmin from './FarmasiSubmodulosAdmin'
+import type { SubmoduloFarmasi } from '@/lib/farmasi-submodules'
 
 interface Clase {
   id: string
@@ -22,6 +24,7 @@ interface Clase {
   activo: boolean
   acceso_gratuito: boolean
   solo_farmaci: boolean
+  farmasi_submodulo_id?: string | null
 }
 interface Alumna {
   id: string
@@ -38,6 +41,8 @@ type Ficha = {
   activo: boolean
   acceso_gratuito: boolean
   solo_farmaci: boolean
+  farmasi_submodulo_id?: string | null
+  submoduloEditado?: boolean
   tieneVideo: boolean
 }
 const vacia: Ficha = {
@@ -59,12 +64,16 @@ export default function ClassroomAdmin({
   errorCarga = false,
   estadisticas = [],
   errorProgreso = false,
+  submodulos = [],
+  errorSubmodulos = false,
 }: {
   clases: Clase[]
   alumnas: Alumna[]
   errorCarga?: boolean
   estadisticas?: EstadisticaClase[]
   errorProgreso?: boolean
+  submodulos?: SubmoduloFarmasi[]
+  errorSubmodulos?: boolean
 }) {
   const router = useRouter(),
     supabase = createClient()
@@ -77,6 +86,9 @@ export default function ClassroomAdmin({
     [modalError, setModalError] = useState(''),
     [programaNuevo, setProgramaNuevo] = useState(''),
     [programasLocales, setProgramasLocales] = useState<string[]>([])
+  const [submodulosConfirmados, setSubmodulosConfirmados] = useState<SubmoduloFarmasi[] | null>(null)
+  const submodulosVisibles = submodulosConfirmados ?? submodulos
+  const submodulosPorId = new Map(submodulosVisibles.map(submodulo => [submodulo.id, submodulo.nombre]))
   const [materialOcupado, setMaterialOcupado] = useState(false)
   const [materialPendiente, setMaterialPendiente] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -129,9 +141,10 @@ export default function ClassroomAdmin({
       // Una ficha sin video siempre se guarda como borrador, incluso si
       // conservó una selección de publicación de un estado anterior.
       const datos = { ...ficha, activo: ficha.activo && puedePublicarClase(ficha) }
-      const data = await api(datos)
+      const { submoduloEditado, farmasi_submodulo_id, ...clase } = datos
+      const data = await api(datos.solo_farmaci && submoduloEditado ? { ...clase, farmasi_submodulo_id: farmasi_submodulo_id ?? null } : clase)
       continuarAlVideo.current = !ficha.id && !puedePublicarClase(ficha)
-      setFicha({ ...datos, id: data.id })
+      setFicha({ ...datos, id: data.id, farmasi_submodulo_id: datos.solo_farmaci ? farmasi_submodulo_id : null, submoduloEditado: false })
       setAviso(
         datos.activo
           ? 'Clase publicada.'
@@ -155,7 +168,9 @@ export default function ClassroomAdmin({
     )
       return
     try {
-      await api({ ...c, activo: !c.activo })
+      const clase = { ...c }
+      delete clase.farmasi_submodulo_id
+      await api({ ...clase, activo: !c.activo })
       setAviso(
         c.activo
           ? 'Clase oculta; podés volver a publicarla.'
@@ -194,7 +209,7 @@ export default function ClassroomAdmin({
       setGuardando(false)
     }
   }
-  function abrir(c?: Clase, modulo?: string) {
+  function abrir(c?: Clase, modulo?: string, farmasi = false) {
     setModalError('')
     setAviso('')
     setFicha(
@@ -208,6 +223,7 @@ export default function ClassroomAdmin({
           }
         : {
             ...vacia,
+            solo_farmaci: farmasi,
             modulo: modulo ?? vacia.modulo,
             orden: clases.filter((c) => {
               const actual = ubicacionClase(c.modulo), destino = ubicacionClase(modulo ?? vacia.modulo)
@@ -294,6 +310,10 @@ export default function ClassroomAdmin({
                 </div>
               ))}
             </div>
+            <FarmasiSubmodulosAdmin submodulos={submodulosVisibles} errorCarga={errorSubmodulos}
+              alActualizar={setSubmodulosConfirmados}
+              alReintentar={() => { setSubmodulosConfirmados(null); router.refresh() }}
+              alNuevaClase={() => abrir(undefined, 'Socias Farmasi', true)} />
             <div className="my-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <label className="block min-w-0 text-sm">
                 Programa
@@ -398,6 +418,9 @@ export default function ClassroomAdmin({
                                       ? 'Acceso gratuito'
                                       : 'Socias / Desafío habilitado'}
                                   </p>
+                                  {c.solo_farmaci && <p className="mt-1 break-words [overflow-wrap:anywhere] text-xs text-[#655B56]">
+                                    Submódulo: {c.farmasi_submodulo_id ? submodulosPorId.get(c.farmasi_submodulo_id) ?? 'No disponible' : 'Sin submódulo'}
+                                  </p>}
                                   <p className="mt-1 text-xs text-[#294A38]">
                                     {c.video_key
                                       ? 'Video privado cargado'
@@ -613,6 +636,17 @@ export default function ClassroomAdmin({
                 Solo Socias Farmasi
               </label>
               <p id="farmaci-clase-ayuda" className="text-xs leading-5 text-[#746A64]">Solo la ven alumnas activas con este acceso. Requiere un MP4 privado. Si cambiás el acceso, revisá la publicación antes de guardar.</p>
+              {ficha.solo_farmaci && <label className="block text-sm">
+                Submódulo Farmasi
+                <select className={inputStyle} value={ficha.farmasi_submodulo_id ?? ''} disabled={errorSubmodulos}
+                  onChange={e => setFicha({ ...ficha, farmasi_submodulo_id: e.target.value || null, submoduloEditado: true })}>
+                  <option value="">Sin submódulo</option>
+                  {ficha.farmasi_submodulo_id && !submodulosPorId.has(ficha.farmasi_submodulo_id) &&
+                    <option value={ficha.farmasi_submodulo_id}>Submódulo actual no disponible</option>}
+                  {submodulosVisibles.map(submodulo => <option key={submodulo.id} value={submodulo.id}>{submodulo.nombre}</option>)}
+                </select>
+                {errorSubmodulos && <span className="mt-2 block text-xs text-[#B01B30]">No pudimos cargar la lista. La asociación actual se conserva al guardar.</span>}
+              </label>}
               <label className="flex min-h-11 items-center gap-3 text-sm">
                 <input
                   type="checkbox"

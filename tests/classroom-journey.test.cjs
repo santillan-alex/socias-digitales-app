@@ -43,6 +43,7 @@ test('error de catálogo es recuperación explícita; una biblioteca realmente v
       'next/navigation': { redirect },
       './ClassroomCliente': { default: catalogo },
       './ClassroomRecovery': { default: recovery },
+      '@/lib/farmasi-class-groups-server': { leerGruposFarmasi: async () => [] },
       '@/lib/class-catalog': { leerCatalogoClases: async () => { if (fallo) throw new Error('fixture'); return [] } },
       '@/lib/class-progress-server': { leerProgresoClases: async () => { progresoConsultado++; return [] } },
       '@/lib/class-management': load('src/lib/class-management.ts'),

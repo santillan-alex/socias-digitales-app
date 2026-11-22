@@ -22,3 +22,11 @@ Para una clase, ir a **Clases → Editar / subir video**, marcar **Solo Socias F
 - Alumna nueva: crea su cuenta gratuita y, al confirmar el email, su solicitud se registra automáticamente. Alumna existente: al ingresar desde ese mismo enlace se registra la solicitud. Si ya tenía sesión abierta sin una solicitud, puede confirmar con **Solicitar acceso Farmasi**. Mientras espera verá el estado, y una vez habilitada el mismo enlace abre solo sus clases Farmasi. La solicitud no cambia planes, roles ni permisos. Las cuentas inactivas requieren revisión.
 - Flor: **Invitaciones → Solicitudes de Socias Farmasi → Revisar acceso**. Comprobá el correo contra tu lista y pulsá **Habilitar acceso Farmasi**. El permiso original se activa y la solicitud deja de aparecer. El acceso se puede quitar desde la ficha de la alumna. El enlace reenviado solo permite solicitar; nunca autoriza a ver contenido.
 - Migración y QA: desplegar la migración `20261122173051_socias_farmasi_requests.sql` antes que esta versión. Usar cuentas ficticias, confirmar flujo de verificación y una solicitud duplicada, comprobar que no cambian otros accesos y que la lista nunca está disponible a alumnas. Para volver a la versión anterior compatible con el permiso pero sin solicitudes, conservar tabla e historial de accesos; dejar de compartir el link mientras esa versión esté activa.
+
+
+## Submódulos para los videos
+
+- En **Clases → Submódulos de Socias Farmasi**, escribí el nombre y elegí **Crear submódulo**. Usá los botones de orden para mover el bloque. El aula solo muestra bloques con clases publicadas que la alumna puede ver.
+- En una clase nueva o existente con **Solo Socias Farmasi**, elegí un **Submódulo** o dejá **Sin submódulo** y guardá. No hace falta volver a cargar el video al moverlo. Ordená los videos dentro del bloque desde **Posición dentro de la sección**.
+- Las clases sin asignar conservan su sección anterior, su video, su publicación y su progreso. La etiqueta de un bloque no concede acceso. El resto de los programas y el enlace de inscripción siguen igual.
+- Aplicar la migración aditiva `20261122184545_farmasi_submodules.sql` antes de desplegar esta versión. Para volver a la versión inmediatamente anterior que ya conoce la audiencia Farmasi, conservar esta migración y sus asociaciones; esa versión sigue mostrando los videos disponibles sin agruparlos.

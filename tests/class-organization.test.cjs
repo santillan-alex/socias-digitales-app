@@ -31,7 +31,7 @@ test('secciones conservan IDs/progreso y tienen orden estable independiente', ()
   assert.deepEqual(classes.map(c => c.id), ['b', 'a'])
   assert.equal(progress.resumenPrograma(classes.map(c => c.id), [{ clase_id: 'a', completada: true }]).porcentaje, 50)
   const ui = read('src/app/classroom/ClassroomCliente.tsx')
-  assert.ok(ui.includes('ubicacionClase(c.modulo).seccion===ubicacionClase(claseAbierta.modulo).seccion'))
+  assert.match(ui, /ubicacionClase\(c.modulo\).seccion\s*===\s*ubicacionClase\(claseAbierta.modulo\).seccion/)
 })
 test('programa plegable sin portada, con clases y apoyo dentro; búsqueda mantiene las secciones', () => {
   const Component = load('src/app/classroom/ClassroomProgram.tsx', {

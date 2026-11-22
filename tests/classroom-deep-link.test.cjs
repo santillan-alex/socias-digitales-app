@@ -26,7 +26,7 @@ const base = { id: ID, titulo: 'Clase ficticia', descripcion: null, modulo: 'Des
 const catalogo = [base, { ...base, id: NEXT, titulo: 'Siguiente clase', orden: 1 }, { ...base, id: SAMPLE, titulo: 'Muestra', modulo: 'Bienvenida', acceso_gratuito: true }, { ...base, id: HIDDEN, activo: false }, { ...base, id: EMPTY, tiene_video_privado: false }]
 const perfil = { rol: 'alumna', tipo_usuario: 'socia', estado: 'activa' }
 const avance = { clase_id: ID, posicion_seg: 87, duracion_seg: 200, completada: false, actualizado_en: '2026-10-23T12:00:00Z' }
-function servidor({ user = { id: 'cuenta-ficticia' }, profile = perfil, falloPerfil = false } = {}) {
+function servidor({ user = { id: 'cuenta-ficticia' }, profile = perfil, falloPerfil = false, leerGrupos = async () => [] } = {}) {
   const calls = { auth: 0, tablas: [], catalogo: 0, progreso: 0 }
   const Recovery = () => null
   const Classroom = () => null
@@ -36,6 +36,7 @@ function servidor({ user = { id: 'cuenta-ficticia' }, profile = perfil, falloPer
     'next/navigation': { redirect: href => { throw new Error('redirect:' + href) } },
     './ClassroomCliente': { default: Classroom }, './ClassroomRecovery': { default: Recovery },
     '@/lib/class-management': management,
+    '@/lib/farmasi-class-groups-server': { leerGruposFarmasi: leerGrupos },
     '@/lib/class-catalog': { leerCatalogoClases: async p => { calls.catalogo++; return catalogo.map(clase => ({ ...clase, puede_ver: access.puedeVerClase(p, clase) })) } },
     '@/lib/class-progress-server': { leerProgresoClases: async () => { calls.progreso++; return [avance] } },
   }).default
@@ -209,17 +210,26 @@ test('navegar a otro enlace abre su clase una sola vez; respuesta tras desmontar
 
 test('aula Farmasi requiere permiso vigente y no entrega catálogo o progreso de otra audiencia', async () => {
   const q = { searchParams: Promise.resolve({ espacio: 'farmasi', clase: SAMPLE }) }
+  const consultas = []
+  const grupo = { id: 'productos', nombre: 'Productos', orden: 0, claseIds: [ID] }
+  const leerGrupos = async clases => { consultas.push(clases.map(c => c.id)); return [grupo] }
   for (const profile of [perfil, { ...perfil, estado: 'pausada', socias_farmaci_habilitada: true }]) {
-    const view = servidor({ profile })
+    const view = servidor({ profile, leerGrupos })
     await assert.rejects(() => view.page(q), /redirect:\/registro\/farmasi/)
     assert.equal(view.calls.catalogo, 0)
     assert.equal(view.calls.progreso, 0)
   }
+  assert.deepEqual(consultas, [])
   const original = catalogo[0]
   catalogo[0] = { ...original, solo_farmaci: true }
   try {
-    const view = servidor({ profile: { rol: 'alumna', estado: 'activa', tipo_usuario: 'gratuito', socias_farmaci_habilitada: true } })
+    const view = servidor({ profile: { rol: 'alumna', estado: 'activa', tipo_usuario: 'gratuito', socias_farmaci_habilitada: true }, leerGrupos })
+    const ordinaria = await view.page({ searchParams: Promise.resolve({}) })
+    assert.equal(ordinaria.props.submodulosFarmasi, undefined)
+    assert.deepEqual(consultas, [])
     const out = await view.page(q)
+    assert.deepEqual(consultas, [[ID]])
+    assert.deepEqual(out.props.submodulosFarmasi, [grupo])
     assert.equal(out.props.espacioFarmasi, true)
     assert.deepEqual(out.props.clases.map(clase => clase.id), [ID])
     assert.deepEqual(out.props.progresoInicial, [avance])

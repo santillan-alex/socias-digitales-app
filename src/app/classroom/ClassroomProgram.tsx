@@ -4,6 +4,7 @@ import { ordenarClases, SECCIONES_CLASE, ubicacionClase } from '@/lib/class-mana
 import { resumenPrograma, tiempoClase, type ProgresoClase } from '@/lib/class-progress'
 import ClassVideoThumbnail from '@/components/ClassVideoThumbnail'
 import { coincideBusquedaClase } from '@/lib/class-library-filters'
+import type { GrupoClasesFarmasi } from '@/lib/farmasi-class-groups'
 
 function CollapseIndicator({ seccion = false }: { seccion?: boolean }) {
   return <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E7DDD5] bg-[#FFFDFA] text-[#294A38]">
@@ -11,9 +12,9 @@ function CollapseIndicator({ seccion = false }: { seccion?: boolean }) {
   </span>
 }
 
-export default function ClassroomProgram({ programa, clases, progreso, buscar, esAdmin, tieneAcceso, cargando, abierto, onAbrir, idsVisibles, filtrandoAvance = false, errorProgreso = false }: {
+export default function ClassroomProgram({ programa, clases, progreso, buscar, esAdmin, tieneAcceso, cargando, abierto, onAbrir, idsVisibles, filtrandoAvance = false, errorProgreso = false, gruposFarmasi }: {
   programa: string; clases: Clase[]; progreso: ProgresoClase[]; buscar: string; esAdmin: boolean; tieneAcceso: boolean; cargando: boolean; abierto: boolean; onAbrir: (clase: Clase) => void
-  idsVisibles?: string[]; filtrandoAvance?: boolean; errorProgreso?: boolean
+  idsVisibles?: string[]; filtrandoAvance?: boolean; errorProgreso?: boolean; gruposFarmasi?: GrupoClasesFarmasi[]
 }) {
   const ordenadas = ordenarClases(clases)
   const ids = idsVisibles ? new Set(idsVisibles) : null
@@ -21,9 +22,10 @@ export default function ClassroomProgram({ programa, clases, progreso, buscar, e
   if (!visibles.length) return null
   const abrirCoincidencias = Boolean(buscar.trim()) || filtrandoAvance
   const resumen = resumenPrograma(clases.filter(c => (c.puede_ver ?? tieneAcceso) && (c.tiene_video_privado || c.vimeo_url)).map(c => c.id), progreso)
-  function tarjetas(videos: Clase[]) {
+  const idsAsignados = gruposFarmasi ? new Set(gruposFarmasi.flatMap(grupo => grupo.claseIds)) : null
+  function tarjetas(videos: Clase[], grupoCompleto?: Clase[]) {
     return <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{videos.map(clase => {
-      const orden = ordenadas.filter(c => ubicacionClase(c.modulo).seccion === ubicacionClase(clase.modulo).seccion).findIndex(c => c.id === clase.id) + 1
+      const orden = (grupoCompleto ?? ordenadas.filter(c => !idsAsignados?.has(c.id) && ubicacionClase(c.modulo).seccion === ubicacionClase(clase.modulo).seccion)).findIndex(c => c.id === clase.id) + 1
       const avance = progreso.find(p => p.clase_id === clase.id)
       const disponible = (clase.puede_ver ?? tieneAcceso) && Boolean(clase.vimeo_url || clase.tiene_video_privado)
       return <article key={clase.id} className="min-w-0 rounded-2xl border border-[#E7DDD5] bg-[#FFFDFA] p-3">
@@ -42,19 +44,30 @@ export default function ClassroomProgram({ programa, clases, progreso, buscar, e
       </article>
     })}</div>
   }
+  function seccionVideos(id: string, nombre: string, videos: Clase[], abierta: boolean, grupoCompleto?: Clase[]) {
+    return <details key={id} open={abierta} className="group/seccion rounded-2xl border border-[#E7DDD5] bg-[#F4EFEA] p-3 sm:p-4">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 rounded-xl text-sm font-semibold text-[#294A38] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38] [&::-webkit-details-marker]:hidden"><span className="min-w-0 break-words [overflow-wrap:anywhere]">{nombre}<span className="ml-2 font-normal text-[#746A64]">· {videos.length}</span></span><CollapseIndicator seccion /></summary>
+      <div className="mt-3">{videos.length ? tarjetas(videos, grupoCompleto) : <p className="py-3 text-sm text-[#746A64]">Todavía no hay contenido publicado en esta sección.</p>}</div>
+    </details>
+  }
   return <details open={abierto || abrirCoincidencias} className="group/programa rounded-[24px] border border-[#E7DDD5] bg-[#FAF7F3] p-4 sm:p-6">
     <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38] [&::-webkit-details-marker]:hidden">
       <div className="min-w-0"><h2 className="break-words font-impact text-lg font-semibold sm:text-xl">{programa}</h2><p className="mt-1 text-xs text-[#746A64]">{clases.length} {clases.length === 1 ? 'clase' : 'clases'}{!esAdmin && resumen.total > 0 ? errorProgreso ? ' · Progreso no disponible' : ` · ${resumen.completas} de ${resumen.total} completadas` : ''}</p></div>
       <CollapseIndicator />
     </summary>
     {!esAdmin && !errorProgreso && resumen.total > 0 && <div role="progressbar" aria-label={`Progreso en ${programa}`} aria-valuenow={resumen.porcentaje} aria-valuemin={0} aria-valuemax={100} className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#E7DDD5]"><div className="h-full rounded-full bg-[#294A38]" style={{ width: `${resumen.porcentaje}%` }} /></div>}
-    <div className="mt-5 space-y-4">{programa === 'Bienvenida' ? tarjetas(visibles) : SECCIONES_CLASE.map(seccion => {
-      const videos = visibles.filter(c => ubicacionClase(c.modulo).seccion === seccion)
-      if (abrirCoincidencias && !videos.length) return null
-      return <details key={seccion} open={seccion === 'Clases' || abrirCoincidencias} className="group/seccion rounded-2xl border border-[#E7DDD5] bg-[#F4EFEA] p-3 sm:p-4">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 rounded-xl text-sm font-semibold text-[#294A38] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38] [&::-webkit-details-marker]:hidden"><span className="min-w-0">{seccion}<span className="ml-2 font-normal text-[#746A64]">· {videos.length}</span></span><CollapseIndicator seccion /></summary>
-        <div className="mt-3">{videos.length ? tarjetas(videos) : <p className="py-3 text-sm text-[#746A64]">Todavía no hay contenido publicado en esta sección.</p>}</div>
-      </details>
-    })}</div>
+    <div className="mt-5 space-y-4">
+      {gruposFarmasi?.map(grupo => {
+        const idsGrupo = new Set(grupo.claseIds)
+        const videos = visibles.filter(c => idsGrupo.has(c.id))
+        if (!videos.length) return null
+        return seccionVideos(grupo.id, grupo.nombre, videos, true, ordenadas.filter(c => idsGrupo.has(c.id)))
+      })}
+      {programa === 'Bienvenida' && !gruposFarmasi ? tarjetas(visibles) : SECCIONES_CLASE.map(seccion => {
+        const videos = visibles.filter(c => !idsAsignados?.has(c.id) && ubicacionClase(c.modulo).seccion === seccion)
+        if ((abrirCoincidencias || gruposFarmasi) && !videos.length) return null
+        return seccionVideos(seccion, seccion, videos, seccion === 'Clases' || abrirCoincidencias)
+      })}
+    </div>
   </details>
 }

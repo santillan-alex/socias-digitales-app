@@ -7,6 +7,8 @@ export async function POST(request: Request) {
   if (auth.error) return auth.error
   try {
     const input = await request.json()
+    if (!input || typeof input !== 'object' || Array.isArray(input))
+      return NextResponse.json({ error: 'Solicitud no válida.' }, { status: 400 })
     if (input.action === 'renombrar') {
       const anterior =
         typeof input.anterior === 'string' ? input.anterior.trim() : ''
@@ -38,6 +40,10 @@ export async function POST(request: Request) {
         { error: 'Revisá el título, el programa, el orden y el acceso. Una clase Farmasi no admite Vimeo ni acceso de muestra.' },
         { status: 400 },
       )
+    const cambiaSubmodulo = Object.hasOwn(input, 'farmasi_submodulo_id')
+    const submodulo = input.farmasi_submodulo_id
+    if (cambiaSubmodulo && submodulo !== null && !esUuid(submodulo))
+      return NextResponse.json({ error: 'Elegí un submódulo Farmasi válido.' }, { status: 400 })
     let key: string | null = null
     let soloFarmaci = datos.solo_farmaci === true
     if (input.id) {
@@ -55,6 +61,8 @@ export async function POST(request: Request) {
       key = data.video_key
       soloFarmaci = datos.solo_farmaci ?? (data.solo_farmaci === true)
     }
+    if (!soloFarmaci && cambiaSubmodulo && submodulo !== null)
+      return NextResponse.json({ error: 'Solo una clase exclusiva de Farmasi puede tener un submódulo Farmasi.' }, { status: 400 })
     if (soloFarmaci && (datos.acceso_gratuito || datos.vimeo_url))
       return NextResponse.json({ error: 'Una clase de Socias Farmasi debe usar video privado y no puede ser de muestra.' }, { status: 400 })
     if (datos.activo && !key && (soloFarmaci || !datos.vimeo_url))
@@ -62,18 +70,25 @@ export async function POST(request: Request) {
         { error: 'Cargá el video antes de publicar la clase.' },
         { status: 400 },
       )
+    const persistir = {
+      ...datos,
+      ...(cambiaSubmodulo ? { farmasi_submodulo_id: submodulo === null ? null : submodulo.toLowerCase() }
+        : input.id && datos.solo_farmaci === false ? { farmasi_submodulo_id: null } : {}),
+    }
     const result = input.id
       ? await auth.supabase
           .from('clases')
-          .update(datos)
+          .update(persistir)
           .eq('id', input.id)
           .select('id')
           .single()
       : await auth.supabase
           .from('clases')
-          .insert({ ...datos, plan: '27' })
+          .insert({ ...persistir, plan: '27' })
           .select('id')
           .single()
+    if (result.error?.code === '23503' && cambiaSubmodulo && submodulo !== null)
+      return NextResponse.json({ error: 'No encontramos ese submódulo Farmasi. Elegí uno de nuevo.' }, { status: 400 })
     if (result.error) throw result.error
     return NextResponse.json({ ok: true, id: result.data.id })
   } catch (error) {

@@ -8,6 +8,7 @@ import ClassroomRecovery from './ClassroomRecovery'
 import { tieneAccesoFarmaci } from '@/lib/class-access'
 import { FLUJO_FARMASI, RUTA_FARMASI, soloClasesFarmasi } from '@/lib/farmasi-registration'
 import { esUuid } from '@/lib/class-management'
+import { leerGruposFarmasi } from '@/lib/farmasi-class-groups-server'
 
 export default async function ClassroomPage(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -35,6 +36,7 @@ export default async function ClassroomPage(props: {
     console.error('class_catalog_read_failed')
     return <ClassroomRecovery esAdmin={perfil.rol === 'admin'} />
   }
+  const submodulosFarmasi = espacioFarmasi ? leerGruposFarmasi(clasesParaVista) : undefined
   let progreso: ProgresoClase[] = []
   let errorProgreso = false
   if (perfil.rol !== 'admin') {
@@ -58,6 +60,7 @@ export default async function ClassroomPage(props: {
   return (
     <ClassroomCliente
       espacioFarmasi={espacioFarmasi}
+      submodulosFarmasi={await submodulosFarmasi}
       clases={clasesParaVista}
       esAdmin={perfil?.rol === 'admin'}
       perfil={perfil}
