@@ -4,11 +4,13 @@ import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import RegistrationPlane from '@/components/RegistrationPlane'
+import { DESTINO_INGRESO_FARMASI, FLUJO_FARMASI, RUTA_FARMASI } from '@/lib/farmasi-registration'
 
 export default function RegistroPage() {
   const pathname = usePathname()
   const esDesafio = pathname === '/registro/desafio'
   const esSocias = pathname === '/registro/socias'
+  const esFarmasi = pathname === RUTA_FARMASI
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -29,14 +31,16 @@ export default function RegistroPage() {
     setRegistroEnviado(false)
 
     try {
-      const response = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, email, password, acepta_email: aceptaEmail, tipo_usuario: esDesafio ? 'desafio' : 'gratuito' }) })
+      const response = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, email, password, acepta_email: aceptaEmail, tipo_usuario: esDesafio ? 'desafio' : 'gratuito', ...(esFarmasi ? { flujo: FLUJO_FARMASI } : {}) }) })
       const result = await response.json()
       if (!response.ok) { setRequiereConfirmacion(response.status === 502); setError(result.error || 'No pudimos crear la cuenta. Intentá nuevamente.'); return }
       setRequiereConfirmacion(true)
       setRegistroEnviado(true)
       setMensaje(esDesafio
         ? 'Revisá tu correo para confirmar la cuenta. Flor habilitará tu acceso al Desafío Socias; cuando lo haga, vas a recibir la bienvenida y podrás entrar a lanzamiento y clases.'
-        : esSocias
+        : esFarmasi
+          ? 'Revisá tu correo para confirmar tu cuenta y volver a Socias Farmasi. Si ya tenés una cuenta confirmada, ingresá con tu contraseña.'
+          : esSocias
           ? 'Revisá tu correo para confirmar la cuenta. Tu cuenta se crea con acceso gratuito; Flor activará tu plan Socias desde tu ficha.'
           : 'Revisá tu correo para confirmar la cuenta. Si ya te registraste y confirmaste antes, ingresá con tu contraseña desde el login.')
     } catch { setError('Revisá tu conexión e intentá nuevamente.') }
@@ -52,7 +56,7 @@ export default function RegistroPage() {
     setReenviando(true)
     setError('')
     try {
-      const response = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, resend: true }) })
+      const response = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, resend: true, ...(esFarmasi ? { flujo: FLUJO_FARMASI } : {}) }) })
       const result = await response.json()
       if (!response.ok) setError(result.error || 'No pudimos reenviar el correo.')
       else setMensaje('Si tu cuenta está pendiente, enviamos la confirmación. Revisá también Spam y Promociones. Si ya confirmaste, podés ingresar.')
@@ -65,12 +69,12 @@ export default function RegistroPage() {
       <section className="relative hidden min-h-screen flex-col justify-between overflow-hidden bg-[#F4CAD8] px-12 py-10 lg:flex xl:px-20">
         <Image src="/academy-stacked-color.png" alt="Socias Digitales Academy" width={420} height={280} priority className="h-auto w-52 object-contain object-left" />
         <div className="relative z-10 max-w-xl pb-10">
-          <p className="mb-4 font-impact text-xs font-semibold uppercase tracking-[0.18em] text-[#294A38]">{esDesafio ? 'Desafío Socias' : 'Socias Digitales'}</p>
+          <p className="mb-4 font-impact text-xs font-semibold uppercase tracking-[0.18em] text-[#294A38]">{esDesafio ? 'Desafío Socias' : esFarmasi ? 'Socias Farmasi' : 'Socias Digitales'}</p>
           <h1 className="font-serif text-5xl leading-[1.04] tracking-[-0.04em] text-[#171413] xl:text-6xl">
             Un paso a la vez. <span className="text-[#294A38]">A tu manera.</span>
           </h1>
           <p className="mt-5 max-w-md text-base leading-7 text-[#51443F]">
-            {esDesafio ? 'Registrate para participar del Desafío Socias.' : esSocias ? 'Creá tu cuenta para que Flor pueda habilitar tu plan Socias.' : 'Creá tu cuenta gratuita y recibí la bienvenida.'}
+            {esDesafio ? 'Registrate para participar del Desafío Socias.' : esSocias ? 'Creá tu cuenta para que Flor pueda habilitar tu plan Socias.' : esFarmasi ? 'Creá tu cuenta para solicitar acceso a Socias Farmasi.' : 'Creá tu cuenta gratuita y recibí la bienvenida.'}
           </p>
         </div>
       </section>
@@ -82,9 +86,9 @@ export default function RegistroPage() {
           </div>
 
           <div className="mb-8">
-            <p className="mb-3 font-impact text-xs font-semibold uppercase tracking-[0.16em] text-[#294A38]">{esDesafio ? 'Desafío Socias' : esSocias ? 'Plan Socias' : 'Acceso gratuito'}</p>
+            <p className="mb-3 font-impact text-xs font-semibold uppercase tracking-[0.16em] text-[#294A38]">{esDesafio ? 'Desafío Socias' : esSocias ? 'Plan Socias' : esFarmasi ? 'Socias Farmasi' : 'Acceso gratuito'}</p>
             <h2 className="font-serif text-4xl leading-tight tracking-[-0.035em] text-[#171413]">Crear <span className="italic text-[#294A38]">cuenta.</span></h2>
-            <p className="mt-3 text-sm leading-6 text-[#655B56]">{esSocias ? 'Completá tus datos. El plan Socias se activa cuando Flor lo habilita; registrarte no realiza una compra.' : 'Completá tus datos para registrarte.'}</p>
+            <p className="mt-3 text-sm leading-6 text-[#655B56]">{esSocias ? 'Completá tus datos. El plan Socias se activa cuando Flor lo habilita; registrarte no realiza una compra.' : esFarmasi ? 'Creá tu cuenta y confirmá tu email para solicitar el acceso. Flor revisará tu solicitud.' : 'Completá tus datos para registrarte.'}</p>
           </div>
 
           <form onSubmit={handleRegistro} className="space-y-4">
@@ -125,9 +129,9 @@ export default function RegistroPage() {
           </form>
 
           <p className="mt-8 text-center text-sm text-[#655B56]">
-            ¿Ya tenés cuenta? <a href="/login" className="font-medium text-[#294A38] underline decoration-[#EC9BB6] underline-offset-4">Ingresá acá</a>
+            ¿Ya tenés cuenta? <a href={esFarmasi ? DESTINO_INGRESO_FARMASI : '/login'} className="font-medium text-[#294A38] underline decoration-[#EC9BB6] underline-offset-4">Ingresá acá</a>
           </p>
-          {!esDesafio && !esSocias && <p className="mt-3 text-center text-sm text-[#655B56]">¿Te inscribís al Desafío Socias? <a href="/registro/desafio" className="font-medium text-[#294A38] underline decoration-[#EC9BB6] underline-offset-4">Registrate por acá</a></p>}
+          {!esDesafio && !esSocias && !esFarmasi && <p className="mt-3 text-center text-sm text-[#655B56]">¿Te inscribís al Desafío Socias? <a href="/registro/desafio" className="font-medium text-[#294A38] underline decoration-[#EC9BB6] underline-offset-4">Registrate por acá</a></p>}
         </div>
       </section>
     </main>

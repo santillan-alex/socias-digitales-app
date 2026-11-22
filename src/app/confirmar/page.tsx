@@ -2,23 +2,27 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { DESTINO_INGRESO_FARMASI, destinoConfirmacion, FLUJO_FARMASI } from '@/lib/farmasi-registration'
 import { createClient } from '@/lib/supabase/client'
 
 export default function ConfirmarPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [esFarmasi, setEsFarmasi] = useState(false)
   async function confirmar() {
     setLoading(true)
     const params = new URLSearchParams(window.location.hash.slice(1))
     const tokenHash = params.get('token_hash')
-    const recovery = params.get('flow') === 'recovery'
-    const invite = params.get('flow') === 'invite'
+    const flujo = params.get('flow')
+    const recovery = flujo === 'recovery'
+    const invite = flujo === 'invite'
+    setEsFarmasi(flujo === FLUJO_FARMASI)
     if (!tokenHash) { setError('El enlace no es válido. Pedí otro correo desde el registro.'); setLoading(false); return }
     try {
       const { error } = await createClient().auth.verifyOtp({ token_hash: tokenHash, type: recovery ? 'recovery' : invite ? 'invite' : 'email' })
       if (error) { setError('El enlace venció o ya fue usado. Pedí otro correo desde Ingresar → Reenviar confirmación.'); return }
       window.history.replaceState(null, '', '/confirmar')
-      window.location.replace(recovery || invite ? '/crear-contrasena' : '/')
+      window.location.replace(destinoConfirmacion(flujo))
     } catch {
       setError('No pudimos conectar. Volvé a intentar; si el enlace venció, reenviá la confirmación desde Ingresar.')
     } finally {
@@ -32,7 +36,7 @@ export default function ConfirmarPage() {
       <p className="mt-4 text-sm text-[#655B56]">Un último paso para verificar tu email.</p>
       {error && <p role="alert" className="mt-5 text-sm text-[#B01B30]">{error}</p>}
       <button onClick={confirmar} disabled={loading} className="mt-7 w-full rounded-xl bg-[#294A38] px-6 py-4 font-semibold text-white disabled:opacity-60">{loading ? 'Confirmando…' : 'Confirmar mi cuenta'}</button>
-      <a href="/login" className="mt-5 block text-sm text-[#294A38] underline">Ya confirmé: ingresar</a>
+      <a href={esFarmasi ? DESTINO_INGRESO_FARMASI : '/login'} className="mt-5 block text-sm text-[#294A38] underline">Ya confirmé: ingresar</a>
     </section>
   </main>
 }

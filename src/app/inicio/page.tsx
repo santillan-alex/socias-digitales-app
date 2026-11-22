@@ -83,7 +83,7 @@ export default async function InicioPage(props: { searchParams: Promise<Record<s
             <Link href="/perfil" className="inline-flex items-center gap-2 text-sm font-medium text-[#294A38]">Mi perfil <ArrowIcon diagonal /></Link>
           </div>
 
-          {tieneAccesoFarmaci(perfil) && <section aria-label="Socias Farmaci" className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-[#E7DDD5] bg-[#FFFDFA] p-5"><div><h2 className="text-xl font-semibold">Socias Farmaci</h2><p className="mt-1 text-sm text-[#746A64]">Tus clases exclusivas están en la biblioteca.</p></div><Link href="/classroom" prefetch={false} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#294A38] px-5 py-3 text-sm font-semibold text-white">Ir a mis clases <ArrowIcon /></Link></section>}
+          {tieneAccesoFarmaci(perfil) && <section aria-label="Socias Farmasi" className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-[#E7DDD5] bg-[#FFFDFA] p-5"><div><h2 className="text-xl font-semibold">Socias Farmasi</h2><p className="mt-1 text-sm text-[#746A64]">Tus clases exclusivas están en la biblioteca.</p></div><Link href="/classroom" prefetch={false} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#294A38] px-5 py-3 text-sm font-semibold text-white">Ir a mis clases <ArrowIcon /></Link></section>}
 
           {mostrarClase && <div className="mt-5"><ProximaClase ahoraInicial={ahoraInicial} variante="banner" /></div>}
 

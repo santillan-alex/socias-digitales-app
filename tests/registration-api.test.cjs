@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -12,10 +13,11 @@ function endpoint(reservation = { allowed: true, exists: false, confirmed: false
   const exports = {}
   new Function('require', 'exports', ts.transpileModule(fs.readFileSync(path.resolve(__dirname, '../src/app/api/registro/route.ts'), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(name => {
     if (name === 'node:crypto') return require(name)
+    if (name === '@/lib/farmasi-registration') return { FLUJO_FARMASI: 'farmasi' }
     if (name === '@/lib/perfil-preguntas') {
-      const module = {exports:{}}
-      new Function('module','exports',ts.transpileModule(fs.readFileSync(path.resolve(__dirname,'../src/lib/perfil-preguntas.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText)(module,module.exports)
-      return module.exports
+      const mockModule = {exports:{}}
+      new Function('module','exports',ts.transpileModule(fs.readFileSync(path.resolve(__dirname,'../src/lib/perfil-preguntas.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText)(mockModule,mockModule.exports)
+      return mockModule.exports
     }
     if (name === '@/lib/email-brand') return { EMAIL_HEADER: '<img alt="Socias" />' }
     if (name === 'next/server') return { NextResponse: { json: (body, options = {}) => ({ body, status: options.status ?? 200 }) } }
@@ -59,5 +61,19 @@ test('no revela cuentas confirmadas, rechaza origen ajeno y no anuncia éxito si
   assert.equal(existing.generated(), undefined)
   assert.equal((await endpoint().POST(req(input, 'https://otro.com'))).status, 403)
   assert.equal((await endpoint(undefined, null, false).POST(req(input))).status, 502)
+})
+test('Farmasi confirma y vuelve al formulario sin crear permisos ni alterar otra cuenta', async () => {
+  const nueva = endpoint()
+  assert.equal((await nueva.POST(req({ ...input, flujo: 'farmasi', tipo_usuario: 'gratuito', habilitada: true, rol: 'admin' }))).status, 200)
+  assert.deepEqual(nueva.generated().options.data, { nombre: 'Prueba', tipo_usuario: 'gratuito' })
+  assert.match(nueva.sent().text, /confirmar#token_hash=test-token&flow=farmasi/)
+  const reenvio = endpoint({ allowed: true, exists: true, confirmed: false })
+  assert.equal((await reenvio.POST(req({ email: input.email, resend: true, flujo: 'farmasi' }))).status, 200)
+  assert.equal(reenvio.generated().type, 'magiclink')
+  assert.match(reenvio.sent().text, /&flow=farmasi/)
+  const confirmada = endpoint({ allowed: true, exists: true, confirmed: true })
+  assert.equal((await confirmada.POST(req({ ...input, flujo: 'farmasi', tipo_usuario: 'gratuito' }))).status, 200)
+  assert.equal(confirmada.generated(), undefined)
+  assert.equal(confirmada.sent(), undefined)
 })
 test.after(() => { process.env = realEnv })

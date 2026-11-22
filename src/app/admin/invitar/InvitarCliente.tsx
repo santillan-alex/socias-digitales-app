@@ -1,12 +1,13 @@
 'use client'
 import AdminSectionMenu from '@/components/AdminSectionMenu'
 import InvitationLinks from '@/components/InvitationLinks'
+import FarmasiSolicitudes, { type SolicitudesFarmasi } from './FarmasiSolicitudes'
 
 import { useState } from 'react'
 
 type Resultado = { email: string; ok: boolean; mensaje: string }
 
-export default function InvitarCliente() {
+export default function InvitarCliente({ solicitudes }: { solicitudes: SolicitudesFarmasi }) {
   const [texto, setTexto] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [resultados, setResultados] = useState<Resultado[]>([])
@@ -55,6 +56,7 @@ export default function InvitarCliente() {
           <h1 className="mt-2 font-serif text-4xl font-semibold tracking-[-0.04em]">Invitaciones</h1>
         </header>
         <InvitationLinks />
+        <FarmasiSolicitudes solicitudes={solicitudes} />
         <details className="rounded-2xl border border-[#EC9BB6]/50 bg-white p-5 sm:p-6">
           <summary className="cursor-pointer text-sm font-semibold text-[#294A38]">Enviar invitaciones al Desafío por email</summary>
           <p className="mt-3 text-sm leading-6 text-[#655B56]">Pegá los emails y les llegará una invitación para crear su cuenta del Desafío Socias.</p>

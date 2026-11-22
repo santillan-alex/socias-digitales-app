@@ -13,7 +13,7 @@ async function leerRespuesta(response: Response): Promise<Acceso> {
   return { habilitada: data.habilitada, elegible: data.elegible }
 }
 
-export default function FarmaciAccessControl({ perfilId }: { perfilId: string }) {
+export default function FarmaciAccessControl({ perfilId, alCambiar }: { perfilId: string; alCambiar?: (habilitada: boolean) => void }) {
   const [acceso, setAcceso] = useState<Acceso | null>(null), [estado, setEstado] = useState('')
   const [ocupado, setOcupado] = useState(true), [intento, setIntento] = useState(0)
   const solicitud = useRef<AbortController | null>(null), mutando = useRef(false)
@@ -35,13 +35,13 @@ export default function FarmaciAccessControl({ perfilId }: { perfilId: string })
   async function cambiar() {
     if (!acceso || mutando.current || ocupado) return
     const habilitada = !acceso.habilitada
-    if (!habilitada && !window.confirm('¿Quitar el acceso a Socias Farmaci? Sus avances quedan guardados.')) return
+    if (!habilitada && !window.confirm('¿Quitar el acceso a Socias Farmasi? Sus avances quedan guardados.')) return
     const controller = new AbortController()
     solicitud.current = controller
     mutando.current = true; setOcupado(true); setEstado('')
     try {
       const datos = await leerRespuesta(await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ perfilId, habilitada }), signal: controller.signal }))
-      if (!controller.signal.aborted) { setAcceso(datos); setEstado(datos.habilitada ? 'Acceso habilitado.' : 'Acceso retirado. Se conservaron sus avances.') }
+      if (!controller.signal.aborted) { setAcceso(datos); setEstado(datos.habilitada ? 'Acceso habilitado.' : 'Acceso retirado. Se conservaron sus avances.'); alCambiar?.(datos.habilitada) }
     } catch (error) {
       if (!controller.signal.aborted) { setAcceso(null); setEstado(error instanceof Error ? error.message : 'No pudimos confirmar el cambio.') }
     } finally {
@@ -50,11 +50,11 @@ export default function FarmaciAccessControl({ perfilId }: { perfilId: string })
     }
   }
 
-  return <section aria-label="Acceso Socias Farmaci" className="mt-5 space-y-3 rounded-2xl border border-[#E7DDD5] bg-[#FAF7F3] p-4" aria-busy={ocupado}>
-    <h3 className="text-base font-semibold">Socias Farmaci</h3>
+  return <section aria-label="Acceso Socias Farmasi" className="mt-5 space-y-3 rounded-2xl border border-[#E7DDD5] bg-[#FAF7F3] p-4" aria-busy={ocupado}>
+    <h3 className="text-base font-semibold">Socias Farmasi</h3>
     <p className="text-sm leading-6 text-[#746A64]">Permite ver clases exclusivas. No cambia el plan ni los otros accesos.</p>
     {acceso ? <><p className="text-sm">{acceso.habilitada ? acceso.elegible ? 'Habilitado' : 'Asignado, pero la cuenta no está activa' : 'Sin habilitar'}</p>
-      <button type="button" className={boton} disabled={ocupado || !acceso.elegible && !acceso.habilitada} onClick={() => void cambiar()}>{acceso.habilitada ? 'Quitar acceso Farmaci' : 'Habilitar acceso Farmaci'}</button></> :
+      <button type="button" className={boton} disabled={ocupado || !acceso.elegible && !acceso.habilitada} onClick={() => void cambiar()}>{acceso.habilitada ? 'Quitar acceso Farmasi' : 'Habilitar acceso Farmasi'}</button></> :
       ocupado ? <p className="text-sm">Comprobando acceso…</p> :
       <button type="button" className={boton} onClick={() => { setEstado(''); setOcupado(true); setIntento(n => n + 1) }}>Volver a comprobar</button>}
     {estado && <p role={acceso ? 'status' : 'alert'} className="text-sm leading-6">{estado}</p>}

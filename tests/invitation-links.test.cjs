@@ -5,12 +5,12 @@ const fs = require('node:fs')
 const ts = require('typescript')
 const read = file => fs.readFileSync(require('node:path').join(__dirname, '..', file), 'utf8')
 
-test('tres invitaciones del dominio final, con copia real y recuperación si falla', async () => {
+test('cuatro invitaciones del dominio final, con copia real y recuperación si falla', async () => {
   const changes = []
   const exports = {}
   const code = ts.transpileModule(read('src/components/InvitationLinks.tsx'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  new Function('require', 'exports', code)(name => name === 'react' ? { useState: value => [value, next => changes.push(next)] } : require(name), exports)
-  assert.deepEqual(exports.invitationLinks.map(link => link.path), ['/registro', '/registro/desafio', '/registro/socias'])
+  new Function('require', 'exports', code)(name => name === 'react' ? { useState: value => [value, next => changes.push(next)] } : name === '@/lib/farmasi-registration' ? { RUTA_FARMASI: '/registro/farmasi' } : require(name), exports)
+  assert.deepEqual(exports.invitationLinks.map(link => link.path), ['/registro', '/registro/desafio', '/registro/socias', '/registro/farmasi'])
   const elements = []
   function walk(node) {
     if (Array.isArray(node)) return node.forEach(walk)

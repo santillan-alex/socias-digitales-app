@@ -155,7 +155,7 @@ export default function ClassroomCliente({ clases, esAdmin, perfil, progresoInic
           <div>
             <p className="font-impact text-[10px] font-semibold uppercase tracking-[0.22em] text-[#294A38]">Tu programa</p>
             <h1 className="mt-2 max-w-3xl font-serif text-4xl leading-[1.04] tracking-[-0.04em] sm:text-5xl">Tus clases</h1>
-            {!tieneAcceso && <p className="mt-3 max-w-xl text-sm leading-6 text-[#746A64]">{accesoPausado ? 'Tu acceso pago está pausado. Tus avances se conservan y las clases de muestra siguen disponibles.' : tieneFarmaciVisible ? 'Acá encontrás tus clases de Socias Farmaci y las clases de muestra.' : 'Empezá con las clases gratuitas y explorá el plan Socias.'}</p>}
+            {!tieneAcceso && <p className="mt-3 max-w-xl text-sm leading-6 text-[#746A64]">{accesoPausado ? 'Tu acceso pago está pausado. Tus avances se conservan y las clases de muestra siguen disponibles.' : tieneFarmaciVisible ? 'Acá encontrás tus clases de Socias Farmasi y las clases de muestra.' : 'Empezá con las clases gratuitas y explorá el plan Socias.'}</p>}
           </div>
           <div className="flex items-center gap-4 rounded-[22px] bg-[#294A38] p-5 text-white">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#F4CAD8] text-[#294A38]"><Icon name="book" className="h-6 w-6" /></span>

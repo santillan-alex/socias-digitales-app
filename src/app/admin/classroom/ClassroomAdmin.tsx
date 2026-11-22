@@ -394,7 +394,7 @@ export default function ClassroomAdmin({
                                   </h3>
                                   <p className="mt-2 text-xs leading-5 text-[#746A64]">
                                     {c.activo ? 'Publicada' : 'Borrador'} ·{' '}
-                                    {c.solo_farmaci ? 'Solo Socias Farmaci' : c.acceso_gratuito
+                                    {c.solo_farmaci ? 'Solo Socias Farmasi' : c.acceso_gratuito
                                       ? 'Acceso gratuito'
                                       : 'Socias / Desafío habilitado'}
                                   </p>
@@ -610,7 +610,7 @@ export default function ClassroomAdmin({
                 <input type="checkbox" checked={ficha.solo_farmaci} aria-describedby="farmaci-clase-ayuda"
                   onChange={e => setFicha({ ...ficha, solo_farmaci: e.target.checked, activo: false,
                     ...(e.target.checked ? { acceso_gratuito: false, vimeo_url: '' } : {}) })} />
-                Solo Socias Farmaci
+                Solo Socias Farmasi
               </label>
               <p id="farmaci-clase-ayuda" className="text-xs leading-5 text-[#746A64]">Solo la ven alumnas activas con este acceso. Requiere un MP4 privado. Si cambiás el acceso, revisá la publicación antes de guardar.</p>
               <label className="flex min-h-11 items-center gap-3 text-sm">

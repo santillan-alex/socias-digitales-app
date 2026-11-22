@@ -3,6 +3,7 @@ import { EMAIL_HEADER } from '@/lib/email-brand'
 import { NextResponse } from 'next/server'
 import { createAdminClient, isAdminSupabaseConfigured } from '@/lib/supabase/admin'
 import { enviarConfirmacion } from '@/lib/registration-mail'
+import { FLUJO_FARMASI } from '@/lib/farmasi-registration'
 import { normalizarNombre } from '@/lib/perfil-preguntas'
 
 export const runtime = 'nodejs'
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
   const password = typeof input.password === 'string' ? input.password : ''
   const resend = input.resend === true
   const recovery = input.recovery === true
+  const farmasi = !recovery && input.flujo === FLUJO_FARMASI
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254 || (!resend && !recovery && (nombre.length < 2 || nombre.length > 120 || password.length < 6 || password.length > 128))) {
     return NextResponse.json({ error: 'Revisá el nombre, email y contraseña (mínimo 6 caracteres).' }, { status: 400 })
   }
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
   }
   // Fragment keeps the one-time token out of server request/access logs. A human
   // clicks Confirmar before consuming it, so email link scanners cannot burn it.
-  const link = `${site}/confirmar#token_hash=${encodeURIComponent(data.properties.hashed_token)}${recovery ? '&flow=recovery' : ''}`
+  const link = `${site}/confirmar#token_hash=${encodeURIComponent(data.properties.hashed_token)}${recovery ? '&flow=recovery' : farmasi ? '&flow=' + FLUJO_FARMASI : ''}`
   const challenge = data.user?.user_metadata?.tipo_usuario === 'desafio'
   const firstName = escapeHtml(normalizarNombre(data.user?.user_metadata?.nombre || nombre || 'Socia').split(' ')[0])
   const heading = recovery ? 'Recuperá tu acceso' : 'Confirmá tu cuenta'

@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     const datos = datosClase(input)
     if (!datos || (input.id && !esUuid(input.id)))
       return NextResponse.json(
-        { error: 'Revisá el título, el programa, el orden y el acceso. Una clase Farmaci no admite Vimeo ni acceso de muestra.' },
+        { error: 'Revisá el título, el programa, el orden y el acceso. Una clase Farmasi no admite Vimeo ni acceso de muestra.' },
         { status: 400 },
       )
     let key: string | null = null
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       soloFarmaci = datos.solo_farmaci ?? (data.solo_farmaci === true)
     }
     if (soloFarmaci && (datos.acceso_gratuito || datos.vimeo_url))
-      return NextResponse.json({ error: 'Una clase de Socias Farmaci debe usar video privado y no puede ser de muestra.' }, { status: 400 })
+      return NextResponse.json({ error: 'Una clase de Socias Farmasi debe usar video privado y no puede ser de muestra.' }, { status: 400 })
     if (datos.activo && !key && (soloFarmaci || !datos.vimeo_url))
       return NextResponse.json(
         { error: 'Cargá el video antes de publicar la clase.' },

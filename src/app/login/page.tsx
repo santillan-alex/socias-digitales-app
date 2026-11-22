@@ -5,12 +5,14 @@ export const dynamic = 'force-dynamic'
 import Image from 'next/image'
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { FLUJO_FARMASI, RUTA_FARMASI } from '@/lib/farmasi-registration'
 import { createClient } from '@/lib/supabase/client'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
+  const esFarmasi = searchParams.get('next') === RUTA_FARMASI
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -48,7 +50,7 @@ function LoginForm() {
     if (!email.trim()) { setError('Escribí tu email para reenviar la confirmación.'); return }
     setReenviando(true); setError(''); setMensaje('')
     try {
-      const response = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim(), resend: true }) })
+      const response = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim(), resend: true, ...(esFarmasi ? { flujo: FLUJO_FARMASI } : {}) }) })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'No pudimos enviar el correo.')
       setMensaje('Si tu cuenta está pendiente, enviamos un nuevo correo. Revisá Spam y Promociones. Si ya confirmaste, ingresá con tu contraseña; si no tenés cuenta, registrate primero.')
@@ -131,7 +133,7 @@ function LoginForm() {
           </button>
           <button type="button" onClick={reenviarConfirmacion} disabled={reenviando || loading} className="mx-auto mt-3 block text-sm text-[#294A38] underline decoration-[#EC9BB6] underline-offset-4 disabled:opacity-60">{reenviando ? 'Reenviando…' : 'No me llegó el email: reenviar confirmación'}</button>
           <p className="mt-8 text-center text-sm text-[#655B56]">
-            ¿Todavía no tenés cuenta? <a href="/registro" className="font-medium text-[#294A38] underline decoration-[#EC9BB6] underline-offset-4">Crear cuenta</a>
+            ¿Todavía no tenés cuenta? <a href={esFarmasi ? RUTA_FARMASI : '/registro'} className="font-medium text-[#294A38] underline decoration-[#EC9BB6] underline-offset-4">Crear cuenta</a>
           </p>
           <p className="mt-3 text-center text-sm text-[#655B56]">¿Venís al Desafío? <a href="/registro/desafio" className="font-medium text-[#294A38] underline decoration-[#EC9BB6] underline-offset-4">Registrate al Desafío Socias</a></p>
           <p className="mt-5 text-center text-xs leading-5 text-[#7B716B]">¿Problemas para ingresar? Contactá a tu administradora.</p>
