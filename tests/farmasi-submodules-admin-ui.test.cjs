@@ -49,6 +49,7 @@ test('orden visible con controles por teclado y extremos deshabilitados; los nom
   assert.match(html, /aria-disabled="false" aria-label="Mover Catálogo de temporada arriba"/)
   assert.match(html, /aria-disabled="true" aria-label="Mover Catálogo de temporada abajo"/)
   assert.match(html, /overflow-wrap:anywhere/)
+  assert.match(html, /aria-label="Eliminar submódulo Catálogo de temporada"/)
 })
 
 test('si falla el listado muestra reintento y nunca anuncia lista vacía ni permite mover', () => {
@@ -70,6 +71,7 @@ test('el editor ordinario no muestra selector, conserva Vimeo; Farmasi puede sel
       '@/components/AdminSectionMenu': { default: () => null },
       '@/lib/supabase/client': { createClient: () => null },
       '@/lib/class-management': manejoClases,
+      './PortadaClaseEditor': { default: () => null },
       './VideoUpload': { default: () => null },
       './ClassProgressAdmin': { default: () => null },
       '@/components/ClassVideoThumbnail': { default: () => null },
@@ -138,5 +140,49 @@ test('alta y reorden usan el endpoint Farmasi con bloqueo inmediato y conservan 
     assert.deepEqual(vistas, [reordenados])
   } finally {
     globalThis.fetch = original
+  }
+})
+
+
+test('eliminar Farmasi exige confirmación, conserva la vista si tiene clases, y aplica lista vacía verificada', async () => {
+  const origFetch = globalThis.fetch, origWindow = globalThis.window
+  const llamadas = [], confirmaciones = [], vistas = [], estado = ['', false, '', '']
+  let confirmar = false, ocupada = true, n = 0
+  globalThis.window = { confirm(msj) { confirmaciones.push(msj); return confirmar } }
+  globalThis.fetch = async (url, init) => {
+    llamadas.push([url, JSON.parse(init.body)])
+    return ocupada ? Response.json({ error: 'Este submódulo tiene clases.' }, { status: 409 })
+      : Response.json({ submodulos: [] })
+  }
+  try {
+    const panel = load(ruta + 'FarmasiSubmodulosAdmin.tsx', {
+      react: { useState() { const i = n++; return [estado[i], valor => { estado[i] = valor }] }, useRef: () => ({ current: false }) },
+      '@/lib/farmasi-submodules': modulosFarmasi,
+    }).default
+    const vista = panel({ ...empty, submodulos: [grupos[0]], alActualizar: x => vistas.push(x) })
+    function buscar(nodo) {
+      if (Array.isArray(nodo)) return nodo.map(buscar).find(Boolean)
+      if (!nodo?.props) return undefined
+      return nodo.props['aria-label'] === 'Eliminar submódulo Primeros pasos' ? nodo : buscar(nodo.props.children)
+    }
+    const borrar = buscar(vista).props.onClick
+    borrar()
+    assert.equal(llamadas.length, 0)
+    assert.match(confirmaciones[0], /Primeros pasos.*si está vacío/)
+    confirmar = true
+    borrar()
+    await new Promise(setImmediate)
+    assert.deepEqual(llamadas, [['/api/admin/farmasi/submodulos', { accion: 'eliminar', id: grupos[0].id }]])
+    assert.match(estado[3], /tiene clases/)
+    assert.deepEqual(vistas, [])
+    ocupada = false
+    borrar()
+    await new Promise(setImmediate)
+    assert.equal(estado[2], 'Submódulo eliminado.')
+    assert.deepEqual(vistas, [[]])
+  } finally {
+    globalThis.fetch = origFetch
+    if (origWindow === undefined) delete globalThis.window
+    else globalThis.window = origWindow
   }
 })

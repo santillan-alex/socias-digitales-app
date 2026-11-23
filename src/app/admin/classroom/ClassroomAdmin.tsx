@@ -4,8 +4,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import AdminSectionMenu from '@/components/AdminSectionMenu'
 import { createClient } from '@/lib/supabase/client'
-import { PROGRAMAS_INICIALES, SECCIONES_CLASE, ubicacionClase, clasificacionClase, ordenarClases, puedePublicarClase, type SeccionClase } from '@/lib/class-management'
+import { PROGRAMAS_INICIALES, SECCIONES_CLASE, ubicacionClase, clasificacionClase, ordenarClases, puedePublicarClase, puedeEliminarProgramaLocal, type SeccionClase } from '@/lib/class-management'
 import VideoUpload from './VideoUpload'
+import PortadaClaseEditor from './PortadaClaseEditor'
 import ClassProgressAdmin, {type EstadisticaClase} from './ClassProgressAdmin'
 import ClassVideoThumbnail from '@/components/ClassVideoThumbnail'
 import ClassMaterialsEditor from './ClassMaterialsEditor'
@@ -91,14 +92,19 @@ export default function ClassroomAdmin({
   const submodulosPorId = new Map(submodulosVisibles.map(submodulo => [submodulo.id, submodulo.nombre]))
   const [materialOcupado, setMaterialOcupado] = useState(false)
   const [materialPendiente, setMaterialPendiente] = useState(false)
+  const [portadaOcupada, setPortadaOcupada] = useState(false)
+  const [revisionesPortada, setRevisionesPortada] = useState<Record<string, number>>({})
   const dialogRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLDivElement>(null)
   const continuarAlVideo = useRef(false)
   const editorAbierto = Boolean(ficha)
   const puedePublicar = ficha ? puedePublicarClase(ficha) : false
   const pasoActual = !ficha?.id ? 1 : puedePublicar ? 3 : 2
+  function actualizarVistaPortada(id: string) {
+    setRevisionesPortada(actual => ({ ...actual, [id]: (actual[id] ?? 0) + 1 }))
+  }
   function cerrarEditor() {
-    if (cargando || guardando || materialOcupado) return
+    if (cargando || guardando || materialOcupado || portadaOcupada) return
     if (materialPendiente && !window.confirm('Tenés materiales sin guardar. ¿Cerrar y descartar esos cambios?')) return
     setMaterialPendiente(false)
     setFicha(null)
@@ -122,6 +128,13 @@ export default function ClassroomAdmin({
       ...programasLocales,
     ]),
   ]
+  function eliminarProgramaLocal(nombre: string) {
+    if (ficha || errorCarga || !puedeEliminarProgramaLocal(nombre, programasLocales, clases)) return
+    if (!window.confirm(`¿Eliminar el programa vacío «${nombre}»? No se borra ninguna clase.`)) return
+    setProgramasLocales(prev => prev.filter(programa => programa !== nombre))
+    setFiltro(actual => actual === nombre ? 'Todos' : actual)
+    setAviso('Programa vacío eliminado.')
+  }
   async function api(body: Record<string, unknown>) {
     const response = await fetch('/api/admin/clases', {
       method: 'POST',
@@ -134,7 +147,7 @@ export default function ClassroomAdmin({
   }
   async function guardar(e: React.FormEvent) {
     e.preventDefault()
-    if (!ficha || guardando || cargando || materialOcupado) return
+    if (!ficha || guardando || cargando || materialOcupado || portadaOcupada) return
     setGuardando(true)
     setModalError('')
     try {
@@ -378,6 +391,10 @@ export default function ClassroomAdmin({
                         <span aria-hidden="true" className="text-xl text-[#294A38]">⌄</span>
                       </summary>
                         <div className="my-4 flex flex-wrap gap-2">
+                          {!errorCarga && puedeEliminarProgramaLocal(programa, programasLocales, clases) &&
+                            <button type="button" onClick={() => eliminarProgramaLocal(programa)}
+                              aria-label={`Eliminar programa ${programa}`}
+                              className="min-h-11 rounded-full border border-[#E9B9C2] px-4 py-3 text-xs text-[#9B2540]">Eliminar</button>}
                           {contenido.length > 0 && (
                             <button
                               onClick={() => void renombrar(programa)}
@@ -407,7 +424,7 @@ export default function ClassroomAdmin({
                               className="rounded-2xl border border-[#E7DDD5] bg-white p-4"
                             >
                               <div className="flex items-start gap-3">
-                                <div className="w-24 shrink-0"><ClassVideoThumbnail id={c.id} titulo={c.titulo} disponible={Boolean(c.video_key)} esAdmin revision={c.video_key ?? ''} /></div>
+                                <div className="w-24 shrink-0"><ClassVideoThumbnail key={revisionesPortada[c.id] ?? 0} id={c.id} titulo={c.titulo} disponible esAdmin revision={c.video_key ?? ''} /></div>
                                 <div className="min-w-0 flex-1">
                                   <h3 className="break-words font-impact text-sm font-semibold">
                                     {String(index + 1).padStart(2, '0')} · {c.titulo}
@@ -534,7 +551,7 @@ export default function ClassroomAdmin({
                 {ficha.id ? 'Editar clase' : 'Nueva clase'}
               </h2>
               <button
-                disabled={cargando || guardando || materialOcupado}
+                disabled={cargando || guardando || materialOcupado || portadaOcupada}
                 onClick={cerrarEditor}
                 aria-label="Cerrar editor"
                 className="flex h-11 w-11 items-center justify-center rounded-full border border-[#D8CFC8] text-xl disabled:opacity-40"
@@ -550,7 +567,7 @@ export default function ClassroomAdmin({
               ))}
             </ol>
             <form onSubmit={guardar} className="mt-5 space-y-4">
-              <fieldset disabled={guardando || cargando || materialOcupado} className="space-y-4">
+              <fieldset disabled={guardando || cargando || materialOcupado || portadaOcupada} className="space-y-4">
               <label className="block text-sm">
                 Título
                 <input
@@ -696,7 +713,7 @@ export default function ClassroomAdmin({
             </form>
             <div ref={videoRef} className="mt-5">
               {ficha.id ? (
-                <fieldset disabled={guardando || materialOcupado}><VideoUpload
+                <fieldset disabled={guardando || materialOcupado || portadaOcupada}><VideoUpload
                   key={ficha.id}
                   claseId={ficha.id}
                   tieneVideo={ficha.tieneVideo}
@@ -708,6 +725,7 @@ export default function ClassroomAdmin({
                     setAviso(
                       'Video cargado. Revisá y publicá cuando esté listo.',
                     )
+                    actualizarVistaPortada(ficha.id!)
                     router.refresh()
                   }}
                 /></fieldset>
@@ -718,7 +736,9 @@ export default function ClassroomAdmin({
                 </p>
               )}
             </div>
-            {ficha.id ? <ClassMaterialsEditor key={ficha.id} claseId={ficha.id} disabled={guardando || cargando} onBusy={setMaterialOcupado} onDraftChange={setMaterialPendiente} />
+            {ficha.id && <PortadaClaseEditor key={ficha.id} claseId={ficha.id} revisionVideo={revisionesPortada[ficha.id] ?? 0} disabled={guardando || cargando || materialOcupado}
+              onBusy={setPortadaOcupada} onChange={() => actualizarVistaPortada(ficha.id!)} />}
+            {ficha.id ? <ClassMaterialsEditor key={ficha.id} claseId={ficha.id} disabled={guardando || cargando || portadaOcupada} onBusy={setMaterialOcupado} onDraftChange={setMaterialPendiente} />
               : <section className="mt-5 rounded-2xl border border-[#E7DDD5] p-4"><h3 className="font-impact text-base font-semibold">Materiales de la clase</h3><p className="mt-2 text-sm text-[#746A64]">Después de guardar la ficha podés adjuntar PDF, documentos y enlaces en este mismo editor, sin salir de la clase.</p></section>}
           </div>
         </div>

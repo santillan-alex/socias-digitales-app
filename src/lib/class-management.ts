@@ -21,6 +21,14 @@ export function clasificacionClase(programa: string, seccion: SeccionClase = 'Cl
   if (!nombre || nombre.includes('›') || nombre.length > 75 || !SECCIONES_CLASE.includes(seccion)) return null
   return nombre + (seccion === 'Clases' ? '' : SEPARADOR_SECCION + seccion)
 }
+export function puedeEliminarProgramaLocal(nombre: string, programasLocales: readonly string[], clases: readonly { modulo: string }[]) {
+  const clave = (valor: string) => valor.split(SEPARADOR_SECCION)[0].trim().replace(/\s+/g, ' ')
+    .normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+  const protegidos = [...PROGRAMAS_INICIALES, 'Introducción', 'Desafío Socias en vivo', 'Socias', 'Socias Digitales', 'Farmasi', 'Socias Farmasi']
+  const buscado = clave(nombre)
+  return programasLocales.includes(nombre) && !protegidos.some(programa => clave(programa) === buscado) &&
+    !clases.some(clase => clave(clase.modulo) === buscado)
+}
 export function ordenarClases<T extends { orden: number; id: string }>(clases: T[]) {
   return [...clases].sort((a, b) => a.orden - b.orden || a.id.localeCompare(b.id))
 }

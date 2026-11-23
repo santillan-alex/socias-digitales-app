@@ -76,3 +76,14 @@ test('renombrar un programa incluye sus secciones y no modifica videos, estado o
   assert.equal(res.status, 200)
   assert.deepEqual(writes.map(w => w.values), [{ modulo: 'Otro programa' }, { modulo: 'Otro programa › Material de apoyo' }])
 })
+
+
+test('solo un programa local creado por la admin y vacío se puede quitar; built-ins y clases se conservan', () => {
+  const { puedeEliminarProgramaLocal } = management
+  assert.equal(puedeEliminarProgramaLocal('Mi programa', ['Mi programa'], []), true)
+  assert.equal(puedeEliminarProgramaLocal('Mi programa', [], []), false)
+  assert.equal(puedeEliminarProgramaLocal('Mi programa', ['Mi programa'], [{ modulo: 'Mi programa' }]), false)
+  assert.equal(puedeEliminarProgramaLocal('Mi programa', ['Mi programa'], [{ modulo: 'MI PROGRAMA › Material de apoyo' }]), false)
+  for (const protegido of ['Bienvenida', 'Introducción', 'Desafío Socias', 'Desafio Socias en vivo', 'Socias', 'Socias Digitales', 'Farmasi', 'Socias Farmasi'])
+    assert.equal(puedeEliminarProgramaLocal(protegido, [protegido], []), false)
+})

@@ -30,7 +30,7 @@ export default function ClassroomProgram({ programa, clases, progreso, buscar, e
       const disponible = (clase.puede_ver ?? tieneAcceso) && Boolean(clase.vimeo_url || clase.tiene_video_privado)
       return <article key={clase.id} className="min-w-0 rounded-2xl border border-[#E7DDD5] bg-[#FFFDFA] p-3">
         <div className="relative">
-          <ClassVideoThumbnail id={clase.id} titulo={clase.titulo} disponible={disponible && Boolean(clase.tiene_video_privado)} esAdmin={esAdmin} revision={clase.miniatura_revision} />
+          <ClassVideoThumbnail id={clase.id} titulo={clase.titulo} disponible={disponible} esAdmin={esAdmin} revision={clase.miniatura_revision} />
           {disponible ? <button type="button" disabled={cargando} onClick={() => onAbrir(clase)} aria-label={`Reproducir ${clase.titulo}`} className="absolute bottom-2 right-2 flex h-11 w-11 items-center justify-center rounded-full bg-[#294A38] text-white disabled:opacity-50"><svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5"><path d="m9 6 10 6-10 6V6Z" fill="currentColor" /></svg></button>
             : <a href="/inicio#plan-socias" aria-label={`Conocer el plan Socias para ${clase.titulo}`} className="absolute bottom-2 right-2 flex h-11 w-11 items-center justify-center rounded-full border border-[#E7DDD5] bg-[#FAF7F3] text-[#294A38]"><svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none"><rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.6"/></svg></a>}
         </div>

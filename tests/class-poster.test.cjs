@@ -12,13 +12,15 @@ function load(file, deps = {}) {
 const management = load('src/lib/class-management.ts')
 const access = load('src/lib/class-access.ts')
 const poster = load('src/lib/class-poster.ts')
+const cover = load('src/lib/class-cover.ts')
+const coverServer = load('src/lib/class-cover-server.ts', { './class-cover': cover })
 const id = '2d0df184-c4a0-4072-bf9e-80734b876b35'
 const ctx = { params: Promise.resolve({ id }) }
 class NextResponse extends Response { static json(data, opts = {}) { return Response.json(data, opts) } }
 function api({ user = { id: 'u' }, perfil = { rol: 'admin' }, clase = { video_key: 'private-video.mp4', activo: true, acceso_gratuito: false }, status = 200, r2status = 404 } = {}) {
   const calls = []
   const db = { auth: { getUser: async () => ({ data: { user } }) }, from: t => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: t === 'perfiles' ? perfil : clase }) }) }) }) }
-  const deps = { 'next/server': { NextResponse }, '@/lib/supabase/server': { createClient: async () => db }, '@/lib/class-management': management, '@/lib/class-access': access, '@/lib/class-poster': poster, '@/lib/admin-auth': { autorizarAdmin: async () => status === 200 ? { supabase: db } : { error: new Response(null, { status }) } }, '@/lib/r2-upload': { pedirR2: async (...args) => { calls.push(args); return new Response(r2status === 200 ? new Uint8Array([255, 216, 255, 0, 255, 217]) : null, { status: r2status }) } } }
+  const deps = { 'next/server': { NextResponse }, '@/lib/supabase/server': { createClient: async () => db }, '@/lib/class-management': management, '@/lib/class-access': access, '@/lib/class-poster': poster, '@/lib/class-cover': cover, '@/lib/class-cover-server': coverServer, '@/lib/admin-auth': { autorizarAdmin: async () => status === 200 ? { supabase: db } : { error: new Response(null, { status }) } }, '@/lib/r2-upload': { pedirR2: async (...args) => { calls.push(args); if (args[1].startsWith('portadas-clases/')) return new Response(null, { status: 404 }); return new Response(r2status === 200 ? new Uint8Array([255, 216, 255, 0, 255, 217]) : null, { status: r2status }) } } }
   return { ...load('src/app/api/classroom/[id]/miniatura/route.ts', deps), ...load('src/app/api/admin/clases/[id]/miniatura/route.ts', deps), calls }
 }
 const jpeg = new Uint8Array([255, 216, 255, ...Array(20).fill(0), 255, 217])

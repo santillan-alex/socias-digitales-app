@@ -25,6 +25,7 @@ function editor(ficha, extra = {}, busy = false, materialStates = []) {
     '@/components/AdminSectionMenu': { default: () => null },
     '@/lib/supabase/client': { createClient: () => ({}) },
     '@/lib/class-management': management,
+    './PortadaClaseEditor': { default: () => null },
     './VideoUpload': { default: props => React.createElement('section', { 'data-upload-for': props.claseId }, 'Elegir archivo') },
     './ClassProgressAdmin': { default: () => null },
     '@/components/ClassVideoThumbnail': { default: () => null },

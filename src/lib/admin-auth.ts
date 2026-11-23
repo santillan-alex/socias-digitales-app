@@ -2,7 +2,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-export async function autorizarAdmin(request?: Request) {
+export async function autorizarAdmin(request?: Request, maximoBytes = 24_000) {
   if (request) {
     const origin = request.headers.get('origin')
     if (!origin || origin !== new URL(request.url).origin)
@@ -12,7 +12,7 @@ export async function autorizarAdmin(request?: Request) {
           { status: 403 },
         ),
       }
-    if (Number(request.headers.get('content-length') || 0) > 24_000)
+    if (Number(request.headers.get('content-length') || 0) > maximoBytes)
       return {
         error: NextResponse.json(
           { error: 'Solicitud demasiado grande.' },

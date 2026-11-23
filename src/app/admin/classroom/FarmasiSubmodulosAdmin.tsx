@@ -1,9 +1,8 @@
 'use client'
 
 import { useRef, useState, type FormEvent } from 'react'
-import { esListaSubmodulosFarmasi, type SubmoduloFarmasi } from '@/lib/farmasi-submodules'
+import { esListaSubmodulosFarmasi, type AccionFarmasi, type SubmoduloFarmasi } from '@/lib/farmasi-submodules'
 
-type Accion = { accion: 'crear'; nombre: string } | { accion: 'mover'; id: string; direccion: 'arriba' | 'abajo' }
 const boton = 'min-h-11 rounded-full border border-[#294A38]/30 px-4 py-2 text-sm font-medium text-[#294A38] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 aria-disabled:opacity-50'
 
 export default function FarmasiSubmodulosAdmin({ submodulos, errorCarga, alActualizar, alReintentar, alNuevaClase }: {
@@ -19,7 +18,7 @@ export default function FarmasiSubmodulosAdmin({ submodulos, errorCarga, alActua
   const [error, setError] = useState('')
   const ocupado = useRef(false)
 
-  async function cambiar(cambio: Accion) {
+  async function cambiar(cambio: AccionFarmasi) {
     if (errorCarga || ocupado.current) return
     ocupado.current = true
     setGuardando(true); setMensaje(''); setError('')
@@ -35,13 +34,19 @@ export default function FarmasiSubmodulosAdmin({ submodulos, errorCarga, alActua
         throw new Error('No pudimos confirmar el cambio. Recargá antes de reintentar.')
       alActualizar(datos.submodulos)
       if (cambio.accion === 'crear') setNombre('')
-      setMensaje(cambio.accion === 'crear' ? 'Submódulo creado.' : 'Orden actualizado.')
+      setMensaje(cambio.accion === 'crear' ? 'Submódulo creado.' : cambio.accion === 'eliminar' ? 'Submódulo eliminado.' : 'Orden actualizado.')
     } catch (causa) {
       setError(causa instanceof Error ? causa.message : 'No pudimos guardar el cambio.')
     } finally {
       ocupado.current = false
       setGuardando(false)
     }
+  }
+
+  function eliminar(submodulo: SubmoduloFarmasi) {
+    if (errorCarga || ocupado.current) return
+    if (window.confirm(`¿Eliminar el submódulo «${submodulo.nombre}»? Solo se puede eliminar si está vacío.`))
+      void cambiar({ accion: 'eliminar', id: submodulo.id })
   }
 
   function crear(e: FormEvent<HTMLFormElement>) {
@@ -81,6 +86,8 @@ export default function FarmasiSubmodulosAdmin({ submodulos, errorCarga, alActua
                   {direccion === 'arriba' ? '↑ Subir' : '↓ Bajar'}
                 </button>
               })}
+              <button type="button" disabled={guardando} aria-label={`Eliminar submódulo ${submodulo.nombre}`}
+                onClick={() => eliminar(submodulo)} className={boton + ' !border-[#E9B9C2] !text-[#9B2540]'}>Eliminar</button>
             </div>
           </li>)}
         </ol>}

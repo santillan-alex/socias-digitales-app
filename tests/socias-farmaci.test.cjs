@@ -133,7 +133,7 @@ test('direct video, thumbnail, material and progress readers all consult the ent
   const video = load('src/app/api/classroom/[id]/video/route.ts', common)
   const poster = load('src/lib/class-poster.ts', { 'server-only': {} })
   const thumbnail = load('src/app/api/classroom/[id]/miniatura/route.ts', {
-    ...common, '@/lib/class-poster': poster, '@/lib/r2-upload': { pedirR2: () => { throw new Error('No solicitar objetos privados') } },
+    ...common, '@/lib/class-poster': poster, '@/lib/class-cover': {}, '@/lib/class-cover-server': {}, '@/lib/r2-upload': { pedirR2: () => { throw new Error('No solicitar objetos privados') } },
   })
   const materials = load('src/lib/class-materials-access.ts', {
     'server-only': {}, 'next/server': next, './supabase/server': supabase, './class-access': access, './class-management': management,

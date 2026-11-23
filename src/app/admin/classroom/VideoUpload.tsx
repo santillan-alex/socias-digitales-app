@@ -167,7 +167,7 @@ export default function VideoUpload({
         try {
           const imagen = await captura.current
           if (imagen) {
-            const info = await fetch(`/api/classroom/${claseId}/miniatura`, { cache: 'no-store' })
+            const info = await fetch(`/api/classroom/${claseId}/miniatura?fuente=automatica`, { cache: 'no-store' })
             if (info.headers.get('content-type')?.includes('application/json')) {
               const { revision } = await info.json()
               if (revision) await fetch(`/api/admin/clases/${claseId}/miniatura?revision=${encodeURIComponent(revision)}`, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: imagen })

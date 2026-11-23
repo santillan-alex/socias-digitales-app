@@ -22,13 +22,15 @@ export async function POST(request: Request) {
       return json({ error: 'Solicitud no válida.' }, 400)
     }
     const datos = validarAccionSubmoduloFarmasi(input)
-    if (!datos) return json({ error: 'Revisá el nombre o el orden del submódulo.' }, 400)
+    if (!datos) return json({ error: 'Revisá la acción y los datos del submódulo.' }, 400)
     const { data, error } = await createAdminClient().rpc('gestionar_farmasi_submodulos', {
       p_accion: datos.accion,
       p_nombre: datos.accion === 'crear' ? datos.nombre : null,
-      p_id: datos.accion === 'mover' ? datos.id : null,
+      p_id: datos.accion === 'crear' ? null : datos.id,
       p_direccion: datos.accion === 'mover' ? datos.direccion : null,
     })
+    if (datos.accion === 'eliminar' && (error?.code === '23503' || error?.code === '23001'))
+      return json({ error: 'Este submódulo tiene clases. Movelas o elegí «Sin submódulo» en cada clase antes de eliminarlo.' }, 409)
     if (error?.code === '23505') return json({ error: 'Ya hay un submódulo con ese nombre.' }, 409)
     if (error?.code === 'P0002') return json({ error: 'No encontramos ese submódulo. Actualizá esta página.' }, 404)
     if (error?.code === '54000') return json({ error: 'Llegaste al límite de submódulos.' }, 409)
