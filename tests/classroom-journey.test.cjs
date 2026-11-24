@@ -38,6 +38,7 @@ test('error de catálogo es recuperación explícita; una biblioteca realmente v
     const recovery = () => React.createElement('p', null, 'Recuperar biblioteca')
     const catalogo = props => React.createElement('p', null, 'Clases:' + props.clases.length)
     const page = load('src/app/classroom/page.tsx', {
+      '@/lib/socias-offer-store': { leerOfertaSocias: async () => ({ oferta: { precioTexto: null, accionUrl: null } }) },
       '@/lib/class-access': load('src/lib/class-access.ts'),
       '@/lib/supabase/server': { createClient: async () => client.db },
       'next/navigation': { redirect },
@@ -89,7 +90,7 @@ test('sin avance abre Bienvenida existente; Continuar real tiene prioridad, erro
   const filters = load('src/lib/class-library-filters.ts', { './class-management': management })
   const program = props => React.createElement('div', { 'data-programa': props.programa, 'data-abierto': props.abierto })
   const Classroom = load('src/app/classroom/ClassroomCliente.tsx', {
-    './ClassPlayer': { default: () => null }, './ClassroomProgram': { default: program },
+    '@/components/SociasUpgradePanel': { default: () => null }, './ClassPlayer': { default: () => null }, './ClassroomProgram': { default: program },
     '@/lib/class-management': management, '@/lib/class-progress': progress, '@/lib/class-access': load('src/lib/class-access.ts'),
     '@/lib/class-library-filters': filters,
   }).default

@@ -4,6 +4,7 @@ import AdminSectionMenu from '@/components/AdminSectionMenu'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import OfertaSociasEditor from './OfertaSociasEditor'
 
 interface Props {
   cotizacion: number
@@ -50,6 +51,8 @@ export default function ConfiguracionAdmin({ cotizacion: cotizacionInicial }: Pr
       <AdminSectionMenu />
 
       <div className="max-w-xl mx-auto px-4 py-10 space-y-6">
+
+        <OfertaSociasEditor />
 
         {/* Cotización del dólar */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">

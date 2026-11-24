@@ -31,6 +31,7 @@ function servidor({ user = { id: 'cuenta-ficticia' }, profile = perfil, falloPer
   const Recovery = () => null
   const Classroom = () => null
   const page = load('src/app/classroom/page.tsx', {
+      '@/lib/socias-offer-store': { leerOfertaSocias: async () => ({ oferta: { precioTexto: null, accionUrl: null } }) },
       '@/lib/class-access': access,
     '@/lib/supabase/server': { createClient: async () => ({ auth: { getUser: async () => { calls.auth++; return { data: { user } } } }, from: table => { calls.tablas.push(table); return { select: () => ({ eq: () => ({ single: async () => ({ data: profile, error: falloPerfil ? {} : null }) }) }) } } }) },
     'next/navigation': { redirect: href => { throw new Error('redirect:' + href) } },
@@ -106,7 +107,7 @@ function cliente(props = {}) {
   }
   const Player = () => null
   const Program = () => null
-  const Component = load('src/app/classroom/ClassroomCliente.tsx', { react: hooks, './ClassPlayer': { default: Player }, './ClassroomProgram': { default: Program }, '@/lib/class-management': management, '@/lib/class-progress': progress, '@/lib/class-access': access, '@/lib/class-library-filters': filters }).default
+  const Component = load('src/app/classroom/ClassroomCliente.tsx', { react: hooks, '@/components/SociasUpgradePanel': { default: () => null }, './ClassPlayer': { default: Player }, './ClassroomProgram': { default: Program }, '@/lib/class-management': management, '@/lib/class-progress': progress, '@/lib/class-access': access, '@/lib/class-library-filters': filters }).default
   const render = () => { cursor = 0; return Component({ clases: catalogo.filter(clase => clase.activo), esAdmin: false, perfil, progresoInicial: [avance], ...currentProps }) }
   const flush = () => { for (const index of effects) { const cell = cells[index]; cell.cleanup?.(); cell.cleanup = cell.effect() } effects.clear() }
   const replay = () => { const registered = cells.filter(cell => cell?.effect); for (const cell of registered) cell.cleanup?.(); for (const cell of registered) cell.cleanup = cell.effect() }

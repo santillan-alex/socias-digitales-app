@@ -46,7 +46,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Rutas que requieren login
-  const rutasProtegidas = ['/bienvenida', '/inicio', '/perfil', '/admin', '/metricas', '/classroom', '/clases', '/productos', '/ranking', '/logros', '/comunidad', '/resultados', '/checklist', '/objetivos', '/lanzamiento', '/notificaciones']
+  const rutasProtegidas = ['/bienvenida', '/inicio', '/perfil', '/admin', '/metricas', '/classroom', '/clases', '/socias', '/productos', '/ranking', '/logros', '/comunidad', '/resultados', '/checklist', '/objetivos', '/lanzamiento', '/notificaciones']
   if (!userId && rutasProtegidas.some(r => pathname.startsWith(r))) {
     const destino = `${pathname}${request.nextUrl.search}`
     return redirectConCookies(`/login?next=${encodeURIComponent(destino)}`)
@@ -92,7 +92,7 @@ export async function proxy(request: NextRequest) {
 
   // Las páginas de módulos pendientes muestran su bloqueo; nunca su contenido.
   // La autorización efectiva también se vuelve a comprobar en cada página/consulta.
-  const rutasIniciales = ['/bienvenida', '/inicio', '/perfil', '/notificaciones', '/productos', '/resultados', '/comunidad', '/metricas', '/objetivos', '/checklist', '/ranking', '/logros']
+  const rutasIniciales = ['/bienvenida', '/inicio', '/perfil', '/notificaciones', '/socias', '/productos', '/resultados', '/comunidad', '/metricas', '/objetivos', '/checklist', '/ranking', '/logros']
   const rutasDesafio = ['/lanzamiento', '/classroom', '/clases']
   if (userId && perfil?.rol !== 'admin' && rutasProtegidas.some(r => pathname.startsWith(r))) {
     const permitida = [...rutasIniciales, ...rutasDesafio].some(r => pathname.startsWith(r))

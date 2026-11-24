@@ -73,7 +73,7 @@ function ui(props = {}) {
   const Player = () => null
   const Classroom = load('src/app/classroom/ClassroomCliente.tsx', {
     react: { ...React, useCallback: callback => callback, useEffect() {}, useRef: initial => { const index = cursor++; if (!(index in cells)) cells[index] = { current: initial }; return cells[index] }, useState: initial => { const index = cursor++; if (!(index in cells)) cells[index] = typeof initial === 'function' ? initial() : initial; return [cells[index], value => { cells[index] = typeof value === 'function' ? value(cells[index]) : value }] } },
-    './ClassPlayer': { default: Player }, './ClassroomProgram': { default: Program },
+    '@/components/SociasUpgradePanel': { default: () => null }, './ClassPlayer': { default: Player }, './ClassroomProgram': { default: Program },
     '@/lib/class-management': management, '@/lib/class-progress': progress, '@/lib/class-access': access, '@/lib/class-library-filters': filters,
   }).default
   const render = () => { cursor = 0; return Classroom({ clases: clases.filter(clase => clase.activo), esAdmin: false, perfil: { rol: 'alumna', estado: 'activa', tipo_usuario: 'socia' }, progresoInicial: registros, ...props }) }

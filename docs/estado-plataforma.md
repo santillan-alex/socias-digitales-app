@@ -1,5 +1,17 @@
 # Estado de Socias Digitales
 
+## Biblioteca Farmasi, propuesta de upgrade y conector de grabaciones — desarrollo 24/11/2026
+
+**Código preparado sobre la versión publicada `741c282197b3504a12c982b08721779bf61a925d`; todavía no registrar como automatización instalada ni aceptada en producción.** Se trabajó en una copia separada de la anterior, conservando sus cambios pendientes de Whop y Resultados.
+
+Las cuentas activas de acceso inferior tienen biblioteca personal con su contenido reproducible; las clases Socias bloqueadas dejan de ser filas entre sus videos. Farmasi conserva su acceso adicional, submódulos y secuencia. La propuesta comercial queda en `/socias`, accesible desde “Conocer Socias” y el panel de beneficios. Precio/condiciones y enlace HTTPS se editan en Configuración, guardados privados con versión; inicialmente vacíos, sin adoptar precios ajenos ni confirmar compras por un clic. Socias activas, administración y cuentas pausadas conservan sus reglas anteriores.
+
+Clases incorpora “Grabaciones automáticas”: conexiones acotadas a programa/sección/acceso, clave mostrada una vez con hash privado, vencimiento y revocación. El conector recibe JSON pequeño y firma partes del video directo a R2. Las reservas de origen y escrituras condicionales evitan duplicados y preservan ediciones/publicaciones/retiros manuales; cada grabación termina en borrador privado. Se conserva la carga manual y no se envían comunicaciones. No hay proveedor adicional, migración de tablas, precio contratado o credencial real creado por esta entrega.
+
+Los scripts permiten agregar una subida al final de la skill existente de Claude o replicar descarga de un video explícito de YouTube en una carpeta de Socias Digitales. No se han instalado herramientas ni la skill en el equipo de Flor, no se descargaron videos reales y no hay vigilancia automática de canal/playlist ni un servicio permanente. Falta la conexión real y la aceptación administrativa/alumna; no afirmar que “cada clase se publica automáticamente”.
+
+QA local con componentes reales y transporte/datos ficticios: matriz de cuatro vistas y cinco estados en anchos CSS 320/360/390/430/1280. Se detectó y corrigió un título sin espacios que desbordaba “Continuar viendo” en escritorio; se repitió en los cinco anchos. Formularios también a altura 500: campos de 16 px y acciones de al menos 44 px. Se comprobaron guardado de propuesta, conflicto 409 con edición conservada, creación/copia de clave ficticia y desactivación conservando las grabaciones. Capturas y registro fuera de Git en `outputs/clases-upgrade-20261124`. Esto no certifica dispositivos físicos ni escrituras de producción. La sesión administrativa de Chrome se abrió por el usuario, pero el control nativo se interrumpió y agotó tiempo; no presentar esa apertura como aceptación completa. Validación global del código: 960/960 pruebas, TypeScript y build completos (106 páginas), ESLint de los 29 archivos de fuente/pruebas sin errores y una advertencia heredada del logo nativo. Las rutas QA se retiraron y el servidor local se detuvo. La publicación sigue pendiente de registrar; no usar el build local de entorno ficticio como artefacto de producción.
+
 Corte inicial: **15 de octubre de 2026**, con actualizaciones fechadas hasta el **5 de noviembre**. Documento de continuidad, no una certificación universal ni un anuncio comercial.
 
 ## Formación y comunidad: Avances reales y primera mejora de Negocio — 05/11/2026, Argentina

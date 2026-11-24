@@ -2,6 +2,68 @@
 
 Fecha: 15/10/2026. Complementa el inventario de `estado-plataforma.md`. No incluye credenciales ni autoriza envíos o cambios sobre usuarias reales.
 
+## Biblioteca personal, upgrade y grabaciones automáticas — desarrollo del 24/11/2026
+
+Base comprobada: producción `741c282197b3504a12c982b08721779bf61a925d`, deployment `dpl_5to3jiCDvv7KtRrveNGPvDrx67p5`, repositorio `santillan-alex/socias-digitales-app`. El desarrollo se hizo en una copia separada para conservar los cambios pendientes de la copia anterior. **Este bloque describe el código preparado; la publicación y la aceptación real se registran por separado.**
+
+### Biblioteca y propuesta comercial
+
+Las cuentas activas gratuitas, de Desafío y Farmasi ven primero sus clases reproducibles; las tarjetas Socias cerradas no se mezclan en esa biblioteca. Se conservan el catálogo protegido, las comprobaciones del reproductor, materiales, progreso y siguiente clase. El aula dedicada de Farmasi conserva sus submódulos. Farmasi continúa siendo una habilitación adicional (`socias_farmaci_habilitada`), no un tipo de cuenta nuevo. No inferir acceso por el nombre del programa.
+
+“Conocer Socias” abre `/socias`, con beneficios de los módulos existentes y los seis meses de acompañamiento definidos por el negocio. La página no concede accesos, procesa pagos ni registra una compra. Una Socia activa ve que ya pertenece al plan. Las cuentas pausadas conservan su circuito anterior.
+
+En **Panel de Flor → Configuración → Propuesta de Socias Digitales** se editan el texto de precio/condiciones y un enlace HTTPS de inscripción o contacto. Los valores iniciales están vacíos: no se adopta un precio de Whop ni se inventa una modalidad de pago. Sin enlace, la inscripción queda deshabilitada; sin precio, no se imprime un importe. El enlace lleva a la opción elegida por Flor, no activa un plan por sí solo. Guardado con versión y confirmación posterior, para evitar sobrescribir otra edición. Un fallo de lectura no se presenta como un precio vacío comprobado.
+
+### Automatización después de descargar una clase
+
+En **Panel de Flor → Clases → Grabaciones automáticas** se crea una conexión por programa, sección y acceso (Socias/Desafío o exclusivamente Farmasi). El programa debe elegirse expresamente. La clave aparece solo al crearla; se conserva únicamente su hash en el almacenamiento privado. Guardarla en el gestor de secretos o configuración privada del proceso local de Flor, nunca en Git, documentos compartidos, argumentos de comandos, capturas o WhatsApp.
+
+La conexión vence a los 90 días y se puede desactivar. No da permisos de administración general, publicación, envío de avisos, edición de clases previas o descarga del catálogo. Antes de operar se comprueban el estado de la conexión y el rol actual de su creadora. Las firmas de partes ya emitidas pueden seguir vigentes durante sus 15 minutos; revocar impide emitir nuevas y finalizar la importación. No equivale a cancelar instantáneamente una transferencia en curso.
+
+La skill existente de Claude debe llamar al conector **después de que la descarga finalice correctamente**. El archivo debe estar completo; unos segundos sin cambios no certifican por sí solos una descarga terminada. Se necesita Node moderno (22 o posterior, con `fetch` y `AbortSignal.timeout`) en el equipo que ejecuta la skill. Ejemplo sin ninguna clave real:
+
+```sh
+node scripts/importar-clase.mjs --file "/ruta/Socias Digitales/Grabaciones/CLASE.mp4" --manifest "/ruta/Socias Digitales/Grabaciones/clase.json" --dry-run
+node scripts/importar-clase.mjs --file "/ruta/Socias Digitales/Grabaciones/CLASE.mp4" --manifest "/ruta/Socias Digitales/Grabaciones/clase.json"
+```
+
+El proceso recibe `SOCIAS_IMPORT_TOKEN` de su configuración privada y usa `https://app.sociasdigitales.com` como destino por defecto (`SOCIAS_APP_URL` puede elegir el alias oficial de Flor). No copiar cookies del navegador ni claves de Supabase/R2 al proceso. El manifiesto contiene solamente:
+
+```json
+{"fuenteId":"youtube:ID_UNICO_DEL_VIDEO","titulo":"Título de la clase","descripcion":"Descripción opcional","orden":1}
+```
+
+Conservar exactamente el mismo manifiesto, archivo y conexión al reintentar. La identidad de importación combina el ID de conexión y el origen: otra conexión puede importar el mismo video a otro programa. Al renovar creando una conexión nueva, no volver a recorrer grabaciones históricas como si fueran clases nuevas. `fuenteId` debe ser el identificador estable del video/grabación, no el nombre de una carpeta ni la fecha de ejecución. Cambiar el archivo o los datos bajo un origen ya reservado genera conflicto para revisión. Programa, acceso y publicación no pueden venir del manifiesto: los fija la conexión creada por Flor.
+
+El CLI comprueba archivo regular MP4, tamaño, cabecera y estabilidad durante lectura, calcula una huella y envía el archivo directamente al R2 privado existente en partes de 16 MiB. La API solo procesa JSON pequeño; no recibe gigabytes a través de Vercel. Retomar el mismo comando recupera las partes verificadas. Solo muestra el éxito después de confirmar la asociación al mismo borrador. Una edición, publicación o retiro de video desde el panel evita que la importación pise esos cambios.
+
+El servidor comprueba tamaño, MIME y cabecera MP4 del objeto terminado. La huella SHA-256 identifica el archivo declarado por el cliente para evitar duplicados; **no es un hash completo recalculado por el servidor ni certifica decodificación o reproducción en todos los dispositivos**. La reproducción móvil requiere MP4 compatible (H.264/AAC). Conservar las cargas manuales existentes para cubrir fuentes que necesiten conversión o acceso adicional.
+
+Límites del conector inicial: diez conexiones activas, veinte registros de conexión conservados, doscientas importaciones/200 GiB por conexión, diez orígenes nuevos por día UTC y 8 GiB por video. Las partes del conector firman el tamaño exacto, sin cambiar el contrato del uploader manual anterior. Son límites de esta integración; no una cuota contratada del proveedor. No se borran binarios ni clases al revocar. No se envían emails, push o notificaciones a alumnas al importar.
+
+### Conector opcional de YouTube: una grabación terminada por ejecución
+
+`scripts/descargar-y-subir-clase.mjs` permite replicar la descarga en una carpeta explícita de Socias Digitales. Requiere `yt-dlp` oficial actualizado, `ffprobe` y, si se combinan video y audio separados, `ffmpeg`. No instala estas herramientas, no usa cookies del navegador, no carga plugins/configuraciones del usuario ni componentes remotos y no acepta canales, playlists o destinos arbitrarios. Solo se usa con grabaciones propias/autorizadas, públicas o no listadas y ya terminadas. Un video privado, con DRM, aún en vivo, programado o cuyo VOD sigue procesándose produce un rechazo para revisión.
+
+```sh
+node scripts/descargar-y-subir-clase.mjs --url "https://www.youtube.com/watch?v=ID_DEL_VIDEO" --folder "/ruta/Socias Digitales/Grabaciones" --order 3 --dry-run
+node scripts/descargar-y-subir-clase.mjs --url "https://www.youtube.com/watch?v=ID_DEL_VIDEO" --folder "/ruta/Socias Digitales/Grabaciones" --order 3
+```
+
+El primer comando valida argumentos y no crea carpetas ni realiza descargas/subidas. El segundo comprueba metadata antes y después de descargar, pide MP4 AVC/AAC y verifica codecs/duración mediante ffprobe antes de llamar al importador. Cada video tiene una carpeta `youtube-ID` con su MP4, metadata, manifiesto estable y recibo de verificación. Un reintento conserva esa ficha; no cambia por un título nuevo ni una reorganización de la lista. Un archivo modificado o un proceso simultáneo requiere revisión. No borrar la carpeta tras una subida fallida: conserva lo necesario para reintentar sin descargar de nuevo.
+
+Este script recibe **un enlace por clase**, no vigila YouTube, no crea un cron ni descubre videos nuevos por sí mismo. La skill actual puede invocarlo cuando recibe el enlace de una clase terminada, o conservar su descargador y llamar solo a `importar-clase.mjs` al final. Para eliminar también ese disparador pendiente se necesita definir la playlist/origen y el entorno que lo ejecutará. Mantener los permisos del video y detenerse ante un requisito de autenticación: no extraer cookies, saltar advertencias ni prometer descarga de cualquier video. Referencia de opciones: [documentación oficial de yt-dlp](https://github.com/yt-dlp/yt-dlp#usage-and-options).
+
+### Prueba de aceptación pendiente de la conexión real
+
+1. Crear una conexión expresa de prueba desde una sesión administrativa real. Instalar su clave solo en la configuración privada del proceso que descargará las clases.
+2. Descargar una grabación propia ya terminada o usar un MP4 técnico autorizado. Comprobar en el panel el borrador, programa, acceso y video; no publicar contenido ficticio a alumnas.
+3. Repetir el mismo comando y comprobar que conserva el mismo UUID y una sola ficha. Interrumpir una carga, retomarla y contrastar el estado del panel.
+4. Revocar la conexión y comprobar el rechazo de nuevas cargas/finalización. Conservar las pruebas privadas y sus archivos; no borrarlas para aparentar que nunca existieron.
+5. Publicar una clase real autorizada, abrirla con la cuenta de prueba y verificar video, materiales, progresión y aislamiento Farmasi/Socias. Importar no sustituye esta prueba.
+
+No se ha conectado la skill remota de Flor ni un webhook de YouTube. El conector local necesita que el equipo esté encendido y que la skill se ejecute. Para una operación independiente del equipo hace falta un ejecutor externo y una fuente/playlist de clases definida; no confundir estos scripts con un servicio permanente ya instalado.
+
 ## Formación y comunidad: Avances — 05/11/2026
 
 **Panel de Flor → Formación y comunidad → Avances** (`/admin/lanzamiento`) ahora consulta el seguimiento de la biblioteca actual. Elegir programa o clase/material, alternar **Por alumna / Por clase**, buscar por nombre y combinar tipo de cuenta, acceso actual y avance. Los indicadores resumen el recorrido elegido, sin cambiar por una búsqueda de personas. **Ver avance** abre una ficha de solo lectura; **Ver alumnas de esta clase** acota el recorrido a esa clase. Clases → Seguimiento conserva su resumen y enlaza a este detalle.

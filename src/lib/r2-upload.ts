@@ -44,8 +44,15 @@ function queryString(query: Record<string, string>) {
     .map(([k, v]) => `${k}=${v}`)
     .join('&')
 }
-export function firmarParte(key: string, uploadId: string, partNumber: number) {
+export function firmarParte(key: string, uploadId: string, partNumber: number, bytes?: number) {
+  if (bytes !== undefined && (!Number.isSafeInteger(bytes) || bytes < 1 || bytes > TAMANO_PARTE ||
+      !Number.isInteger(partNumber) || partNumber < 1 || partNumber > Math.ceil(MAX_VIDEO_BYTES / TAMANO_PARTE)))
+    throw new Error('Tamaño de parte no válido.')
   const c = config(key)
+  // Browsers keep the original host-only signature. The machine connector binds
+  // every numbered part to its exact length so a token cannot exceed its quota.
+  const signedHeaders = bytes === undefined ? 'host' : 'content-length;host'
+  const canonicalHeaders = `${bytes === undefined ? '' : `content-length:${bytes}\n`}host:${c.host}\n`
   const query = queryString({
     uploadId,
     partNumber: String(partNumber),
@@ -53,14 +60,14 @@ export function firmarParte(key: string, uploadId: string, partNumber: number) {
     'X-Amz-Credential': `${process.env.R2_ACCESS_KEY_ID}/${c.scope}`,
     'X-Amz-Date': c.date,
     'X-Amz-Expires': '900',
-    'X-Amz-SignedHeaders': 'host',
+    'X-Amz-SignedHeaders': signedHeaders,
   })
   const canonical = [
     'PUT',
     c.uri,
     query,
-    `host:${c.host}\n`,
-    'host',
+    canonicalHeaders,
+    signedHeaders,
     'UNSIGNED-PAYLOAD',
   ].join('\n')
   const signature = createHmac('sha256', c.signing)

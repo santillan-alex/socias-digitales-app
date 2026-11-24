@@ -2,6 +2,12 @@
 
 Fecha: **15/10/2026**. Este documento reemplaza el estado de transferencia anterior del 08/10. No confirma que se haya movido ningún servicio.
 
+## Ampliación preparada el 24/11/2026: propuesta y conexiones de grabaciones
+
+Esta ampliación usa el R2 privado existente, sin añadir proveedor ni migración de tablas. Respaldar conjuntamente `plataforma/oferta-socias-v1.json`, `plataforma/importaciones-clases/config-v1.json`, `plataforma/importaciones-clases/trabajos/` y los videos asociados bajo `clases/`. La configuración guarda conexiones, hashes, revocaciones y reservas/cuotas; los trabajos conservan la identidad del origen y el UUID del borrador. Restaurar solo parte de esos datos puede romper reintentos y revocaciones.
+
+Las claves de conexión de la skill local se muestran una vez al crearlas y se almacenan fuera del repositorio, en la configuración privada del equipo de Flor. No son las claves de R2, Supabase ni Whop. La transferencia de Vercel no instala Node, herramientas de descarga, carpetas o la skill de Claude en otro equipo. Coordinar esa instalación y probar el circuito con la responsable. Ver límites y aceptación en `operacion-y-pruebas.md`; código preparado no equivale a automatización real activa.
+
 ## Ampliación de respaldo: archivos propios de Afiliadas — cierre del 03/11/2026
 
 El código publicado de esta ampliación corresponde al commit `5bfdfab03840d054b2e6fe8755d78e2c3cf8b1c6`, árbol `c96cfbf827e702910ec35e54bc0f277d445907b5`, deployment `dpl_BJ25xb7ZCmM7urk8NEJxA6uXgLoQ`, **READY confirmado**, con dominios app/Flor y aliases conservados. Las **777 pruebas**, build local completo y ESLint con salida 0 corresponden a esa versión. Desde Chrome con sesión administrativa, origen app, se subieron realmente PDF y MP4 técnicos, se guardaron archivados, se recargaron y descargaron; los SHA-256 de los archivos recibidos coinciden con sus fixtures. Esta aceptación no confirma una transferencia, respaldo ejecutado o restauración probada. Consultar el corte más reciente de `estado-plataforma.md` antes de operar.

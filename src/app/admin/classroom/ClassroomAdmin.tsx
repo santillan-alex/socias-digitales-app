@@ -259,6 +259,12 @@ export default function ClassroomAdmin({
         </a>
         <div className="flex flex-wrap gap-2">
           <Link
+            href="/admin/classroom/importaciones"
+            className="inline-flex min-h-11 items-center rounded-full border border-[#D8CFC8] bg-[#FAF7F3] px-4 py-3 text-sm"
+          >
+            Grabaciones automáticas
+          </Link>
+          <Link
             href="/classroom"
             className="inline-flex min-h-11 items-center rounded-full border border-[#D8CFC8] px-4 py-3 text-sm"
           >

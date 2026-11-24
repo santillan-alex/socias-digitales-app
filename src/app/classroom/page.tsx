@@ -9,6 +9,8 @@ import { tieneAccesoFarmaci } from '@/lib/class-access'
 import { FLUJO_FARMASI, RUTA_FARMASI, soloClasesFarmasi } from '@/lib/farmasi-registration'
 import { esUuid } from '@/lib/class-management'
 import { leerGruposFarmasi } from '@/lib/farmasi-class-groups-server'
+import { leerOfertaSocias } from '@/lib/socias-offer-store'
+import type { OfertaSocias } from '@/lib/socias-offer'
 
 export default async function ClassroomPage(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -28,8 +30,15 @@ export default async function ClassroomPage(props: {
   if (perfilError || !perfil) return <ClassroomRecovery esAdmin={false} />
   if (espacioFarmasi && !tieneAccesoFarmaci(perfil)) redirect(RUTA_FARMASI)
   let clasesParaVista: Awaited<ReturnType<typeof leerCatalogoClases>>
+  let ofertaSocias: OfertaSocias | undefined
   try {
-    const catalogo = await leerCatalogoClases(perfil)
+    const [catalogo, propuesta] = await Promise.all([
+      leerCatalogoClases(perfil),
+      perfil.rol !== 'admin' && perfil.tipo_usuario !== 'socia'
+        ? leerOfertaSocias().catch(() => null)
+        : Promise.resolve(null),
+    ])
+    ofertaSocias = propuesta?.oferta
     clasesParaVista = espacioFarmasi ? soloClasesFarmasi(catalogo) : catalogo
   }
   catch {
@@ -64,6 +73,7 @@ export default async function ClassroomPage(props: {
       clases={clasesParaVista}
       esAdmin={perfil?.rol === 'admin'}
       perfil={perfil}
+      ofertaSocias={ofertaSocias}
       progresoInicial={progreso}
       errorProgreso={errorProgreso}
       claseInicialId={claseInicial?.id ?? null}
