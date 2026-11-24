@@ -2,11 +2,15 @@
 
 Fecha: **15/10/2026**. Este documento reemplaza el estado de transferencia anterior del 08/10. No confirma que se haya movido ningún servicio.
 
-## Ampliación preparada el 24/11/2026: propuesta y conexiones de grabaciones
+## Ampliación publicada el 24/11/2026: propuesta y conexiones de grabaciones
+
+Código publicado y **READY** en `6926a0aa279f0b03e720b6dc9b7d18b4da447c40`, árbol `b90efda71271f5b9a7014c7aa096fa847da30ea7`, deployment `dpl_BCQBa3rHW4dPuX7rTFTFwJS74nSX`; se confirmó `app.sociasdigitales.com` sobre el mismo deployment. La comprobación administrativa real abrió Clases, Grabaciones automáticas, Configuración y la propuesta `/socias`, sin escrituras. Al cierre no había conexiones/importaciones y la propuesta tenía precio/enlace vacíos. No se crearon claves ni se cambiaron cuentas, permisos, clases o comunicaciones. La publicación no transfiere ningún servicio ni instala la skill en el equipo de Flor.
 
 Esta ampliación usa el R2 privado existente, sin añadir proveedor ni migración de tablas. Respaldar conjuntamente `plataforma/oferta-socias-v1.json`, `plataforma/importaciones-clases/config-v1.json`, `plataforma/importaciones-clases/trabajos/` y los videos asociados bajo `clases/`. La configuración guarda conexiones, hashes, revocaciones y reservas/cuotas; los trabajos conservan la identidad del origen y el UUID del borrador. Restaurar solo parte de esos datos puede romper reintentos y revocaciones.
 
-Las claves de conexión de la skill local se muestran una vez al crearlas y se almacenan fuera del repositorio, en la configuración privada del equipo de Flor. No son las claves de R2, Supabase ni Whop. La transferencia de Vercel no instala Node, herramientas de descarga, carpetas o la skill de Claude en otro equipo. Coordinar esa instalación y probar el circuito con la responsable. Ver límites y aceptación en `operacion-y-pruebas.md`; código preparado no equivale a automatización real activa.
+Las claves de conexión de la skill local se muestran una vez al crearlas y se almacenan fuera del repositorio, en la configuración privada del equipo de Flor. No son las claves de R2, Supabase ni Whop. La transferencia de Vercel no instala Node, herramientas de descarga, carpetas o la skill de Claude en otro equipo. Coordinar esa instalación y probar el circuito con la responsable. Ver límites y aceptación en `operacion-y-pruebas.md`; código publicado no equivale a automatización real activa. Siguen pendientes una subida MP4 real y el recorrido de una alumna Farmasi real.
+
+Evidencia previa a publicar: 960/960 pruebas, TypeScript y build completo de 106 páginas; QA local en 320/360/390/430/1280 y estados llenos/largos/vacíos/cargando/error. No se usó la `.next` de configuración ficticia como artefacto de despliegue. La consulta de errores/fatales de quince minutos del nuevo deployment no encontró registros, sin que ello sustituya la aceptación pendiente. El registro privado del cierre es `outputs/clases-upgrade-20261124/publicacion-y-verificacion.json`. Las capturas de producción se conservan fuera de Git en `outputs/clases-upgrade-20261124`: `grabaciones-panel-publicado.jpg`, `propuesta-configuracion-publicada.jpg` y `propuesta-socias-publicada.jpg`. La referencia de reversión de código es `741c282197b3504a12c982b08721779bf61a925d` / `dpl_5to3jiCDvv7KtRrveNGPvDrx67p5`; conservar los datos y archivos que se creen después de esa versión.
 
 ## Ampliación de respaldo: archivos propios de Afiliadas — cierre del 03/11/2026
 

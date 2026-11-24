@@ -2,9 +2,17 @@
 
 Fecha: 15/10/2026. Complementa el inventario de `estado-plataforma.md`. No incluye credenciales ni autoriza envíos o cambios sobre usuarias reales.
 
-## Biblioteca personal, upgrade y grabaciones automáticas — desarrollo del 24/11/2026
+## Biblioteca personal, upgrade y grabaciones automáticas — publicado el 24/11/2026
 
-Base comprobada: producción `741c282197b3504a12c982b08721779bf61a925d`, deployment `dpl_5to3jiCDvv7KtRrveNGPvDrx67p5`, repositorio `santillan-alex/socias-digitales-app`. El desarrollo se hizo en una copia separada para conservar los cambios pendientes de la copia anterior. **Este bloque describe el código preparado; la publicación y la aceptación real se registran por separado.**
+**Publicado y READY:** commit `6926a0aa279f0b03e720b6dc9b7d18b4da447c40`, árbol `b90efda71271f5b9a7014c7aa096fa847da30ea7`, deployment `dpl_BCQBa3rHW4dPuX7rTFTFwJS74nSX`; `app.sociasdigitales.com` apunta al mismo deployment. Repositorio `santillan-alex/socias-digitales-app`. El desarrollo se hizo sobre la producción anterior `741c282197b3504a12c982b08721779bf61a925d` en una copia separada, conservando los cambios pendientes de la copia anterior. La instalación de la automatización y su aceptación con una grabación real siguen pendientes.
+
+### Comprobación del cierre publicado
+
+Con sesión administrativa real en Chrome se abrió Clases: 29 fichas en total, 27 publicadas y 2 borradores; el indicador de gratuitas mostró 3 al corte. “Grabaciones automáticas” abrió su panel sin errores, con cero conexiones/importaciones; el campo Programa ofreció Bienvenida, Desafío Socias y Socias Farmasi. En Configuración, la propuesta tenía precio y enlace vacíos y Guardar propuesta habilitado. Sin guardar cambios, “Ver propuesta” abrió `/socias` en modo de revisión administrativa: beneficios visibles, sin precio y con inscripción deshabilitada hasta definir el enlace.
+
+Estas comprobaciones fueron de lectura: no hubo creación de claves, importaciones ni guardados de oferta/clases, cambios de cuentas/permisos o envío de avisos. Un primer control nativo de Chrome se había interrumpido; después se completó esta lectura real, sin convertirla en prueba de subida o de acceso de una alumna Farmasi. Los quince minutos consultados de logs no mostraron errores/fatales; el resultado se limita a esa ventana.
+
+Antes de publicar pasaron 960/960 pruebas, TypeScript y build completo de 106 páginas; ESLint de 29 archivos sin errores y una advertencia previa de imagen nativa. QA local: 100 combinaciones de biblioteca/propuesta/editor/importaciones, cinco estados y anchos CSS 320/360/390/430/1280; tras corregir el título largo de Continuar viendo se repitieron los cinco anchos. También se comprobaron diez combinaciones de formularios con altura 500 y operaciones simuladas de guardado/conflicto/copia/revocación. Las rutas ficticias se retiraron y el servidor se detuvo antes del build final. Capturas privadas: `outputs/clases-upgrade-20261124/grabaciones-panel-publicado.jpg`, `propuesta-configuracion-publicada.jpg` y `propuesta-socias-publicada.jpg`; el registro del cierre se conserva en `outputs/clases-upgrade-20261124/publicacion-y-verificacion.json`, fuera de Git. Falta completar la prueba MP4 y el recorrido con una alumna Farmasi real detallados más abajo.
 
 ### Biblioteca y propuesta comercial
 
