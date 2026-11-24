@@ -4,7 +4,9 @@ Fecha: 15/10/2026. Complementa el inventario de `estado-plataforma.md`. No inclu
 
 ## Inicio, navegación y upgrade Farmasi — ampliación del 24/11/2026
 
-La ampliación parte de `e62f2462d1e167c67846e261bd5abb8ee3a96f36`, hijo documental de la producción `6926a0aa279f0b03e720b6dc9b7d18b4da447c40`. El despliegue final se registra por separado. No cambia tablas, grants, SDK, proveedores o precios.
+**Publicado y READY:** commit `a134e2e8c5540d43eaac3a7a0064d957a4b3902a`, árbol `6c5207abbd298c9b26586acbfd4eddced4fb72a7`, deployment `dpl_EVNBnam2zzVfz3oViHCF1RdzGtz6`; se confirmó `app.sociasdigitales.com` sobre el mismo deployment. Base `e62f2462d1e167c67846e261bd5abb8ee3a96f36`, hijo documental de la producción previa `6926a0aa279f0b03e720b6dc9b7d18b4da447c40`. No cambia tablas, grants, SDK, proveedores o precios.
+
+Cierre técnico: 990/990 pruebas, lint de 25 archivos sin errores (dos avisos existentes de imágenes), TypeScript y build webpack de 106 páginas correctos. Lock intacto, sin ruta QA en el manifest y procesos locales detenidos. El build ficticio fue solo verificación; Vercel reconstruyó desde la fuente registrada. La consulta de error/fatal de diez minutos no encontró registros; no sustituye la aceptación real pendiente. Resultado completo fuera de Git en `outputs/farmasi-experiencia-20261124/verificacion-y-publicacion.json` y `verificacion-codigo.json`.
 
 - Farmasi activa sin formación general: Inicio Farmasi con resumen de su catálogo/progreso y una única propuesta de upgrade; no FreeStart ni LockedModules. Socia/Desafío con Farmasi mantienen su campus y acceso adicional. Farmasi y Afiliadas pueden coexistir.
 - `StudentNavigationData.farmasi` se obtiene del perfil protegido y no convierte `formacion` en verdadero. Las APIs y páginas conservan su autorización. El menú distingue la query exacta de Farmasi; parámetros repetidos no seleccionan ese espacio. La barra móvil del marco deriva destinos de esos indicadores; la global queda como fallback seguro y se oculta solo cuando existe el marco.

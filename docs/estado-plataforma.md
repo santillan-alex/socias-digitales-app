@@ -2,7 +2,9 @@
 
 ## Experiencia Farmasi y propuesta Socias — ampliación del 24/11/2026
 
-Código preparado sobre `e62f2462d1e167c67846e261bd5abb8ee3a96f36`, registro documental de la producción `6926a0aa279f0b03e720b6dc9b7d18b4da447c40`. Registrar deployment y aceptación de esta ampliación al publicarla; el bloque anterior no acredita que esta nueva experiencia ya esté en producción.
+**Publicado y READY.** Commit `a134e2e8c5540d43eaac3a7a0064d957a4b3902a`, árbol `6c5207abbd298c9b26586acbfd4eddced4fb72a7`, deployment `dpl_EVNBnam2zzVfz3oViHCF1RdzGtz6`. Se confirmó que `app.sociasdigitales.com` apunta a esta versión. Base `e62f2462d1e167c67846e261bd5abb8ee3a96f36`, registro documental de la producción previa `6926a0aa279f0b03e720b6dc9b7d18b4da447c40`.
+
+Validación final: **990/990 pruebas**, TypeScript y build webpack completos (106 páginas), lint de 25 archivos sin errores y dos avisos existentes de imágenes nativas. Lock sin cambios, árbol verificado y cero rutas QA publicadas. Vercel reconstruyó la fuente; no se desplegó el build local ficticio. Los registros error/fatal de los diez minutos consultados no devolvieron resultados; esto no certifica el recorrido autenticado pendiente. Registro privado: `outputs/farmasi-experiencia-20261124/verificacion-y-publicacion.json`. Reversión de código: `6926a0aa279f0b03e720b6dc9b7d18b4da447c40` / `dpl_BCQBa3rHW4dPuX7rTFTFwJS74nSX`, conservando datos y archivos.
 
 Farmasi sin formación general tiene un Inicio propio: próxima clase o reanudación, clases disponibles, completadas/en curso y avance. El resumen usa únicamente el catálogo Farmasi autorizado y el progreso de la sesión; un error conserva estados desconocidos, no ceros inventados. Este recorrido sustituye “Empezar gratis” y el mosaico de módulos bloqueados para Farmasi sola. Socias y Desafío con Farmasi conservan su campus y suman el acceso a su aula; Afiliadas continúa siendo un acceso adicional.
 
