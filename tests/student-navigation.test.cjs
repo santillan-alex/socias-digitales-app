@@ -31,15 +31,19 @@ function components(pathname = '/inicio', react = React) {
     UnreadNoticeLink: ({ variante, activo }) => React.createElement('a', { href: '/notificaciones', 'aria-current': activo ? 'page' : undefined, 'data-variante': variante }, variante === 'menu' ? 'Notificaciones' : 'Avisos'),
   }
   const Sidebar = load('src/components/StudentSidebar.tsx', {
-    'next/link': link, 'next/navigation': { usePathname: () => pathname },
+    'next/link': link, 'next/navigation': { usePathname: () => pathname.split(/[?#]/)[0], useSearchParams: () => new URLSearchParams(pathname.split('?')[1]?.split('#')[0] ?? '') },
     './NavigationIcon': icon, './UnreadNotices': notices,
     '@/app/inicio/ProximaClase': { default: ({ variante }) => React.createElement('div', { 'data-proximo-hito': variante }) },
     '@/lib/student-navigation': navigation,
   }).default
+  const Mobile = load('src/components/MobileNavigation.tsx', {
+    'next/link': link, 'next/navigation': { usePathname: () => pathname.split(/[?#]/)[0], useSearchParams: () => new URLSearchParams(pathname.split('?')[1]?.split('#')[0] ?? '') },
+    './NavigationIcon': icon, '@/lib/student-navigation': navigation,
+  }).default
   const Frame = load('src/components/StudentShellFrame.tsx', {
-    react, 'next/link': link, 'next/navigation': { usePathname: () => pathname },
+    react, 'next/link': link, 'next/navigation': { usePathname: () => pathname.split(/[?#]/)[0], useSearchParams: () => new URLSearchParams(pathname.split('?')[1]?.split('#')[0] ?? '') },
     '@/app/inicio/AgendaProvider': { AgendaProvider: wrapper }, './UnreadNotices': notices,
-    './StudentSidebar': { default: Sidebar },
+    './StudentSidebar': { default: Sidebar }, './MobileNavigation': { default: Mobile },
   }).default
   return { Sidebar, Frame }
 }
@@ -59,6 +63,37 @@ test('rutas activas: material, reproductor y contraseña comparten la sección c
   for (const pathname of ['/classroom-ajeno', '/clases-extra', '/perfilado', '/admin', '/admin/comunidad', '/']) {
     assert.deepEqual(sections.filter(section => navigation.activoSeccionEstudiante(pathname, section)), [], pathname)
   }
+})
+test('Farmasi y biblioteca general tienen una sola sección activa, incluida la query duplicada del servidor', () => {
+  const dual = { ...data, farmasi: true, conocerSocias: false }
+  const sections = navigation.seccionesPrincipalesEstudiante(dual)
+  for (const [route, expected] of [
+    ['/classroom?espacio=farmasi', 'farmasi'],
+    ['/classroom?clase=propia&espacio=farmasi', 'farmasi'],
+    ['/classroom?espacio=farmasi&espacio=farmasi', 'programa'],
+    ['/classroom?espacio=farmasi&espacio=otro', 'programa'],
+    ['/classroom?espacio=otro', 'programa'], ['/classroom', 'programa'], ['/clases/materiales', 'programa'],
+  ]) assert.deepEqual(sections.filter(section => navigation.activoSeccionEstudiante(route, section)).map(section => section.id), [expected], route)
+  for (const [query, expected] of [['espacio=farmasi', 'farmasi'], ['espacio=farmasi&espacio=farmasi', 'programa']]) {
+    assert.deepEqual(sections.filter(section => navigation.activoSeccionEstudiante('/classroom', section, query)).map(section => section.id), [expected])
+  }
+  const html = renderToStaticMarkup(React.createElement(components('/classroom?espacio=farmasi').Sidebar, { datos: dual }))
+  assert.equal((html.match(/aria-current="page"/g) || []).length, 1)
+  assert.match(html, /href="\/classroom\?espacio=farmasi" aria-current="page"/)
+})
+test('Farmasi sola conserva menú, avisos y upgrade sin Estrategia, calendario o herramientas de Socias', () => {
+  const propia = { ...data, formacion: false, farmasi: true, conocerSocias: true, comunidad: false, herramientas: { miDia: false, metricas: false, resultados: false, logros: false } }
+  const { Frame } = components('/classroom?espacio=farmasi')
+  const html = renderToStaticMarkup(React.createElement(Frame, { datos: propia, children: React.createElement('main', null, 'Aula propia') }))
+  assert.match(html, /Menú y próximo encuentro/)
+  assert.match(html, /Socias Farmasi/)
+  assert.match(html, /Conocer Socias/)
+  assert.match(html, /aria-controls="sd-student-navigation-dialog"/)
+  for (const href of ['/lanzamiento', '/clases', '/comunidad', '/metricas', '/resultados', '/checklist', '/logros']) assert.ok(!html.includes(`href="${href}"`), href)
+  assert.ok(!html.includes('data-proximo-hito'))
+  const socia = renderToStaticMarkup(React.createElement(components('/classroom').Sidebar, { datos: { ...data, farmasi: true } }))
+  assert.match(socia, /href="\/clases"/); assert.match(socia, /href="\/classroom\?espacio=farmasi"/)
+  assert.doesNotMatch(socia, /Conocer Socias/)
 })
 test('herramientas y comunidad solo aparecen con sus indicadores autorizados, sin desbloquear otros módulos', () => {
   for (let bits = 0; bits < 16; bits++) {

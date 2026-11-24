@@ -239,6 +239,9 @@ body {
 .platform-design, .sd-access-design { min-width: 0; }
 .platform-design { padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px); }
 .sd-mobile-navigation { display: none; }
+/* El marco usa los datos protegidos. Ocultar solo la barra global redundante,
+   no su barra interior ni las rutas que todavía no usan ese marco. */
+.platform-design--member:has(.sd-student-shell) > .sd-mobile-navigation { display: none; }
 .sd-student-section-actions { display: none; }
 /* Solo encabezados redundantes marcados explícitamente; nunca títulos,
    filtros, controles del reproductor ni barras administrativas. */

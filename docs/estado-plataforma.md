@@ -1,5 +1,21 @@
 # Estado de Socias Digitales
 
+## Experiencia Farmasi y propuesta Socias — ampliación del 24/11/2026
+
+Código preparado sobre `e62f2462d1e167c67846e261bd5abb8ee3a96f36`, registro documental de la producción `6926a0aa279f0b03e720b6dc9b7d18b4da447c40`. Registrar deployment y aceptación de esta ampliación al publicarla; el bloque anterior no acredita que esta nueva experiencia ya esté en producción.
+
+Farmasi sin formación general tiene un Inicio propio: próxima clase o reanudación, clases disponibles, completadas/en curso y avance. El resumen usa únicamente el catálogo Farmasi autorizado y el progreso de la sesión; un error conserva estados desconocidos, no ceros inventados. Este recorrido sustituye “Empezar gratis” y el mosaico de módulos bloqueados para Farmasi sola. Socias y Desafío con Farmasi conservan su campus y suman el acceso a su aula; Afiliadas continúa siendo un acceso adicional.
+
+El menú persistente incorpora Farmasi como indicador separado de formación, desde el perfil protegido. La barra móvil deriva sus cuatro o cinco destinos de esos datos, prioriza ambas bibliotecas en accesos combinados y no ofrece Mi día sin comprobar su permiso. El marco oculta únicamente la barra global duplicada. No se conceden Estrategia, comunidad, herramientas o agenda Socias por tener Farmasi.
+
+El aula Farmasi muestra directamente los submódulos plegables con progreso real. Abre el módulo de la clase en curso o el primero para alumnas nuevas; búsqueda y filtros abren coincidencias sin cambiar los totales del módulo, la posición o la secuencia del reproductor. Los videos sin asignación siguen visibles. La biblioteca general conserva su organización.
+
+La propuesta `/socias` tiene contexto Farmasi únicamente cuando su acceso está comprobado, comparación de lo que conserva y lo que suma, beneficios de formación/comunidad/organización/resultados y preguntas frecuentes. “Ver qué incluye” funciona sin precio ni checkout. Una muestra solo se ofrece si una clase real del catálogo propio es activa, gratuita, autorizada, no exclusiva Farmasi y tiene video; el reproductor vuelve a autorizarla. Socias activas y cuentas pausadas no reciben una oferta de compra en esta página. Precio y destino siguen viniendo de Configuración, sin importes, contactos o compras inventados.
+
+QA local con componentes reales y fixtures identificadas: **75 combinaciones** de Inicio/aula/propuesta × lleno/largo/vacío/cargando/error × anchos CSS 320/360/390/430/1280; sin desborde, campos de 16 px y acciones de al menos 44 px. Diez comprobaciones adicionales de avance desconocido y búsqueda enfocada con altura 500. Se verificaron plegado → búsqueda → apertura de coincidencia, filtro de completadas, menú móvil y Escape con retorno de foco, ancla de beneficios bajo el encabezado, FAQ y barra retirada al enfocar búsqueda con altura 440. El registro válido es `outputs/farmasi-experiencia-20261124/mediciones-qa-final.json`; la medición preliminar no sustituye las vistas renderizadas de ese registro. Son pruebas locales, no dispositivos físicos ni una sesión Farmasi real.
+
+Chrome perdió la conexión al iniciar la aceptación real. Se pidió reconectarlo; no se alteraron roles o grants para conseguir una captura. El navegador integrado completó los controles locales anteriores y se retiraron sus emulaciones/pestañas; la ruta ficticia y el servidor local se retiraron antes del build. Sigue pendiente recorrer Inicio → aula → muestra → propuesta con una sesión Farmasi real. La comprobación SQL de solo lectura confirmó el flag booleano, RLS y los triggers protectores vigentes; sin migraciones ni escrituras de datos, acceso, contenido, oferta o comunicaciones.
+
 ## Biblioteca Farmasi, propuesta de upgrade y conector de grabaciones — publicado el 24/11/2026
 
 **Publicado y READY.** Commit `6926a0aa279f0b03e720b6dc9b7d18b4da447c40`, árbol `b90efda71271f5b9a7014c7aa096fa847da30ea7`, deployment `dpl_BCQBa3rHW4dPuX7rTFTFwJS74nSX`. Se confirmó que `app.sociasdigitales.com` apunta a este mismo deployment. Se partió de la producción `741c282197b3504a12c982b08721779bf61a925d` en una copia separada, conservando los cambios pendientes de Whop y Resultados de la copia anterior. La publicación del conector no significa que la automatización ya esté instalada en el equipo de Flor.

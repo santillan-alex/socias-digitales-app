@@ -16,7 +16,8 @@ function load(file, deps = {}) {
 }
 const link = { default: ({ prefetch, ...props }) => { void prefetch; return React.createElement('a', props) } }
 const icon = { default: () => React.createElement('span', { 'aria-hidden': true }) }
-const Upgrade = load('src/components/SociasUpgradePanel.tsx', { 'next/link': link, './ArrowIcon': icon, './NavigationIcon': icon }).default
+const upgradeHelpers = load('src/lib/socias-upgrade.ts')
+const Upgrade = load('src/components/SociasUpgradePanel.tsx', { 'next/link': link, './ArrowIcon': icon, './NavigationIcon': icon, '@/lib/socias-upgrade': upgradeHelpers }).default
 const management = load('src/lib/class-management.ts')
 const progress = load('src/lib/class-progress.ts')
 const filters = load('src/lib/class-library-filters.ts', { './class-management': management })
@@ -68,7 +69,8 @@ test('el aula Farmasi conserva grupos y su orden; el banner no incorpora clases 
   const groups = [{ id: 'grupo', nombre: 'Primeros pasos', orden: 1, claseIds: ['farmasi'] }]
   const view = library({ espacioFarmasi: true, clases: rows.filter(c => c.solo_farmaci), submodulosFarmasi: groups })
   assert.equal(view.programs.length, 1)
-  assert.equal(view.programs[0].programa, 'Contenido de Farmasi')
+  assert.equal(view.programs[0].programa, 'Farmasi')
+  assert.equal(view.programs[0].compactoFarmasi, true)
   assert.deepEqual(view.programs[0].gruposFarmasi, groups)
   assert.deepEqual(view.programs[0].clases.map(c => c.id), ['farmasi'])
   assert.match(view.html, /href="\/classroom\?espacio=farmasi"/)
@@ -120,7 +122,9 @@ test('la propuesta completa enumera beneficios actuales y acompañamiento sin in
   const html = renderToStaticMarkup(React.createElement(Upgrade, { formato: 'completo' }))
   for (const text of ['Clases y materiales', 'Una comunidad para crecer', 'Mi día', 'tus métricas', 'de acompañamiento', 'Enlace de inscripción por confirmar']) assert.match(html, new RegExp(text))
   assert.match(html, /<button[^>]*disabled=""[^>]*>Quiero ser Socia/)
-  assert.doesNotMatch(html, /597|299|197|Ranking|Mis objetivos|Continuar a Whop|Valor del upgrade por confirmar|href=/)
+  assert.match(html, /href="#socias-beneficios"/)
+  assert.match(html, /id="socias-beneficios"/)
+  assert.doesNotMatch(html, /597|299|197|Ranking|Mis objetivos|Continuar a Whop|Valor del upgrade por confirmar|href="https:/)
 })
 
 test('precio y destino configurados se muestran sin claves, y destinos no seguros no se convierten en compra', () => {
@@ -132,9 +136,28 @@ test('precio y destino configurados se muestran sin claves, y destinos no seguro
   for (const accionUrl of ['javascript:alert(1)', 'http://example.com', 'https://clave:secreto@example.com', '/ruta-no-verificada']) {
     const blocked = renderToStaticMarkup(React.createElement(Upgrade, { formato: 'completo', ofertaSocias: { precioTexto: null, accionUrl } }))
     assert.match(blocked, /disabled=""/)
-    assert.doesNotMatch(blocked, /href=/)
+    assert.doesNotMatch(blocked, /href="(?:https?:|javascript:|\/ruta-no-verificada)/)
   }
   const summary = renderToStaticMarkup(React.createElement(Upgrade, { ofertaSocias: { precioTexto, accionUrl: 'https://example.com/inscripcion' } }))
   assert.match(summary, /href="\/socias"/)
   assert.doesNotMatch(summary, /https:\/\/example.com/)
+})
+
+test('Farmasi recibe contexto y comparación propios, sin afirmar ese acceso para otras cuentas', () => {
+  const html = renderToStaticMarkup(React.createElement(Upgrade, { formato: 'completo', contexto: 'farmasi' }))
+  assert.match(html, /Tu espacio Farmasi se conserva/)
+  assert.match(html, /Lo que sumás/)
+  assert.match(html, /href="\/classroom\?espacio=farmasi"/)
+  const general = renderToStaticMarkup(React.createElement(Upgrade, { formato: 'completo' }))
+  assert.doesNotMatch(general, /Tu espacio Farmasi se conserva|Volver a Farmasi/)
+})
+
+test('la muestra usa únicamente un enlace interno de clase; contenido y condiciones se escapan', () => {
+  const id = '11111111-1111-4111-8111-111111111111'
+  const html = renderToStaticMarkup(React.createElement(Upgrade, { formato: 'completo', muestra: { id, titulo: '<Clase de muestra>' } }))
+  assert.match(html, new RegExp('href="/classroom\\?clase=' + id + '"'))
+  assert.match(html, /&lt;Clase de muestra&gt;/)
+  assert.match(html, /Ver clase de muestra/)
+  const sinMuestra = renderToStaticMarkup(React.createElement(Upgrade, { formato: 'completo', muestra: { id: 'javascript:alert(1)', titulo: 'No válida' } }))
+  assert.doesNotMatch(sinMuestra, /Ver clase de muestra|javascript:/)
 })

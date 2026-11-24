@@ -7,6 +7,7 @@ import { AgendaProvider } from '@/app/inicio/AgendaProvider'
 import type { StudentNavigationData } from '@/lib/student-navigation'
 import { UnreadNoticesProvider, UnreadNoticeLink } from './UnreadNotices'
 import StudentSidebar from './StudentSidebar'
+import MobileNavigation from './MobileNavigation'
 
 export type { StudentNavigationData } from '@/lib/student-navigation'
 
@@ -17,7 +18,7 @@ export default function StudentShellFrame({ datos, children }: { datos: StudentN
   const dialogo = useRef<HTMLDialogElement | null>(null)
   const [menuAbierto, setMenuAbierto] = useState(false)
   const inicial = datos.nombre.trim().slice(0, 1).toLocaleUpperCase('es-AR') || 'S'
-  const tieneMenu = datos.formacion || datos.afiliadas === true
+  const tieneMenu = datos.formacion || datos.afiliadas === true || datos.farmasi === true
 
   // El diálogo nativo conserva foco, Escape y el retorno al botón que lo abrió.
   // Al navegar o pasar a escritorio se cierra, sin guardar estado en un efecto.
@@ -60,6 +61,7 @@ export default function StudentShellFrame({ datos, children }: { datos: StudentN
           </aside>}
           <div className="sd-student-shell__content min-w-0">{children}</div>
         </div>
+        <MobileNavigation datos={datos} />
         {tieneMenu && <dialog ref={dialogo} id="sd-student-navigation-dialog" aria-labelledby="sd-student-navigation-title" onClose={() => setMenuAbierto(false)} onClick={event => { if (event.target === event.currentTarget) cerrarMenu() }} className="sd-student-shell__dialog fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%_-_1.5rem)] max-w-sm overflow-y-auto rounded-[24px] border border-[#E7DDD5] bg-[#FFFDFA] p-5 text-[#211C19] backdrop:bg-[#211C19]/60" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom, 0px))' }}>
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#E7DDD5] bg-[#FFFDFA] pb-3">
             <h2 id="sd-student-navigation-title" className="text-lg font-semibold">Tu espacio</h2>

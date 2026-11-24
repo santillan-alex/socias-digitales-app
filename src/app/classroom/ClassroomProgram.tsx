@@ -3,7 +3,7 @@ import type { Clase } from './ClassroomCliente'
 import { ordenarClases, SECCIONES_CLASE, ubicacionClase } from '@/lib/class-management'
 import { resumenPrograma, tiempoClase, type ProgresoClase } from '@/lib/class-progress'
 import ClassVideoThumbnail from '@/components/ClassVideoThumbnail'
-import { coincideBusquedaClase } from '@/lib/class-library-filters'
+import { claseDisponibleBiblioteca, coincideBusquedaClase } from '@/lib/class-library-filters'
 import type { GrupoClasesFarmasi } from '@/lib/farmasi-class-groups'
 
 function CollapseIndicator({ seccion = false }: { seccion?: boolean }) {
@@ -12,9 +12,34 @@ function CollapseIndicator({ seccion = false }: { seccion?: boolean }) {
   </span>
 }
 
-export default function ClassroomProgram({ programa, clases, progreso, buscar, esAdmin, tieneAcceso, cargando, abierto, onAbrir, idsVisibles, filtrandoAvance = false, errorProgreso = false, gruposFarmasi }: {
+// The dedicated classroom contains only authorized Farmasi videos. Keep one
+// ordering and one membership per class, including videos not yet assigned.
+export function organizarModulosFarmasi(clases: Clase[], grupos: GrupoClasesFarmasi[], tieneAcceso: boolean) {
+  const vistas = new Set<string>()
+  const ordenadas = ordenarClases(clases.filter(clase => {
+    if (vistas.has(clase.id) || !clase.solo_farmaci || clase.puede_ver !== true || !claseDisponibleBiblioteca(clase, tieneAcceso)) return false
+    vistas.add(clase.id)
+    return true
+  }))
+  const asignadas = new Set<string>()
+  const bloques: { id: string; nombre: string; clases: Clase[] }[] = []
+  for (const grupo of [...grupos].sort((a, b) => a.orden - b.orden || a.id.localeCompare(b.id))) {
+    const ids = new Set(grupo.claseIds)
+    const videos = ordenadas.filter(clase => ids.has(clase.id) && !asignadas.has(clase.id))
+    if (!videos.length) continue
+    for (const clase of videos) asignadas.add(clase.id)
+    bloques.push({ id: grupo.id, nombre: grupo.nombre, clases: videos })
+  }
+  for (const seccion of SECCIONES_CLASE) {
+    const videos = ordenadas.filter(clase => !asignadas.has(clase.id) && ubicacionClase(clase.modulo).seccion === seccion)
+    if (videos.length) bloques.push({ id: `farmasi-sin-grupo-${seccion}`, nombre: seccion, clases: videos })
+  }
+  return bloques
+}
+
+export default function ClassroomProgram({ programa, clases, progreso, buscar, esAdmin, tieneAcceso, cargando, abierto, onAbrir, idsVisibles, filtrandoAvance = false, errorProgreso = false, gruposFarmasi, compactoFarmasi = false, claseDestacadaId = null }: {
   programa: string; clases: Clase[]; progreso: ProgresoClase[]; buscar: string; esAdmin: boolean; tieneAcceso: boolean; cargando: boolean; abierto: boolean; onAbrir: (clase: Clase) => void
-  idsVisibles?: string[]; filtrandoAvance?: boolean; errorProgreso?: boolean; gruposFarmasi?: GrupoClasesFarmasi[]
+  idsVisibles?: string[]; filtrandoAvance?: boolean; errorProgreso?: boolean; gruposFarmasi?: GrupoClasesFarmasi[]; compactoFarmasi?: boolean; claseDestacadaId?: string | null
 }) {
   const ordenadas = ordenarClases(clases)
   const ids = idsVisibles ? new Set(idsVisibles) : null
@@ -23,10 +48,16 @@ export default function ClassroomProgram({ programa, clases, progreso, buscar, e
   const abrirCoincidencias = Boolean(buscar.trim()) || filtrandoAvance
   const resumen = resumenPrograma(clases.filter(c => (c.puede_ver ?? tieneAcceso) && (c.tiene_video_privado || c.vimeo_url)).map(c => c.id), progreso)
   const idsAsignados = gruposFarmasi ? new Set(gruposFarmasi.flatMap(grupo => grupo.claseIds)) : null
+  const progresoVigente = new Map<string, ProgresoClase>()
+  if (compactoFarmasi) for (const item of progreso) {
+    const anterior = progresoVigente.get(item.clase_id)
+    if (!anterior || item.actualizado_en > anterior.actualizado_en) progresoVigente.set(item.clase_id, item)
+  }
+  const avanceParaVista = compactoFarmasi ? [...progresoVigente.values()] : progreso
   function tarjetas(videos: Clase[], grupoCompleto?: Clase[]) {
     return <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{videos.map(clase => {
       const orden = (grupoCompleto ?? ordenadas.filter(c => !idsAsignados?.has(c.id) && ubicacionClase(c.modulo).seccion === ubicacionClase(clase.modulo).seccion)).findIndex(c => c.id === clase.id) + 1
-      const avance = progreso.find(p => p.clase_id === clase.id)
+      const avance = avanceParaVista.find(p => p.clase_id === clase.id)
       const disponible = (clase.puede_ver ?? tieneAcceso) && Boolean(clase.vimeo_url || clase.tiene_video_privado)
       return <article key={clase.id} className="min-w-0 rounded-2xl border border-[#E7DDD5] bg-[#FFFDFA] p-3">
         <div className="relative">
@@ -49,6 +80,38 @@ export default function ClassroomProgram({ programa, clases, progreso, buscar, e
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 rounded-xl text-sm font-semibold text-[#294A38] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38] [&::-webkit-details-marker]:hidden"><span className="min-w-0 break-words [overflow-wrap:anywhere]">{nombre}<span className="ml-2 font-normal text-[#746A64]">· {videos.length}</span></span><CollapseIndicator seccion /></summary>
       <div className="mt-3">{videos.length ? tarjetas(videos, grupoCompleto) : <p className="py-3 text-sm text-[#746A64]">Todavía no hay contenido publicado en esta sección.</p>}</div>
     </details>
+  }
+  if (compactoFarmasi) {
+    const bloques = organizarModulosFarmasi(clases, gruposFarmasi ?? [], tieneAcceso)
+    const destacados = bloques.find(grupo => grupo.clases.some(clase => clase.id === claseDestacadaId))
+    const ultimoAvance = errorProgreso ? undefined : [...avanceParaVista].filter(item => item.completada || (Number.isFinite(item.posicion_seg) && item.posicion_seg > 0))
+      .sort((a, b) => b.actualizado_en.localeCompare(a.actualizado_en))
+      .find(item => bloques.some(grupo => grupo.clases.some(clase => clase.id === item.clase_id)))
+    const nuevaAlumna = !errorProgreso && !ultimoAvance
+    const ultimoBloque = ultimoAvance ? bloques.find(grupo => grupo.clases.some(clase => clase.id === ultimoAvance.clase_id)) : undefined
+    const bloqueInicial = destacados?.id ?? ultimoBloque?.id ?? (nuevaAlumna ? bloques[0]?.id : undefined)
+    // A new search/filter gets fresh native details: matching modules reopen
+    // even if the user had previously collapsed the initially open module.
+    // Other rerenders keep the native open/closed state and never move focus.
+    const claveVista = JSON.stringify([buscar.trim(), filtrandoAvance, idsVisibles ?? null])
+    return <section aria-label="Módulos de Farmasi" className="space-y-3">
+      {bloques.map(grupo => {
+        const videos = grupo.clases.filter(clase => ids ? ids.has(clase.id) : coincideBusquedaClase(clase.titulo, buscar))
+        if (!videos.length) return null
+        const avanceGrupo = resumenPrograma(grupo.clases.map(clase => clase.id), avanceParaVista)
+        return <details key={`${grupo.id}:${claveVista}`} open={abrirCoincidencias || bloqueInicial === grupo.id} className="group/seccion rounded-[22px] border border-[#E7DDD5] bg-[#FAF7F3] p-4 sm:p-5">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 rounded-xl text-[#294A38] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38] [&::-webkit-details-marker]:hidden">
+            <span className="min-w-0 flex-1">
+              <span className="block break-words font-impact text-base font-semibold [overflow-wrap:anywhere] sm:text-lg">{grupo.nombre}</span>
+              <span className="mt-1 block text-xs leading-5 text-[#746A64]">{grupo.clases.length} {grupo.clases.length === 1 ? 'clase' : 'clases'}{!esAdmin ? errorProgreso ? ' · Progreso no disponible' : ` · ${avanceGrupo.completas} de ${avanceGrupo.total} completadas` : ''}</span>
+              {!esAdmin && !errorProgreso && avanceGrupo.total > 0 && <span role="progressbar" aria-label={`Progreso en ${grupo.nombre}`} aria-valuenow={avanceGrupo.porcentaje} aria-valuemin={0} aria-valuemax={100} className="mt-2 block h-1 overflow-hidden rounded-full bg-[#E7DDD5]"><span className="block h-full rounded-full bg-[#294A38]" style={{ width: `${avanceGrupo.porcentaje}%` }} /></span>}
+            </span>
+            <CollapseIndicator seccion />
+          </summary>
+          <div className="mt-4">{tarjetas(videos, grupo.clases)}</div>
+        </details>
+      })}
+    </section>
   }
   return <details open={abierto || abrirCoincidencias} className="group/programa rounded-[24px] border border-[#E7DDD5] bg-[#FAF7F3] p-4 sm:p-6">
     <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38] [&::-webkit-details-marker]:hidden">

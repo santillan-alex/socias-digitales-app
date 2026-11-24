@@ -66,6 +66,10 @@ El fondo de `nav[data-admin-menu]` es transparente mediante una regla limitada a
 
 ## Jerarquía y estados
 
+Desde el 24/11, Farmasi sin formación general tiene un Inicio orientado a reanudar sus clases y revisar su avance. Sus tres indicadores se mantienen en una fila en celular, con etiquetas cortas, cifras claras y el nombre completo accesible. La propuesta Socias queda en un bloque separado; no reproducir el mosaico de clases cerradas o “Empezar gratis” dentro de ese Inicio. El menú persiste con Farmasi como acceso independiente; en celular usar cuatro o cinco destinos según permisos. En cuentas con Socias/Desafío y Farmasi, priorizar ambas bibliotecas; los demás accesos conservan su lugar en Menú. Nunca interpretar la presentación como habilitación de un módulo.
+
+El aula Farmasi presenta los submódulos directamente, con indicador de plegado, clases y progreso. Evitar selector de programa y plegado exterior redundantes dentro de ese espacio. La propuesta `/socias` conserva las superficies sólidas de marca: hero blush, acompañamiento verde con texto claro y beneficios en surface/paper/blush con borde. El color distingue tipos de beneficio, no posiciones variables. En la propuesta Farmasi, aclarar lo que conserva y lo que suma. La acción interna “Ver qué incluye” funciona aunque aún no haya enlace comercial; una clase de muestra debe provenir del catálogo real autorizado. Mantener la inscripción honestamente deshabilitada hasta configurar su destino.
+
 Mantener un título principal por vista y acciones localizadas. Flor necesita operar: gestionar usuarias, clases, avisos y equipo; la alumna necesita continuar lo suyo. No mezclar menús de administración y estudio para conseguir una captura.
 
 Los links de invitación pertenecen a su apartado, no dominan la portada administrativa. El anuncio del próximo evento es una barra fina; el contador compacto queda en la navegación lateral. No inventar una fecha nueva si la anterior ya pasó.

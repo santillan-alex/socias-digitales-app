@@ -95,7 +95,7 @@ export default function ClassroomCliente({ clases, esAdmin, perfil, espacioFarma
     : !grupoPorClase.has(c.id) && ubicacionClase(c.modulo).programa === ubicacionClase(claseAbierta.modulo).programa && ubicacionClase(c.modulo).seccion === ubicacionClase(claseAbierta.modulo).seccion) : []
   const siguiente = claseAbierta ? siguientes[siguientes.findIndex(c=>c.id===claseAbierta.id)+1] : undefined
   const avanceAplicado = esAdmin || errorProgreso ? 'todas' : avance
-  const biblioteca = filtrarBibliotecaClases(clasesBiblioteca, progreso, { programa: filtro, buscar, avance: avanceAplicado, tieneAcceso, errorProgreso })
+  const biblioteca = filtrarBibliotecaClases(clasesBiblioteca, progreso, { programa: espacioFarmasi ? 'Todos' : filtro, buscar, avance: avanceAplicado, tieneAcceso, errorProgreso })
   const idsVisibles = new Set(biblioteca.idsVisibles)
   const claseDelEnlace = claseInicialId && esUuid(claseInicialId)
     ? clases.find(clase => clase.id.toLowerCase() === claseInicialId.toLowerCase() && clase.activo && clase.puede_ver === true && (clase.tiene_video_privado || clase.vimeo_url))
@@ -188,12 +188,12 @@ export default function ClassroomCliente({ clases, esAdmin, perfil, espacioFarma
         </nav>}
         {avisoEnlace && <p role="status" className="mt-5 rounded-2xl border border-[#E7DDD5] bg-[#FAF7F3] p-4 text-sm leading-6 text-[#746A64]">{avisoEnlace}</p>}
         {errorProgreso && <p role="alert" className="mt-5 rounded-2xl border border-[#EC9BB6] bg-[#FAF7F3] p-4 text-sm">No pudimos cargar tu progreso. Recargá para retomarlo; las clases siguen disponibles.</p>}
-        {mostrarUpgrade && clasesBiblioteca.length > 0 && <div className="mt-7 flex flex-wrap items-center justify-between gap-3"><h2 className="font-impact text-xl font-semibold">Tu biblioteca</h2><span className="rounded-full border border-[#E7DDD5] bg-[#FAF7F3] px-3 py-2 text-xs font-medium text-[#294A38]">Incluido en tu acceso</span></div>}
+        {!espacioFarmasi && mostrarUpgrade && clasesBiblioteca.length > 0 && <div className="mt-7 flex flex-wrap items-center justify-between gap-3"><h2 className="font-impact text-xl font-semibold">Tu biblioteca</h2><span className="rounded-full border border-[#E7DDD5] bg-[#FAF7F3] px-3 py-2 text-xs font-medium text-[#294A38]">Incluido en tu acceso</span></div>}
         {continuar && <section className="mt-6 flex flex-col gap-4 rounded-[22px] border border-[#EC9BB6] bg-[#F4CAD8] p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1"><p className="text-[10px] font-semibold uppercase tracking-[.17em] text-[#294A38]">Continuar viendo</p><h2 className="mt-2 break-words text-lg font-semibold [overflow-wrap:anywhere]">{continuar.clase.titulo}</h2><p className="mt-1 break-words text-xs text-[#746A64] [overflow-wrap:anywhere]">{ubicacionClase(continuar.clase.modulo).programa} · Desde {tiempoClase(continuar.progreso.posicion_seg)}</p></div>
           <button type="button" onClick={()=>void abrirClase(continuar.clase)} disabled={Boolean(cargandoVideo)} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-3 rounded-full bg-[#294A38] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">Retomar clase <Icon name="arrow" /></button>
         </section>}
-        {clasesBiblioteca.length>0 && <div className="mt-7 grid gap-3 sm:grid-cols-2"><label className="text-xs text-[#746A64]">Programa<select value={filtro} onChange={e=>setFiltro(e.target.value)} className="mt-2 min-h-11 w-full rounded-xl border border-[#D8CFC8] bg-[#FAF7F3] px-3 py-3 text-base text-[#211C19]"><option>Todos</option>{modulos.map(m=><option key={m}>{m}</option>)}</select></label><label className="text-xs text-[#746A64]">Buscar clase<input type="search" value={buscar} onChange={e=>setBuscar(e.target.value)} maxLength={120} placeholder="Nombre de la clase" className="mt-2 min-h-11 w-full rounded-xl border border-[#D8CFC8] bg-[#FAF7F3] px-3 py-3 text-base text-[#211C19]" /></label></div>}
+        {clasesBiblioteca.length>0 && <div className={`mt-7 grid gap-3 ${espacioFarmasi ? '' : 'sm:grid-cols-2'}`}>{!espacioFarmasi && <label className="text-xs text-[#746A64]">Programa<select value={filtro} onChange={e=>setFiltro(e.target.value)} className="mt-2 min-h-11 w-full rounded-xl border border-[#D8CFC8] bg-[#FAF7F3] px-3 py-3 text-base text-[#211C19]"><option>Todos</option>{modulos.map(m=><option key={m}>{m}</option>)}</select></label>}<label className="text-xs text-[#746A64]">Buscar clase<input type="search" value={buscar} onChange={e=>setBuscar(e.target.value)} maxLength={120} placeholder="Nombre de la clase" className="mt-2 min-h-11 w-full rounded-xl border border-[#D8CFC8] bg-[#FAF7F3] px-3 py-3 text-base text-[#211C19]" /></label></div>}
         {!esAdmin && clasesBiblioteca.length>0 && <section aria-label="Filtrar clases por avance" className="mt-5 rounded-2xl border border-[#E7DDD5] bg-[#FAF7F3] p-4">
           <p className="text-sm font-semibold">Tu avance</p>
           <p id="ayuda-filtros-avance" className="mt-1 text-xs leading-5 text-[#746A64]">Los conteos incluyen solo las clases disponibles según tu programa y búsqueda.{!espacioFarmasi && !mostrarUpgrade && ' Todas también muestra contenido con acceso Socias.'}</p>
@@ -213,7 +213,7 @@ export default function ClassroomCliente({ clases, esAdmin, perfil, espacioFarma
           </section>
         ) : (
           <div className="mt-7 space-y-4">
-            {gruposVisibles ? <ClassroomProgram programa="Contenido de Farmasi" clases={clasesBiblioteca} gruposFarmasi={gruposVisibles} progreso={progreso} buscar={buscar} esAdmin={esAdmin} tieneAcceso={tieneAcceso} cargando={Boolean(cargandoVideo)} abierto idsVisibles={biblioteca.idsVisibles} filtrandoAvance={avanceAplicado !== 'todas'} errorProgreso={errorProgreso} onAbrir={clase => void abrirClase(clase)} /> : modulos.filter(m=>filtro==='Todos'||filtro===m).map((modulo) => {
+            {espacioFarmasi ? <ClassroomProgram programa="Farmasi" compactoFarmasi claseDestacadaId={claseAbierta?.id ?? claseDelEnlace?.id ?? continuar?.clase.id ?? null} clases={clasesBiblioteca} gruposFarmasi={gruposVisibles} progreso={progreso} buscar={buscar} esAdmin={esAdmin} tieneAcceso={tieneAcceso} cargando={Boolean(cargandoVideo)} abierto idsVisibles={biblioteca.idsVisibles} filtrandoAvance={avanceAplicado !== 'todas'} errorProgreso={errorProgreso} onAbrir={clase => void abrirClase(clase)} /> : modulos.filter(m=>filtro==='Todos'||filtro===m).map((modulo) => {
               const clasesDelModulo = clasesBiblioteca.filter(clase => ubicacionClase(clase.modulo).programa === modulo)
               const visibles=clasesDelModulo.filter(c=>idsVisibles.has(c.id))
               if(!visibles.length)return null
@@ -224,7 +224,7 @@ export default function ClassroomCliente({ clases, esAdmin, perfil, espacioFarma
           </div>
         )}
         {clasesBiblioteca.length>0 && !biblioteca.visibles.length && <p className="mt-6 rounded-2xl border border-[#E7DDD5] bg-[#FAF7F3] p-6 text-sm text-[#746A64]">No hay clases que coincidan con estos filtros. Probá otro estado o limpiá los filtros para ver tu biblioteca.</p>}
-        {mostrarUpgrade && <SociasUpgradePanel ofertaSocias={ofertaSocias} />}
+        {mostrarUpgrade && <SociasUpgradePanel ofertaSocias={ofertaSocias} contexto={espacioFarmasi ? 'farmasi' : 'general'} />}
       </div>
 
       {errorVideo && <div role="alert" className="sd-mobile-toast fixed bottom-5 left-1/2 z-[60] w-[min(92vw,32rem)] -translate-x-1/2 rounded-2xl border border-[#B01B30] bg-[#FAF7F3] px-5 py-4 text-sm text-[#7C1D2A]">{errorVideo}</div>}

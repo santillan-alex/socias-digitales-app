@@ -15,16 +15,43 @@ function cargar(file, deps = {}) {
 }
 const link = { default: ({ prefetch, ...props }) => { void prefetch; return React.createElement('a', props) } }
 const icon = { default: () => null }
+const navigation = cargar('src/lib/student-navigation.ts')
+const datos = { nombre: 'Socia ficticia', formacion: true, comunidad: false, herramientas: { miDia: true, metricas: false, resultados: false, logros: false }, ahoraInicial: 0, hitos: [], errorAgenda: false, avisos: { cantidad: 0, ultimoTitulo: null, errorCarga: false } }
 test('navegación móvil: cinco destinos reales, ruta activa correcta y sin precargar avisos o alterar permisos', () => {
   for (const [ruta, destino] of [['/inicio','/inicio'],['/classroom/parte-1','/clases'],['/checklist','/checklist'],['/notificaciones','/notificaciones'],['/cuenta/contrasena','/perfil']]) {
-    const Nav = cargar('src/components/MobileNavigation.tsx', { 'next/link': link, 'next/navigation': { usePathname: () => ruta }, './NavigationIcon': icon }).default
-    const html = renderToStaticMarkup(React.createElement(Nav))
+    const Nav = cargar('src/components/MobileNavigation.tsx', { 'next/link': link, 'next/navigation': { usePathname: () => ruta, useSearchParams: () => new URLSearchParams() }, './NavigationIcon': icon, '@/lib/student-navigation': navigation }).default
+    const html = renderToStaticMarkup(React.createElement(Nav, { datos }))
     assert.equal((html.match(/href=/g) || []).length, 5)
     assert.ok(html.includes(`href="${destino}" aria-current="page"`))
     assert.ok(html.includes('Navegación móvil'))
   }
   const src = read('src/components/MobileNavigation.tsx')
   assert.ok(src.includes('prefetch={false}')); assert.ok(!src.includes('fetch(')); assert.ok(!src.includes('supabase')); assert.ok(!src.includes('user_metadata'))
+})
+test('barra inferior deriva máximo cinco destinos operativos del perfil y no promociona permisos sin comprobar', () => {
+  const sinHerramientas = { miDia: false, metricas: false, resultados: false, logros: false }
+  const cases = [
+    [{ formacion: false, farmasi: true, herramientas: sinHerramientas }, ['/inicio', '/classroom?espacio=farmasi', '/notificaciones', '/perfil']],
+    [{ farmasi: true }, ['/inicio', '/clases', '/classroom?espacio=farmasi', '/notificaciones', '/perfil']],
+    [{}, ['/inicio', '/clases', '/checklist', '/notificaciones', '/perfil']],
+    [{ herramientas: sinHerramientas }, ['/inicio', '/clases', '/notificaciones', '/perfil']],
+    [{ formacion: false, afiliadas: true, herramientas: sinHerramientas }, ['/inicio', '/afiliadas', '/notificaciones', '/perfil']],
+    [{ formacion: false, afiliadas: true, farmasi: true, herramientas: sinHerramientas }, ['/inicio', '/classroom?espacio=farmasi', '/afiliadas', '/notificaciones', '/perfil']],
+  ]
+  for (const [changes, expected] of cases) {
+    const actual = navigation.seccionesMovilesEstudiante({ ...datos, conocerSocias: true, ...changes })
+    assert.deepEqual(actual.map(item => item.href), expected)
+    assert.ok(actual.length <= 5)
+    assert.equal(new Set(actual.map(item => item.href)).size, actual.length)
+    assert.ok(!actual.some(item => item.href === '/socias'))
+  }
+  const Nav = cargar('src/components/MobileNavigation.tsx', { 'next/link': link, 'next/navigation': { usePathname: () => '/classroom', useSearchParams: () => new URLSearchParams('espacio=farmasi') }, './NavigationIcon': icon, '@/lib/student-navigation': navigation }).default
+  const dual = renderToStaticMarkup(React.createElement(Nav, { datos: { ...datos, farmasi: true } }))
+  assert.equal((dual.match(/aria-current="page"/g) || []).length, 1)
+  assert.match(dual, /href="\/classroom\?espacio=farmasi" aria-current="page"/)
+  const global = renderToStaticMarkup(React.createElement(Nav))
+  assert.equal((global.match(/href=/g) || []).length, 4)
+  assert.doesNotMatch(global, /checklist|Mi día|Socias Farmasi|\/socias/)
 })
 test('Flor dispone de diecinueve destinos desde el lateral y el diálogo móvil, sin pestañas horizontales', () => {
   const sections = cargar('src/lib/admin-sections.ts')

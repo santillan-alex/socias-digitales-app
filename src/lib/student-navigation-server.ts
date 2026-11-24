@@ -21,11 +21,13 @@ export async function leerNavegacionAlumna(): Promise<StudentNavigationData | nu
     const { data: { user }, error: errorSesion } = await supabase.auth.getUser()
     if (errorSesion || !user) return null
     const { data: perfil, error } = await supabase.from('perfiles')
-      .select('id,nombre,rol,tipo_usuario,estado,desafio_socias_habilitada').eq('id', user.id).maybeSingle()
+      .select('id,nombre,rol,tipo_usuario,estado,desafio_socias_habilitada,socias_farmaci_habilitada').eq('id', user.id).maybeSingle()
     if (error || !perfil || perfil.id !== user.id || perfil.rol === 'admin') return null
-    const formacion = accesoInicio(perfil).formacion
+    const acceso = accesoInicio(perfil)
+    const formacion = acceso.formacion
+    const farmasi = acceso.farmasi
     const afiliadas = await leerAccesoAfiliadas(supabase, user.id, perfil)
-    if (!formacion && !afiliadas.habilitada) return null
+    if (!formacion && !afiliadas.habilitada && !farmasi) return null
 
     const permiso = async (lectura: () => Promise<{ permitido: boolean; error?: boolean; admin?: boolean }>) => {
       try { const acceso = await lectura(); return acceso.permitido === true && !acceso.error && !acceso.admin }
@@ -45,7 +47,7 @@ export async function leerNavegacionAlumna(): Promise<StudentNavigationData | nu
     ])
     return {
       nombre: typeof perfil.nombre === 'string' && perfil.nombre.trim() ? perfil.nombre.trim().split(/\s+/)[0] : 'Socia',
-      formacion, afiliadas: afiliadas.habilitada, comunidad: puedeUsarComunidad(perfil),
+      formacion, farmasi, conocerSocias: acceso.conocerSocias, afiliadas: afiliadas.habilitada, comunidad: puedeUsarComunidad(perfil),
       herramientas: { resultados, metricas, miDia, logros: formacion && puedeVerLogros(perfil) },
       ahoraInicial: Date.now(), avisos: resumen, ...encuentro,
     }

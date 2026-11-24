@@ -46,6 +46,21 @@ test('acceso de Inicio coincide con el permiso privado y distingue Socias de Des
   assert.equal(home.accesoInicio({ rol: 'admin', estado: 'activa' }).formacion, false)
   assert.equal(home.accesoInicio(null).formacion, false)
 })
+test('Farmasi es un acceso adicional y no modifica el permiso de formación ni el nivel principal', () => {
+  const perfil = { ...socia, tipo_usuario: 'gratuito', socias_farmaci_habilitada: true }
+  const acceso = home.accesoInicio(perfil)
+  assert.equal(acceso.nivel, 'gratuito'); assert.equal(acceso.formacion, false)
+  assert.equal(acceso.farmasi, true); assert.equal(acceso.soloFarmasi, true); assert.equal(acceso.conocerSocias, true)
+  assert.equal(acceso.etiqueta, 'Socias Farmasi')
+  for (const tipo_usuario of ['socia', 'desafio']) {
+    const combinada = home.accesoInicio({ ...perfil, tipo_usuario, desafio_socias_habilitada: tipo_usuario === 'desafio' })
+    assert.equal(combinada.soloFarmasi, false); assert.equal(combinada.farmasi, true); assert.equal(combinada.formacion, true)
+  }
+  for (const estado of ['pausada', 'cancelada', undefined]) {
+    const cerrada = home.accesoInicio({ ...perfil, estado })
+    assert.equal(cerrada.farmasi, false); assert.equal(cerrada.soloFarmasi, false); assert.equal(cerrada.conocerSocias, false)
+  }
+})
 function pagina({ perfil = socia, errorPerfil = null, user = { id: 'propia' }, estrategia = false, afiliadas = { habilitada: false, error: false } } = {}) {
   const calls = [], seleccion = []
   const db = { auth: { getUser: async () => ({ data: { user } }) }, from: table => {
@@ -62,15 +77,19 @@ function pagina({ perfil = socia, errorPerfil = null, user = { id: 'propia' }, e
   const notices = { UnreadNoticesProvider: wrapper, UnreadNoticeLink: ({ variante, activo }) => React.createElement('a', { href: '/notificaciones', 'data-variante': variante, 'aria-current': activo ? 'page' : undefined }, variante === 'menu' ? 'Notificaciones' : 'Avisos') }
   const navigation = load('src/lib/student-navigation.ts')
   const Sidebar = load('src/components/StudentSidebar.tsx', {
-    'next/link': link, 'next/navigation': { usePathname: () => '/inicio' },
+    'next/link': link, 'next/navigation': { usePathname: () => '/inicio', useSearchParams: () => new URLSearchParams() },
     './NavigationIcon': icon, './UnreadNotices': notices,
     '@/app/inicio/ProximaClase': { default: ({ variante }) => React.createElement('div', { 'data-proximo-hito': variante }) },
     '@/lib/student-navigation': navigation,
   }).default
+  const Mobile = load('src/components/MobileNavigation.tsx', {
+    'next/link': link, 'next/navigation': { usePathname: () => '/inicio', useSearchParams: () => new URLSearchParams() },
+    './NavigationIcon': icon, '@/lib/student-navigation': navigation,
+  }).default
   const Frame = load('src/components/StudentShellFrame.tsx', {
-    'next/link': link, 'next/navigation': { usePathname: () => '/inicio' },
+    'next/link': link, 'next/navigation': { usePathname: () => '/inicio', useSearchParams: () => new URLSearchParams() },
     '@/app/inicio/AgendaProvider': { AgendaProvider: wrapper },
-    './UnreadNotices': notices, './StudentSidebar': { default: Sidebar },
+    './UnreadNotices': notices, './StudentSidebar': { default: Sidebar }, './MobileNavigation': { default: Mobile },
   }).default
   const permiso = nombre => async (_db, id) => { assert.equal(id, 'propia'); calls.push(nombre); return { permitido: false } }
   const page = load('src/app/inicio/page.tsx', {
@@ -105,6 +124,12 @@ function pagina({ perfil = socia, errorPerfil = null, user = { id: 'propia' }, e
     // La frontera async y los lectores reales se prueban por separado. Este
     // sustituto síncrono verifica solo que Inicio habilita el bloque correcto
     // y le entrega la sesión/perfil protegidos, sin ejecutar el hijo async.
+    './FarmasiHome': { default: ({ supabase, usuariaId, perfil: protegido }) => {
+      assert.equal(supabase, db); assert.equal(usuariaId, 'propia'); assert.equal(protegido, perfil)
+      calls.push('farmasi-home')
+      return React.createElement('section', { 'data-inicio-farmasi': true }, 'Tu formación Farmasi', React.createElement('a', { href: '/classroom?espacio=farmasi' }, 'Ir a mis clases'))
+    } },
+    '@/components/FarmasiHomeSummary': { FarmasiHomeLoading: () => React.createElement('p', { role: 'status' }, 'Reuniendo tu espacio Farmasi…') },
     './CampusFormation': { default: ({ supabase, usuariaId, perfil: protegido }) => {
       assert.equal(supabase, db); assert.equal(usuariaId, 'propia'); assert.equal(protegido, perfil)
       calls.push('campus')
@@ -129,6 +154,33 @@ test('SSR Inicio: Socia activa sin flag Desafío recibe campus sin habilitar otr
   assert.ok(p.calls.includes('agenda')); assert.ok(!p.calls.includes('catalogo'))
   assert.equal(p.calls.filter(call => call === 'campus').length, 1)
   assert.match(p.seleccion.find(s => s.table === 'perfiles').columns, /\bestado\b/)
+})
+test('SSR Inicio: Farmasi sola tiene su espacio propio, sin clases cerradas, bienvenida gratuita ni módulos Socias', async () => {
+  const p = pagina({ perfil: { ...socia, tipo_usuario: 'gratuito', socias_farmaci_habilitada: true } })
+  const html = renderToStaticMarkup(await p.page())
+  assert.match(html, /data-inicio-farmasi="true"/)
+  assert.match(html, /Socias Farmasi/)
+  assert.match(html, /href="\/classroom\?espacio=farmasi"/)
+  assert.match(html, /Conocer Socias/)
+  for (const text of ['data-inicio-gratuito', 'Empezar gratis', 'Otros espacios del plan Socias', 'Tu espacio Socias Digitales', 'Quiero ser Socia', 'data-campus', 'data-calendario-personal', 'data-proximo-hito']) assert.ok(!html.includes(text), text)
+  assert.ok(!p.calls.includes('agenda')); assert.ok(!p.calls.includes('catalogo')); assert.ok(!p.calls.includes('campus'))
+  assert.equal(p.calls.filter(call => call === 'farmasi-home').length, 1)
+})
+test('SSR Inicio: Socia/Desafío con Farmasi conservan su campus y Afiliadas puede coexistir con Farmasi sola', async () => {
+  for (const tipo_usuario of ['socia', 'desafio']) {
+    const p = pagina({ perfil: { ...socia, tipo_usuario, desafio_socias_habilitada: tipo_usuario === 'desafio', socias_farmaci_habilitada: true } })
+    const html = renderToStaticMarkup(await p.page())
+    assert.match(html, /data-campus="true"/)
+    assert.match(html, /aria-label="Socias Farmasi"/)
+    assert.match(html, /href="\/classroom\?espacio=farmasi"/)
+    assert.ok(!p.calls.includes('farmasi-home'))
+  }
+  const p = pagina({ perfil: { ...socia, tipo_usuario: 'gratuito', socias_farmaci_habilitada: true }, afiliadas: { habilitada: true, error: false } })
+  const html = renderToStaticMarkup(await p.page())
+  assert.match(html, /data-inicio-farmasi="true"/)
+  assert.match(html, /Tu espacio de Afiliadas/)
+  assert.match(html, /href="\/afiliadas"/)
+  assert.ok(!p.calls.includes('campus')); assert.ok(!p.calls.includes('agenda'))
 })
 test('SSR Inicio: Afiliadas se agrega al acceso Socia y conserva campus, calendario y navegación formativa', async () => {
   const p = pagina({ afiliadas: { habilitada: true, error: false } })

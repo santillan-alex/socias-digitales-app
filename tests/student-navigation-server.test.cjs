@@ -71,13 +71,13 @@ test('reader verifica Auth y perfil propio antes de permisos; solo serializa pre
   const view = reader({ perfil: { ...profile, email: 'privado@ejemplo.test', avatar_url: 'https://privado.test/foto', secreto: 'no serializar' }, user: { id: 'propia', user_metadata: { rol: 'admin', nombre: 'Metadata editable' }, access_token: 'token privado' } })
   const result = await view.leerNavegacionAlumna()
   assert.deepEqual(view.calls.slice(0, 3), ['cliente', 'auth', 'perfil'])
-  assert.deepEqual(view.selection, ['id,nombre,rol,tipo_usuario,estado,desafio_socias_habilitada'])
+  assert.deepEqual(view.selection, ['id,nombre,rol,tipo_usuario,estado,desafio_socias_habilitada,socias_farmaci_habilitada'])
   assert.equal(result.nombre, 'Socia'); assert.equal(result.formacion, true); assert.equal(result.comunidad, true)
   assert.equal(result.afiliadas, false)
   assert.deepEqual(result.herramientas, { resultados: true, metricas: false, miDia: true, logros: true })
   assert.deepEqual(result.avisos, notices); assert.deepEqual(result.hitos, [event]); assert.equal(result.errorAgenda, false)
   assert.ok(Number.isSafeInteger(result.ahoraInicial))
-  assert.deepEqual(Object.keys(result).sort(), ['nombre', 'formacion', 'comunidad', 'afiliadas', 'herramientas', 'ahoraInicial', 'avisos', 'hitos', 'errorAgenda'].sort())
+  assert.deepEqual(Object.keys(result).sort(), ['nombre', 'formacion', 'farmasi', 'conocerSocias', 'comunidad', 'afiliadas', 'herramientas', 'ahoraInicial', 'avisos', 'hitos', 'errorAgenda'].sort())
   for (const secret of ['propia', 'privado@', 'privado.test', 'token privado', 'Metadata editable', 'no serializar', 'user_metadata']) assert.ok(!JSON.stringify(result).includes(secret))
 })
 test('admin, perfil ajeno, ausente o fallido y acceso sin formación no consultan avisos, agenda ni herramientas', async () => {
@@ -118,12 +118,42 @@ test('Afiliada gratuita explícita recibe menú propio y avisos sin consultar ag
   assert.deepEqual(result.hitos, []); assert.equal(result.errorAgenda, false)
   assert.deepEqual(result.avisos, notices)
   assert.deepEqual(view.calls, ['cliente', 'auth', 'perfil', 'afiliadas', 'avisos'])
-  assert.deepEqual(navigation.seccionesPrincipalesEstudiante(result).map(item => item.href), ['/inicio', '/afiliadas', '/perfil', '/notificaciones'])
+  assert.deepEqual(navigation.seccionesPrincipalesEstudiante(result).map(item => item.href), ['/inicio', '/afiliadas', '/perfil', '/notificaciones', '/socias'])
   assert.deepEqual(navigation.herramientasEstudiante(result), [])
   const afiliadas = navigation.seccionesPrincipalesEstudiante(result).find(item => item.id === 'afiliadas')
   assert.equal(navigation.activoSeccionEstudiante('/afiliadas?campana=proxima', afiliadas), true)
   assert.equal(navigation.activoSeccionEstudiante('/afiliadas/recursos', afiliadas), true)
   assert.equal(navigation.activoSeccionEstudiante('/afiliadas-otra', afiliadas), false)
+})
+test('Farmasi protegido agrega su menú sin conceder formación, agenda o herramientas privadas', async () => {
+  const view = reader({ perfil: { ...profile, tipo_usuario: 'gratuito', socias_farmaci_habilitada: true }, resultados: { permitido: true }, metricas: { permitido: true }, miDia: { permitido: true } })
+  const result = await view.leerNavegacionAlumna()
+  assert.equal(result.farmasi, true); assert.equal(result.formacion, false); assert.equal(result.conocerSocias, true)
+  assert.equal(result.comunidad, false)
+  assert.deepEqual(result.herramientas, { resultados: false, metricas: false, miDia: false, logros: false })
+  assert.deepEqual(result.hitos, []); assert.equal(result.errorAgenda, false)
+  assert.deepEqual(view.calls, ['cliente', 'auth', 'perfil', 'afiliadas', 'avisos'])
+  assert.deepEqual(navigation.seccionesPrincipalesEstudiante(result).map(item => item.href), ['/inicio', '/classroom?espacio=farmasi', '/perfil', '/notificaciones', '/socias'])
+})
+test('Farmasi puede combinarse con Socia, Desafío y Afiliadas sin sustituir sus otros accesos', async () => {
+  for (const tipo_usuario of ['socia', 'desafio', 'gratuito']) {
+    const result = await reader({ perfil: { ...profile, tipo_usuario, desafio_socias_habilitada: tipo_usuario === 'desafio', socias_farmaci_habilitada: true }, afiliadas: { habilitada: true, error: false } }).leerNavegacionAlumna()
+    const paths = navigation.seccionesPrincipalesEstudiante(result).map(item => item.href)
+    assert.equal(result.farmasi, true); assert.equal(result.afiliadas, true)
+    assert.ok(paths.includes('/classroom?espacio=farmasi')); assert.ok(paths.includes('/afiliadas'))
+    assert.equal(paths.includes('/clases'), tipo_usuario !== 'gratuito')
+    assert.equal(paths.includes('/socias'), tipo_usuario !== 'socia')
+  }
+})
+test('Farmasi no se deriva de metadata, valores truthy ni cuentas sin estado activo', async () => {
+  for (const socias_farmaci_habilitada of [false, null, undefined, 'true', 1]) {
+    const view = reader({ perfil: { ...profile, tipo_usuario: 'gratuito', socias_farmaci_habilitada }, user: { id: 'propia', user_metadata: { socias_farmaci_habilitada: true, estado: 'activa' } } })
+    assert.equal(await view.leerNavegacionAlumna(), null)
+    assert.deepEqual(view.calls, ['cliente', 'auth', 'perfil', 'afiliadas'])
+  }
+  for (const estado of ['pausada', 'cancelada', undefined]) {
+    assert.equal(await reader({ perfil: { ...profile, tipo_usuario: 'gratuito', estado, socias_farmaci_habilitada: true } }).leerNavegacionAlumna(), null)
+  }
 })
 test('rol antiguo o metadata editable no conceden Afiliadas sin permiso explícito', async () => {
   for (const rol of ['alumna', 'afiliada', 'afiliada_lanzamiento']) {

@@ -2,6 +2,21 @@
 
 Fecha: 15/10/2026. Complementa el inventario de `estado-plataforma.md`. No incluye credenciales ni autoriza envíos o cambios sobre usuarias reales.
 
+## Inicio, navegación y upgrade Farmasi — ampliación del 24/11/2026
+
+La ampliación parte de `e62f2462d1e167c67846e261bd5abb8ee3a96f36`, hijo documental de la producción `6926a0aa279f0b03e720b6dc9b7d18b4da447c40`. El despliegue final se registra por separado. No cambia tablas, grants, SDK, proveedores o precios.
+
+- Farmasi activa sin formación general: Inicio Farmasi con resumen de su catálogo/progreso y una única propuesta de upgrade; no FreeStart ni LockedModules. Socia/Desafío con Farmasi mantienen su campus y acceso adicional. Farmasi y Afiliadas pueden coexistir.
+- `StudentNavigationData.farmasi` se obtiene del perfil protegido y no convierte `formacion` en verdadero. Las APIs y páginas conservan su autorización. El menú distingue la query exacta de Farmasi; parámetros repetidos no seleccionan ese espacio. La barra móvil del marco deriva destinos de esos indicadores; la global queda como fallback seguro y se oculta solo cuando existe el marco.
+- `FarmasiHome` lee catálogo, progreso propio y oferta en paralelo. La vista recibe un resumen sin URLs de reproducción. Un fallo de catálogo muestra recuperación; un fallo de progreso deja valores desconocidos, sin porcentajes o reanudación fabricados.
+- El aula mantiene orden y reproducción dentro del submódulo, incluye videos sin asignación y abre coincidencias al buscar o filtrar. Los denominadores de progreso no cambian con la búsqueda.
+- `/socias` contextualiza Farmasi únicamente con su flag activo y booleano comprobado. Socia activa muestra su estado actual; pausada/cancelada muestra recuperación, sin otra compra. La oferta se mantiene versionada y administrable por Flor.
+- La muestra se selecciona del catálogo autorizado: UUID válido, activa, gratuita, no exclusiva Farmasi, permiso verdadero y video disponible. El DTO contiene solo ID/título; el enlace interno no habilita la clase. Si el catálogo falla se informa y la oferta comprobada se conserva. Sin muestras, no inventar una.
+
+QA local: 75 combinaciones renderizadas de tres vistas, cinco estados y cinco anchos CSS (320/360/390/430/1280), más diez controles con altura 500. Medidas finales en `outputs/farmasi-experiencia-20261124/mediciones-qa-final.json`, interacciones en `interacciones-qa.json` y altura reducida en `altura-reducida-qa.json`, fuera de Git. Se comprobó menú nativo/Escape/foco, plegado/búsqueda/filtro de completadas, ancla de beneficios y FAQ. Altura 440 con búsqueda enfocada: barra inferior oculta, campo de 16 px dentro de la pantalla y sin desborde. La captura `propuesta-socias-desktop.jpg` corresponde a componentes reales con datos ficticios identificados, no a una alumna de producción.
+
+Aceptación pendiente: sesión normal Farmasi → Inicio → retomar/aula → submódulos → conocer Socias → muestra autorizada → volver a Farmasi. Repetir también con Socia+Farmasi y confirmar ausencia de upsell. Chrome se desconectó; no suplantar sesiones ni habilitar cuentas para completar la prueba. Se retiraron la ruta QA local, el servidor y las emulaciones antes de compilar. El test SQL de solo lectura confirmó flag booleano, RLS de perfiles/clases y triggers protectores; advisories conocidos sin cambios, no una certificación de ausencia de problemas.
+
 ## Biblioteca personal, upgrade y grabaciones automáticas — publicado el 24/11/2026
 
 **Publicado y READY:** commit `6926a0aa279f0b03e720b6dc9b7d18b4da447c40`, árbol `b90efda71271f5b9a7014c7aa096fa847da30ea7`, deployment `dpl_BCQBa3rHW4dPuX7rTFTFwJS74nSX`; `app.sociasdigitales.com` apunta al mismo deployment. Repositorio `santillan-alex/socias-digitales-app`. El desarrollo se hizo sobre la producción anterior `741c282197b3504a12c982b08721779bf61a925d` en una copia separada, conservando los cambios pendientes de la copia anterior. La instalación de la automatización y su aceptación con una grabación real siguen pendientes.
