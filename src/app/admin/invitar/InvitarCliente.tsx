@@ -53,10 +53,10 @@ export default function InvitarCliente({ solicitudes }: { solicitudes: Solicitud
       <main className="mx-auto max-w-3xl space-y-6 px-5 py-8 sm:px-8">
         <header>
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#294A38]">Tu comunidad</p>
-          <h1 className="mt-2 font-serif text-4xl font-semibold tracking-[-0.04em]">Invitaciones</h1>
+          <h1 className="mt-2 font-serif text-4xl font-semibold tracking-[-0.04em]">Invitaciones y Farmasi</h1>
         </header>
-        <InvitationLinks />
         <FarmasiSolicitudes solicitudes={solicitudes} />
+        <InvitationLinks />
         <details className="rounded-2xl border border-[#EC9BB6]/50 bg-white p-5 sm:p-6">
           <summary className="cursor-pointer text-sm font-semibold text-[#294A38]">Enviar invitaciones al Desafío por email</summary>
           <p className="mt-3 text-sm leading-6 text-[#655B56]">Pegá los emails y les llegará una invitación para crear su cuenta del Desafío Socias.</p>

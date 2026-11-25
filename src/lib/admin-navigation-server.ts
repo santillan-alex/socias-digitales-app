@@ -20,7 +20,13 @@ export async function leerNavegacionAdmin(): Promise<LecturaNavegacionAdmin> {
         .eq('desafio_socias_estado', 'pendiente').eq('desafio_socias_habilitada', false)
       if (!pendientes.error && Number.isSafeInteger(pendientes.count) && Number(pendientes.count) >= 0) solicitudesPendientes = pendientes.count
     } catch (cause) { unstable_rethrow(cause) }
+    let solicitudesFarmasiPendientes: number | null = null
+    try {
+      const farmasi = await supabase.from('solicitudes_socias_farmasi').select('usuaria_id', { count: 'exact', head: true })
+        .not('usuaria_id', 'in', FILTRO_CUENTAS_PRUEBA)
+      if (!farmasi.error && Number.isSafeInteger(farmasi.count) && Number(farmasi.count) >= 0) solicitudesFarmasiPendientes = farmasi.count
+    } catch (cause) { unstable_rethrow(cause) }
     const nombre = typeof perfil.data.nombre === 'string' && perfil.data.nombre.trim() ? perfil.data.nombre.trim().split(/\s+/)[0] : 'Administradora'
-    return { estado: 'lista', datos: { nombre, solicitudesPendientes } }
+    return { estado: 'lista', datos: { nombre, solicitudesPendientes, solicitudesFarmasiPendientes } }
   } catch (cause) { unstable_rethrow(cause); return { estado: 'error', status: 503, mensaje: 'No pudimos comprobar tu acceso al panel.' } }
 }

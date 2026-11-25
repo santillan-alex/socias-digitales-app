@@ -86,7 +86,7 @@ export default function AdminDesafio({ inscriptas }: { inscriptas: Inscripta[] }
         <header className="mt-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: '#294A38' }}>Desafío Socias</p>
-            <h1 className="mt-2 text-4xl md:text-5xl" style={{ fontFamily: 'var(--font-playfair)' }}>Solicitudes de acceso</h1>
+            <h1 className="mt-2 text-4xl md:text-5xl" style={{ fontFamily: 'var(--font-playfair)' }}>Solicitudes de Desafío</h1>
             <p className="mt-2 text-sm text-neutral-600">Revisá cada inscripción. Al habilitarla, se envía el email de bienvenida.</p>
           </div>
           <div className="rounded-2xl px-5 py-4" style={{ background: '#EC9BB6' }}>
@@ -94,6 +94,7 @@ export default function AdminDesafio({ inscriptas }: { inscriptas: Inscripta[] }
           </div>
         </header>
 
+        <section className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EC9BB6] bg-[#FFFDFA] p-4"><p className="text-sm text-[#655B56]">¿Buscás una inscripción Farmasi? Esta página muestra solo Desafío Socias.</p><a href="/admin/invitar#solicitudes-farmasi" className="inline-flex min-h-11 items-center rounded-full bg-[#294A38] px-4 py-2 text-sm font-semibold text-white">Revisar solicitudes Farmasi</a></section>
         <div className="my-6">
           <input value={busqueda} onChange={event => setBusqueda(event.target.value)} placeholder="Buscar por nombre o email…"
             className="w-full max-w-md rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#294A38]" />

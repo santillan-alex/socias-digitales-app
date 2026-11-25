@@ -82,12 +82,12 @@ function uiFixture() {
   const cells = []; let cursor = 0; const refreshed = []
   const hooks = { useState: initial => { const i = cursor++; if (!(i in cells)) cells[i] = initial; return [cells[i], value => { cells[i] = typeof value === 'function' ? value(cells[i]) : value }] }, useRef: initial => { const i = cursor++; if (!(i in cells)) cells[i] = { current: initial }; return cells[i] } }
   const dashboard = load('src/app/admin/AdminDashboard.tsx', {
-    react: hooks, 'next/navigation': { useRouter: () => ({ refresh: () => refreshed.push(true) }) },
+    react: hooks, './alumnas/FarmaciAccessControl': { default: () => null }, 'next/navigation': { useRouter: () => ({ refresh: () => refreshed.push(true) }) },
     '@/lib/supabase/client': { createClient: () => ({}) }, '@/lib/admin-profile-update': logic,
     '@/components/NavigationIcon': { default: () => null }, '@/components/AdminSectionMenu': { default: () => null },
-    '@/lib/admin-sections': { ADMIN_SECTIONS: [] }, '@/lib/admin-usuarias': { TIPOS_ACCESO: [{ id: 'gratuito', etiqueta: 'Gratuitas' }, { id: 'desafio', etiqueta: 'Desafío Socias' }, { id: 'socia', etiqueta: 'Socias' }], tipoAcceso: p => p.tipo_usuario || 'gratuito', contarTipos: () => ({ gratuito: 1, desafio: 0, socia: 0 }), filtrarUsuarias: rows => rows },
+    '@/lib/admin-sections': { ADMIN_SECTIONS: [] }, '@/lib/admin-usuarias': { TIPOS_ACCESO_PANEL: [{ id: 'gratuito', etiqueta: 'Gratuitas' }, { id: 'desafio', etiqueta: 'Desafío Socias' }, { id: 'socia', etiqueta: 'Socias' }], tipoAcceso: p => p.tipo_usuario || 'gratuito', estadoFarmasiPanel: () => 'sin_acceso', contarTiposPanel: () => ({ gratuito: 1, desafio: 0, socia: 0 }), filtrarUsuariasPanel: rows => rows },
   }).default
-  const render = () => { cursor = 0; return dashboard({ alumnas: [{ ...perfil, created_at: '2026-10-20', ultimo_acceso: null }], stats: { totalAlumnas: 1, activas: 1, solicitudesDesafioPendientes: 0, fechaReferencia: Date.now() } }) }
+  const render = () => { cursor = 0; return dashboard({ alumnas: [{ ...perfil, created_at: '2026-10-20', ultimo_acceso: null }], stats: { totalAlumnas: 1, activas: 1, solicitudesDesafioPendientes: 0, solicitudesFarmasiPendientes: 0, fechaReferencia: Date.now() } }) }
   function find(tree, predicate) { if (!tree || typeof tree !== 'object') return null; if (predicate(tree)) return tree; for (const child of [tree.props?.children].flat(Infinity)) { const result = find(child, predicate); if (result) return result } return null }
   const button = label => find(render(), el => el.type === 'button' && el.props.children === label)
   button('Ver ficha').props.onClick()

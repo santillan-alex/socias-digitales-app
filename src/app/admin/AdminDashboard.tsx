@@ -2,7 +2,8 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TIPOS_ACCESO, tipoAcceso, contarTipos, filtrarUsuarias, type TipoAcceso } from '@/lib/admin-usuarias'
+import { TIPOS_ACCESO_PANEL, tipoAcceso, estadoFarmasiPanel, contarTiposPanel, filtrarUsuariasPanel, type TipoFiltroAcceso } from '@/lib/admin-usuarias'
+import FarmaciAccessControl from './alumnas/FarmaciAccessControl'
 import { versionFicha } from '@/lib/admin-profile-update'
 
 interface Alumna {
@@ -13,6 +14,8 @@ interface Alumna {
   rol: string
   tipo_usuario: string | null
   desafio_socias_habilitada: boolean
+  socias_farmaci_habilitada: boolean | null
+  socias_farmasi_pendiente: boolean | null
   desafio_socias_estado: string
   desafio_socias_habilitada_at: string | null
   desafio_socias_habilitada_por: string | null
@@ -41,6 +44,7 @@ interface Stats {
   comisionesMes: number
   retencion: number
   solicitudesDesafioPendientes: number
+  solicitudesFarmasiPendientes: number | null
   fechaReferencia: number
 }
 
@@ -67,6 +71,15 @@ function etiquetaTipoUsuario(tipo: string | null | undefined) {
   return 'Gratuito'
 }
 
+function AccesosAlumna({ alumna }: { alumna: Alumna }) {
+  const farmasi = estadoFarmasiPanel(alumna), base = tipoAcceso(alumna)
+  return <div className="flex min-w-0 flex-wrap gap-1.5">
+    {farmasi === 'habilitada' && <span className="rounded-full bg-[#294A38] px-2.5 py-1 text-xs font-medium text-white">Socias Farmasi</span>}
+    {farmasi === 'pendiente' && <span className="rounded-full bg-[#F4CAD8] px-2.5 py-1 text-xs font-medium text-[#211c19]">Farmasi pendiente</span>}
+    {farmasi === 'sin_comprobar' && <span className="rounded-full border border-[#e7ddd5] px-2.5 py-1 text-xs text-[#746a64]">Farmasi sin comprobar</span>}
+    {(base !== 'gratuito' || farmasi === 'sin_acceso') && <span className="rounded-full bg-[#F4EFEA] px-2.5 py-1 text-xs font-medium">{etiquetaTipoUsuario(base)}</span>}
+  </div>
+}
 function EmailCuenta({ alumna, errorDirectorio }: { alumna: Alumna; errorDirectorio: boolean }) {
   const estado = errorDirectorio ? 'Estado del email sin verificar'
     : alumna.cuenta_encontrada === false ? 'Cuenta de acceso no encontrada'
@@ -84,7 +97,7 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
   const router = useRouter()
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todas')
-  const [filtroTipo, setFiltroTipo] = useState<TipoAcceso | 'todas'>('todas')
+  const [filtroTipo, setFiltroTipo] = useState<TipoFiltroAcceso | 'todas'>('todas')
   const [alumnaSeleccionada, setAlumnaSeleccionada] = useState<Alumna | null>(null)
   const [editando, setEditando] = useState<Partial<Alumna>>({})
   const [guardando, setGuardando] = useState(false)
@@ -94,13 +107,16 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
   const [mensajeFicha, setMensajeFicha] = useState('')
   const operacionEnCurso = useRef(false)
 
-  const alumnasFiltradas = filtrarUsuarias(alumnas, { busqueda, estado: filtroEstado, tipo: filtroTipo })
-  const cantidadesTipo = contarTipos(alumnas)
-  const baseTipos = filtrarUsuarias(alumnas, { busqueda, estado: filtroEstado, tipo: 'todas' })
-  const cantidadesFiltroTipo = contarTipos(baseTipos)
-  const baseEstados = filtrarUsuarias(alumnas, { busqueda, estado: 'todas', tipo: filtroTipo })
+  const alumnasFiltradas = filtrarUsuariasPanel(alumnas, { busqueda, estado: filtroEstado, tipo: filtroTipo })
+  const cantidadesTipo = contarTiposPanel(alumnas)
+  const baseTipos = filtrarUsuariasPanel(alumnas, { busqueda, estado: filtroEstado, tipo: 'todas' })
+  const cantidadesFiltroTipo = contarTiposPanel(baseTipos)
+  const baseEstados = filtrarUsuariasPanel(alumnas, { busqueda, estado: 'todas', tipo: filtroTipo })
+  const cuentasFarmasiSinComprobar = alumnas.some(a => estadoFarmasiPanel(a) === 'sin_comprobar')
+  const farmasiCuentaSeleccionada = alumnaSeleccionada ? estadoFarmasiPanel(alumnaSeleccionada) : 'sin_acceso'
+  const soloFarmasi = Boolean(alumnaSeleccionada && tipoAcceso(alumnaSeleccionada) === 'gratuito' && farmasiCuentaSeleccionada !== 'sin_acceso')
 
-  function filtrarDesdeResumen(tipo: TipoAcceso) {
+  function filtrarDesdeResumen(tipo: TipoFiltroAcceso) {
     setFiltroTipo(tipo)
     setFiltroEstado('todas')
     setBusqueda('')
@@ -129,10 +145,14 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
     setGuardando(true)
     setErrorFicha('')
     try {
+      const tipoPropuesto = soloFarmasi ? alumnaSeleccionada.tipo_usuario : editando.tipo_usuario ?? tipoAcceso(alumnaSeleccionada)
+      if (tipoPropuesto !== 'gratuito' && tipoPropuesto !== 'desafio' && tipoPropuesto !== 'socia') {
+        throw new Error('No pudimos comprobar el plan base de esta cuenta. Recargá la ficha antes de guardar.')
+      }
       const cambios = {
         nombre: editando.nombre ?? '', whatsapp: editando.whatsapp ?? null, pais: editando.pais ?? null,
         estado: editando.estado ?? alumnaSeleccionada.estado,
-        tipo_usuario: editando.tipo_usuario ?? tipoAcceso(alumnaSeleccionada),
+        tipo_usuario: tipoPropuesto,
       }
       const respuesta = await fetch(`/api/admin/usuarias/${alumnaSeleccionada.id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -177,22 +197,28 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
             <div><p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#294A38]">Vista general</p><h1 className="mt-2 font-serif text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">Panel de Flor</h1></div>
           </div>
 
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             {[
               { label: 'Usuarias', value: stats.totalAlumnas, note: `+${stats.nuevasMes} este mes`, tone: 'bg-[#F4CAD8] border-transparent' },
               { label: 'Alumnas activas', value: stats.activas, note: `${activasPct}% del total`, tone: 'bg-[#EC9BB6] border-transparent' },
-              { label: 'Solicitudes pendientes', value: stats.solicitudesDesafioPendientes, note: 'Desafío Socias', tone: 'bg-[#F4EFEA] border-[#EC9BB6]/55' },
+              { label: 'Solicitudes Desafío', value: stats.solicitudesDesafioPendientes, note: 'Desafío Socias', tone: 'bg-[#F4EFEA] border-[#EC9BB6]/55', href: '/admin/desafio' },
+              { label: 'Solicitudes Farmasi', value: stats.solicitudesFarmasiPendientes, note: stats.solicitudesFarmasiPendientes == null ? 'Sin comprobar' : 'Pendientes de revisión', tone: 'bg-[#F4EFEA] border-[#EC9BB6]/55', href: '/admin/invitar#solicitudes-farmasi' },
               { label: 'Ventas del mes', value: stats.ventasMes, note: 'Registradas en la plataforma', tone: 'bg-[#294A38] text-white border-transparent' },
-            ].map(kpi => <article key={kpi.label} className={`rounded-[22px] border p-5 ${kpi.tone}`}><p className="text-[10px] font-semibold uppercase tracking-[0.16em] opacity-65">{kpi.label}</p><p className="mt-3 font-impact text-4xl font-semibold tracking-[-0.04em]">{kpi.value}</p><p className="mt-2 text-xs font-medium opacity-65">{kpi.note}</p></article>)}
+            ].map(kpi => {
+              const contenido = <><p className="text-[10px] font-semibold uppercase tracking-[0.16em] opacity-65">{kpi.label}</p><p className="mt-3 font-impact text-4xl font-semibold tracking-[-0.04em]">{kpi.value ?? '—'}</p><p className="mt-2 text-xs font-medium opacity-65">{kpi.note}</p></>
+              const clase = `rounded-[22px] border p-5 ${kpi.tone}`
+              return kpi.href ? <a key={kpi.label} href={kpi.href} className={`${clase} block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#294A38]`}>{contenido}</a> : <article key={kpi.label} className={clase}>{contenido}</article>
+            })}
           </section>
 
-          <section aria-label="Alumnas por tipo de acceso" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {TIPOS_ACCESO.map(tipo => <button key={tipo.id} type="button" onClick={() => filtrarDesdeResumen(tipo.id)} aria-label={`Ver ${tipo.etiqueta}: ${cantidadesTipo[tipo.id]}`} className="flex items-center justify-between gap-4 rounded-[20px] border border-[#EC9BB6]/55 bg-[#F4EFEA] px-5 py-4 text-left transition-colors hover:bg-[#F4CAD8]/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#294A38]">
+          <section aria-label="Alumnas por tipo de acceso" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {TIPOS_ACCESO_PANEL.map(tipo => <button key={tipo.id} type="button" onClick={() => filtrarDesdeResumen(tipo.id)} aria-label={`Ver ${tipo.etiqueta}: ${cantidadesTipo[tipo.id] ?? 'sin comprobar'}`} className="flex items-center justify-between gap-4 rounded-[20px] border border-[#EC9BB6]/55 bg-[#F4EFEA] px-5 py-4 text-left transition-colors hover:bg-[#F4CAD8]/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#294A38]">
               <span className="text-sm font-medium">{tipo.etiqueta}</span>
-              <span className="font-impact text-3xl font-semibold tabular-nums text-[#294A38]">{cantidadesTipo[tipo.id]}</span>
+              <span className="font-impact text-3xl font-semibold tabular-nums text-[#294A38]">{cantidadesTipo[tipo.id] ?? '—'}</span>
             </button>)}
           </section>
 
+          <p className="text-xs leading-5 text-[#746a64]">Farmasi puede combinarse con Socias o Desafío. Gratuitas no incluye solicitudes o accesos Farmasi.</p>
           <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
             <article className="rounded-[24px] border border-[#EC9BB6]/55 bg-[#F4EFEA] p-5 sm:p-6">
               <div className="flex items-center justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#746a64]">Estado de la comunidad</p><h2 className="mt-1.5 font-serif text-2xl font-semibold">Actividad de alumnas</h2></div><span className="font-impact text-sm font-semibold text-[#294A38]">{stats.totalAlumnas}</span></div>
@@ -200,19 +226,20 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
               <div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-xl bg-white px-4 py-3"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#294A38]"/><span className="text-xs font-semibold">Activas</span></div><p className="mt-2 font-impact text-2xl font-semibold">{stats.activas}</p></div><div className="rounded-xl bg-white px-4 py-3"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#EC9BB6]"/><span className="text-xs font-semibold">Otras</span></div><p className="mt-2 font-impact text-2xl font-semibold">{Math.max(stats.totalAlumnas - stats.activas, 0)}</p></div></div>
             </article>
             <article className="rounded-[24px] bg-[#F4CAD8] p-5 sm:p-6">
-              <div className="flex items-start justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#746a64]">Requieren atención</p><p className="mt-2 font-impact text-4xl font-semibold">{inactivasMes + stats.solicitudesDesafioPendientes}</p></div><span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FAF7F3] text-[#294A38]" aria-hidden="true">!</span></div>
-              <div className="mt-5 space-y-2 text-sm"><a href="/admin/desafio" className="flex items-center justify-between rounded-xl bg-[#FAF7F3]/75 px-4 py-3"><span>Solicitudes pendientes</span><strong className="font-impact">{stats.solicitudesDesafioPendientes}</strong></a><div className="flex items-center justify-between rounded-xl bg-[#FAF7F3]/75 px-4 py-3"><span>Sin ingreso reciente</span><strong className="font-impact">{inactivasMes}</strong></div><div className="flex items-center justify-between rounded-xl bg-[#FAF7F3]/75 px-4 py-3"><span>Perfil por completar</span><strong className="font-impact">{perfilesIncompletos}</strong></div></div>
+              <div className="flex items-start justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#746a64]">Requieren atención</p><p className="mt-2 font-impact text-4xl font-semibold">{stats.solicitudesFarmasiPendientes == null ? '—' : inactivasMes + stats.solicitudesDesafioPendientes + stats.solicitudesFarmasiPendientes}</p></div><span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FAF7F3] text-[#294A38]" aria-hidden="true">!</span></div>
+              <div className="mt-5 space-y-2 text-sm"><a href="/admin/desafio" className="flex items-center justify-between rounded-xl bg-[#FAF7F3]/75 px-4 py-3"><span>Solicitudes Desafío</span><strong className="font-impact">{stats.solicitudesDesafioPendientes}</strong></a><a href="/admin/invitar#solicitudes-farmasi" className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-[#FAF7F3]/75 px-4 py-3"><span>Solicitudes Farmasi</span><strong className="font-impact">{stats.solicitudesFarmasiPendientes ?? 'Sin comprobar'}</strong></a><div className="flex items-center justify-between rounded-xl bg-[#FAF7F3]/75 px-4 py-3"><span>Sin ingreso reciente</span><strong className="font-impact">{inactivasMes}</strong></div><div className="flex items-center justify-between rounded-xl bg-[#FAF7F3]/75 px-4 py-3"><span>Perfil por completar</span><strong className="font-impact">{perfilesIncompletos}</strong></div></div>
             </article>
           </section>
 
           <section id="acceso-actividad" className="scroll-mt-5 rounded-[24px] bg-white p-5 sm:p-6">
             {mensajeFicha && <p role="status" className="mb-4 rounded-xl border border-[#294A38]/25 bg-[#F4EFEA] px-4 py-3 text-sm leading-6 text-[#294A38]">{mensajeFicha}</p>}
             {errorDirectorio && <div role="alert" className="mb-4 rounded-xl border border-[#EC9BB6] bg-[#F4CAD8]/35 p-4 text-sm leading-6 text-[#655B56]"><p className="font-semibold text-[#211C19]">No pudimos consultar el directorio de cuentas.</p><p className="mt-1">La lista de alumnas sigue disponible, pero el estado del email no está verificado. No significa que la cuenta no exista o que falte confirmar el correo.</p><a href="/admin" className="mt-2 inline-flex min-h-11 items-center font-semibold text-[#294A38] underline underline-offset-4">Recargar directorio</a></div>}
+            {cuentasFarmasiSinComprobar && <p role="alert" className="mb-4 rounded-xl border border-[#EC9BB6] bg-[#FAF7F3] p-4 text-sm leading-6 text-[#655B56]">Hay accesos o solicitudes Farmasi sin comprobar. No los contamos como gratuitas; recargá para consultar su estado.</p>}
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#746a64]">Usuarias</p><h2 className="mt-1 font-serif text-2xl font-semibold">Acceso y actividad</h2></div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <a href="/api/exportar-alumnas" download className="text-sm font-medium text-[#294A38]">Descargar lista&nbsp; ↓</a>
-                <input type="text" aria-label="Buscar alumnas por nombre, email o país" placeholder="Nombre, email o país" value={busqueda} onChange={e => setBusqueda(e.target.value)} className="min-w-0 w-full rounded-full border-0 bg-[#F4EFEA] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#EC9BB6] sm:w-auto" />
+                <input type="text" aria-label="Buscar alumnas por nombre, email o país" placeholder="Nombre, email o país" value={busqueda} onChange={e => setBusqueda(e.target.value)} className="min-h-11 min-w-0 w-full rounded-full border-0 bg-[#F4EFEA] px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-[#EC9BB6] sm:w-auto" />
               </div>
             </div>
 
@@ -228,7 +255,7 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
               type="button"
               aria-pressed={filtroEstado === f.valor}
               onClick={() => setFiltroEstado(f.valor)}
-              className={`rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
+              className={`min-h-11 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
                 filtroEstado === f.valor
                   ? 'bg-[#294A38] text-white'
                   : 'text-[#746a64] hover:bg-white'
@@ -241,7 +268,7 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
 
             <div role="group" aria-label="Filtrar por tipo de acceso" className="mt-3 flex flex-wrap items-center gap-2">
               <span className="mr-1 text-[11px] font-medium text-[#746a64]">Tipo de acceso</span>
-              {[{ id: 'todas' as const, etiqueta: 'Todos', cantidad: baseTipos.length }, ...TIPOS_ACCESO.map(tipo => ({ ...tipo, cantidad: cantidadesFiltroTipo[tipo.id] }))].map(tipo => <button key={tipo.id} type="button" aria-pressed={filtroTipo === tipo.id} onClick={() => setFiltroTipo(tipo.id)} className={`rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${filtroTipo === tipo.id ? 'border-[#294A38] bg-[#294A38] text-white' : 'border-[#EC9BB6]/55 bg-[#FAF7F3] text-[#655B56] hover:bg-[#F4CAD8]/40'}`}>{tipo.etiqueta} <span className="ml-1 tabular-nums opacity-75">({tipo.cantidad})</span></button>)}
+              {[{ id: 'todas' as const, etiqueta: 'Todos', cantidad: baseTipos.length }, ...TIPOS_ACCESO_PANEL.map(tipo => ({ ...tipo, cantidad: cantidadesFiltroTipo[tipo.id] }))].map(tipo => <button key={tipo.id} type="button" aria-pressed={filtroTipo === tipo.id} onClick={() => setFiltroTipo(tipo.id)} className={`min-h-11 rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${filtroTipo === tipo.id ? 'border-[#294A38] bg-[#294A38] text-white' : 'border-[#EC9BB6]/55 bg-[#FAF7F3] text-[#655B56] hover:bg-[#F4CAD8]/40'}`}>{tipo.etiqueta} <span className="ml-1 tabular-nums opacity-75">({tipo.cantidad ?? '—'})</span></button>)}
               <span role="status" aria-live="polite" className="ml-auto text-xs text-[#746a64]">{alumnasFiltradas.length} de {stats.totalAlumnas} alumnas</span>
             </div>
 
@@ -251,7 +278,7 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
                   {alumna.avatar_url ? <img src={alumna.avatar_url} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" /> : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F4CAD8] text-xs font-semibold">{(alumna.nombre || 'SD').split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()}</span>}
                   <div className="min-w-0 flex-1"><h3 className="break-words text-sm font-semibold">{alumna.nombre || 'Sin nombre'}</h3><EmailCuenta alumna={alumna} errorDirectorio={errorDirectorio} /><p className="mt-1 text-xs text-[#746a64]">{alumna.whatsapp || 'Sin teléfono'}</p></div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2"><span className="rounded-full border border-[#e7ddd5] px-2.5 py-1 text-xs capitalize">{alumna.estado || 'activa'}</span><span className="rounded-full bg-[#F4CAD8] px-2.5 py-1 text-xs">{etiquetaTipoUsuario(tipoAcceso(alumna))}</span></div>
+                <div className="mt-3 flex flex-wrap gap-2"><span className="rounded-full border border-[#e7ddd5] px-2.5 py-1 text-xs capitalize">{alumna.estado || 'activa'}</span><AccesosAlumna alumna={alumna} /></div>
                 <dl className="mt-4 grid grid-cols-2 gap-3 text-xs"><div><dt className="text-[#746a64]">País</dt><dd className="mt-1">{alumna.pais || '—'}</dd></div><div><dt className="text-[#746a64]">Ingreso</dt><dd className="mt-1">{formatFecha(alumna.created_at)}</dd></div><div><dt className="text-[#746a64]">Actividad</dt><dd className="mt-1">{diasSinIngresar(alumna.ultimo_acceso, stats.fechaReferencia)}</dd></div><div><dt className="text-[#746a64]">Progreso</dt><dd className="mt-1 tabular-nums">{alumna.progreso ?? 0}%</dd></div></dl>
                 <button type="button" onClick={() => abrirFicha(alumna)} className="mt-4 w-full rounded-full border border-[#294A38]/30 px-4 py-3 text-sm font-semibold text-[#294A38]">Ver ficha</button>
               </article>)}
@@ -283,7 +310,7 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
                     <td className="py-3.5"><span className="flex items-center gap-2 text-xs font-medium text-[#211c19]"><span className={`h-2 w-2 rounded-full ${alumna.estado === 'activa' ? 'bg-[#294A38]' : alumna.estado === 'pausada' ? 'bg-[#EC9BB6]' : 'bg-[#211c19]/25'}`} />
                         {alumna.estado ?? 'activa'}</span>
                     </td>
-                    <td className="py-3.5"><span className="rounded-full bg-[#F4EFEA] px-2.5 py-1 text-xs font-medium">{etiquetaTipoUsuario(tipoAcceso(alumna))}</span></td>
+                    <td className="py-3.5"><AccesosAlumna alumna={alumna} /></td>
                     <td className="py-3.5 text-xs text-[#746a64]">{alumna.pais ?? '—'}</td>
                     <td className="py-3.5 text-xs text-[#746a64]">{formatFecha(alumna.created_at)}</td>
                     <td className="py-3.5 text-xs text-[#746a64]">{diasSinIngresar(alumna.ultimo_acceso, stats.fechaReferencia)}</td>
@@ -327,8 +354,8 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
                 ) : (
                   <div className="w-16 h-16 shrink-0 rounded-full bg-[#F4CAD8] flex items-center justify-center font-impact text-xl font-medium text-[#294A38]">{(alumnaSeleccionada.nombre || 'SD').split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase()}</div>
                 )}
-                <div>
-                  <p className="font-bold text-gray-900">{alumnaSeleccionada.nombre || 'Sin nombre'}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="break-words font-bold text-gray-900">{alumnaSeleccionada.nombre || 'Sin nombre'}</p>
                   <p className="text-sm text-gray-500">Desde {formatFecha(alumnaSeleccionada.created_at)}</p>
                 </div>
               </div>
@@ -338,6 +365,11 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
                 <EmailCuenta alumna={alumnaSeleccionada} errorDirectorio={errorDirectorio} />
                 <p className="mt-3 text-xs leading-5 text-[#746A64]">Un email confirmado verifica la dirección; no acredita un pago. Desde esta ficha no se envían correos ni se muestran o cambian contraseñas.</p>
               </section>
+
+              <FarmaciAccessControl key={alumnaSeleccionada.id} perfilId={alumnaSeleccionada.id} esSolicitud={farmasiCuentaSeleccionada === 'pendiente'} alCambiar={habilitada => {
+                setAlumnaSeleccionada(actual => actual && actual.id === alumnaSeleccionada.id ? { ...actual, socias_farmaci_habilitada: habilitada, socias_farmasi_pendiente: habilitada ? false : actual.socias_farmasi_pendiente } : actual)
+                router.refresh()
+              }} />
 
               <fieldset disabled={guardando || eliminando} className="grid min-w-0 grid-cols-1 gap-4 border-0 p-0 sm:grid-cols-2">
                 {[
@@ -352,7 +384,7 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
                       type={type}
                       value={(editando as Record<string, string>)[key] ?? ''}
                       onChange={e => setEditando(prev => ({ ...prev, [key]: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                      className="min-h-11 w-full border border-gray-200 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-rose-300"
                     />
                   </div>
                 ))}
@@ -363,7 +395,7 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
                     id="ficha-estado"
                     value={editando.estado ?? 'activa'}
                     onChange={e => setEditando(prev => ({ ...prev, estado: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="min-h-11 w-full border border-gray-200 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-rose-300"
                   >
                     <option value="activa">Activa</option>
                     <option value="pausada">Pausada</option>
@@ -371,23 +403,27 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
                   </select>
                 </div>
 
-                <div>
-                  <label htmlFor="ficha-tipo" className="block text-xs font-medium text-gray-500 mb-1">Tipo de usuaria</label>
+                {soloFarmasi ? <div className="min-w-0">
+                  <p className="mb-1 text-xs font-medium text-gray-500">Tipo de usuaria</p>
+                  <div className="min-h-11 rounded-lg border border-gray-200 px-3 py-2"><AccesosAlumna alumna={alumnaSeleccionada} /></div>
+                  <p className="mt-2 text-xs leading-5 text-[#746a64]">Sin plan general de Academia. Gestioná Farmasi desde su propio acceso.</p>
+                </div> : <div>
+                  <label htmlFor="ficha-tipo" className="block text-xs font-medium text-gray-500 mb-1">{farmasiCuentaSeleccionada !== 'sin_acceso' ? 'Plan general' : 'Tipo de usuaria'}</label>
                   <select
                     id="ficha-tipo"
                     value={editando.tipo_usuario ?? tipoAcceso(alumnaSeleccionada)}
                     onChange={e => setEditando(prev => ({ ...prev, tipo_usuario: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="min-h-11 w-full border border-gray-200 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-rose-300"
                   >
-                    <option value="gratuito">Gratuito</option>
+                    <option value="gratuito">{farmasiCuentaSeleccionada !== 'sin_acceso' ? 'Sin plan general' : 'Gratuito'}</option>
                     <option value="desafio">Desafío Socias</option>
                     <option value="socia">Socia</option>
                   </select>
                   {editando.tipo_usuario === 'desafio' && !alumnaSeleccionada.desafio_socias_habilitada && <p className="mt-2 text-xs leading-5 text-[#746a64]">Quedará pendiente. Flor habilita el acceso y envía la bienvenida desde Solicitudes del Desafío.</p>}
-                </div>
+                </div>}
               </fieldset>
               <div className="rounded-xl border border-[#EC9BB6]/50 bg-[#F4EFEA] p-4 text-sm leading-6 text-[#655B56]">
-                <p><strong className="text-[#211c19]">Activación manual.</strong> Asignar Socia y Activa habilita sus clases privadas; no acredita un cobro ni crea una suscripción. Verificá el pago por separado.</p>
+                {soloFarmasi ? <p><strong className="text-[#211c19]">Aprobación Farmasi.</strong> Aceptar Farmasi habilita solo sus clases; no cambia el acceso a Academy ni acredita pagos.</p> : <p><strong className="text-[#211c19]">Activación manual.</strong> Asignar Socia y Activa habilita sus clases privadas; no acredita un cobro ni crea una suscripción. Verificá el pago por separado.</p>}
                 <p className="mt-2">Pausar o cancelar suspende el contenido de pago sin borrar respuestas ni progreso. Los módulos con autorización propia se gestionan desde cada apartado.</p>
               </div>
 
@@ -402,8 +438,8 @@ export default function AdminDashboard({ alumnas, stats, errorDirectorio = false
                   <p className="font-semibold text-gray-800">{diasSinIngresar(alumnaSeleccionada.ultimo_acceso, stats.fechaReferencia)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">Rol</p>
-                  <p className="font-semibold text-gray-800">{etiquetaTipoUsuario(alumnaSeleccionada.tipo_usuario)}</p>
+                  <p className="text-xs text-gray-400">Acceso</p>
+                  <div className="mt-1"><AccesosAlumna alumna={alumnaSeleccionada} /></div>
                 </div>
               </div>
             </div>

@@ -5,6 +5,7 @@ import AdminRecovery from './AdminRecovery'
 import { FILTRO_CUENTAS_PRUEBA, esCuentaPrueba } from '@/lib/test-accounts'
 import { createAdminClient, isAdminSupabaseConfigured } from '@/lib/supabase/admin'
 import { identidadesDeCuentas, type IdentidadCuenta } from '@/lib/admin-team'
+import { leerSolicitudesFarmasi } from '@/lib/admin-student-directory-server'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -36,6 +37,9 @@ export default async function AdminPage() {
   // Administración no es un tipo de alumna ni forma parte de estos indicadores.
   const alumnas = perfiles?.filter(perfil => perfil.rol !== 'admin' && !esCuentaPrueba(perfil.id)) ?? []
 
+  // Only read requests for the students already returned to this verified admin.
+  // A failure is unknown, never proof that a particular student has no request.
+  const solicitudesFarmasi = await leerSolicitudesFarmasi({ supabase, userId: user.id, admin: true }, alumnas.map(alumna => alumna.id))
   const stats = {
     fechaReferencia: hoy.getTime(),
     totalAlumnas: alumnas?.length ?? 0,
@@ -49,6 +53,7 @@ export default async function AdminPage() {
     afiliadasActivas: alumnas?.filter(a => a.rol === 'afiliada').length ?? 0,
     ventasMes: ventasAfiliadas?.length ?? 0,
     comisionesMes: ventasAfiliadas?.reduce((acc, v) => acc + Number(v.comision), 0) ?? 0,
+    solicitudesFarmasiPendientes: solicitudesFarmasi ? alumnas.filter(a => a.socias_farmaci_habilitada !== true && solicitudesFarmasi.has(a.id)).length : null,
     solicitudesDesafioPendientes: alumnas?.filter(a => a.rol !== 'admin' && a.tipo_usuario === 'desafio' && a.desafio_socias_estado === 'pendiente' && !a.desafio_socias_habilitada).length ?? 0,
   }
 
@@ -68,6 +73,8 @@ export default async function AdminPage() {
   }
   const alumnasConCuenta = alumnas.map(alumna => ({
     ...alumna,
+    socias_farmaci_habilitada: typeof alumna.socias_farmaci_habilitada === 'boolean' ? alumna.socias_farmaci_habilitada : null,
+    socias_farmasi_pendiente: solicitudesFarmasi ? solicitudesFarmasi.has(alumna.id) : null,
     email: identidades?.get(alumna.id)?.email ?? null,
     email_confirmado: identidades?.get(alumna.id)?.email_confirmado ?? null,
     cuenta_encontrada: identidades?.get(alumna.id)?.cuenta_encontrada ?? null,

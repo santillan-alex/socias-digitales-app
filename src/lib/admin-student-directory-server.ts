@@ -84,7 +84,7 @@ async function leerHabilitaciones(auth: SesionDirectorioAlumnas, ids: string[]) 
     return permisos
   } catch (error) { unstable_rethrow(error); return null }
 }
-async function leerSolicitudesFarmasi(auth: SesionDirectorioAlumnas, ids: string[]) {
+export async function leerSolicitudesFarmasi(auth: SesionDirectorioAlumnas, ids: string[]) {
   const lotes: string[][] = [], pendientes = new Set<string>()
   for (let i = 0; i < ids.length; i += TAMANO_LOTE_ACCESOS) lotes.push(ids.slice(i, i + TAMANO_LOTE_ACCESOS))
   try {

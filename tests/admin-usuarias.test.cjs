@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -44,4 +45,21 @@ test('la cuenta de prueba nunca figura en cantidades ni listados; otras Alex rea
   assert.deepEqual(contarTipos([...usuarias,prueba,real]),{gratuito:2,desafio:2,socia:2})
   const list=filtrarUsuarias([...usuarias,prueba,real],{busqueda:'alex',estado:'todas',tipo:'todas'})
   assert.deepEqual(list,[real])
+})
+
+test('dashboard clasifica Farmasi y pendientes sin alterar tipo persistido ni duplicar personas', () => {
+  const { contarTiposPanel, filtrarUsuariasPanel } = moduleFixture.exports
+  const base = usuarias.map(u => ({ ...u, socias_farmaci_habilitada: false, socias_farmasi_pendiente: false }))
+  const filas = [...base, { id: 'farmasi', tipo_usuario: 'gratuito', estado: 'activa', socias_farmaci_habilitada: true, socias_farmasi_pendiente: false }, { id: 'pendiente', tipo_usuario: 'gratuito', estado: 'activa', socias_farmaci_habilitada: false, socias_farmasi_pendiente: true }, { id: 'mixta', tipo_usuario: 'socia', estado: 'activa', socias_farmaci_habilitada: true, socias_farmasi_pendiente: false }]
+  assert.deepEqual(contarTiposPanel(filas), { gratuito: 2, desafio: 1, socia: 3, farmasi: 2, farmasi_pendiente: 1 })
+  const ids = tipo => filtrarUsuariasPanel(filas, { busqueda: '', estado: 'todas', tipo }).map(u => u.id)
+  assert.deepEqual(ids('farmasi'), ['farmasi', 'mixta'])
+  assert.deepEqual(ids('farmasi_pendiente'), ['pendiente'])
+  assert.deepEqual(ids('gratuito'), ['gratis', 'sin-tipo'])
+  assert.equal(tipoAcceso(filas.find(u => u.id === 'farmasi')), 'gratuito')
+  assert.ok(ids('socia').includes('mixta'))
+  assert.equal(ids('todas').length, 8)
+  const desconocida = [{ ...filas.at(-1), tipo_usuario: 'gratuito', socias_farmaci_habilitada: false, socias_farmasi_pendiente: null }]
+  assert.deepEqual(contarTiposPanel(desconocida), { gratuito: null, desafio: 0, socia: 0, farmasi: null, farmasi_pendiente: null })
+  assert.equal(filtrarUsuariasPanel(desconocida, { busqueda: '', estado: 'todas', tipo: 'gratuito' }).length, 0)
 })

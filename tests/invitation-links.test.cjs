@@ -41,7 +41,7 @@ test('invitaciones en apartado propio y perfil admin, no ocupan la vista general
   assert.doesNotMatch(dashboard, /Invitar al Desafío/)
   assert.doesNotMatch(dashboard, /ADMIN_SECTIONS\.map|<AdminSectionMenu|<aside/)
   assert.match(read('src/app/admin/layout.tsx'), /<AdminShellFrame datos=\{lectura\.datos\}>\{children\}/)
-  assert.match(read('src/lib/admin-sections.ts'), /href: '\/admin\/invitar', label: 'Invitaciones', icon: 'invitaciones'/)
+  assert.match(read('src/lib/admin-sections.ts'), /href: '\/admin\/invitar', label: 'Invitaciones y Farmasi', icon: 'invitaciones'/)
   assert.match(read('src/components/AdminSectionMenu.tsx'), /dentroDelPanel \? null/)
   assert.match(read('src/lib/admin-navigation.ts'), /'\/admin\/invitar'/)
   assert.match(read('src/app/admin/invitar/InvitarCliente.tsx'), /<InvitationLinks \/>/)

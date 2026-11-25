@@ -3,7 +3,7 @@
 const test = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), ts = require('typescript'), React = require('react'), { renderToStaticMarkup } = require('react-dom/server')
 const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8')
 function load(file, deps = {}, env = {}) { const m = { exports: {} }; new Function('require', 'module', 'exports', 'window', ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText)(n => n in deps ? deps[n] : require(n), m, m.exports, env.window); return m.exports }
-const sections = load('src/lib/admin-sections.ts'), navigation = load('src/lib/admin-navigation.ts', { './admin-sections': sections }), datos = { nombre: 'Flor', solicitudesPendientes: 4 }
+const sections = load('src/lib/admin-sections.ts'), navigation = load('src/lib/admin-navigation.ts', { './admin-sections': sections }), datos = { nombre: 'Flor', solicitudesPendientes: 4, solicitudesFarmasiPendientes: 2 }
 const Link = ({ prefetch, children, ...p }) => { void prefetch; return React.createElement('a', p, children) }
 const icon = { default: () => React.createElement('span', { 'data-icon': true, 'aria-hidden': true }) }
 function sidebar(ruta = '/admin', react = React) { return load('src/components/AdminSidebar.tsx', { react, 'next/link': { default: Link }, 'next/navigation': { usePathname: () => ruta }, './NavigationIcon': icon, '@/lib/admin-sections': sections, '@/lib/admin-navigation': navigation }).default }
@@ -39,11 +39,11 @@ test('sidebar conserva diecinueve links, iconos, grupo activo abierto y badge re
   for (const s of sections.ADMIN_SECTIONS) {
     const Sidebar = sidebar(s.href), html = renderToStaticMarkup(React.createElement(Sidebar, { datos }))
     assert.equal((html.match(/href=/g) ?? []).length, 19); assert.equal((html.match(/data-icon=/g) ?? []).length, 22); assert.equal((html.match(/aria-current="page"/g) ?? []).length, 1)
-    assert.ok(html.includes(`href="${s.href}" aria-current="page"`)); assert.ok(html.includes('4 solicitudes pendientes')); assert.ok(html.includes('group-open:hidden')); assert.ok(!html.includes('<select')); assert.ok(!html.includes('overflow-x'))
+    assert.ok(html.includes(`href="${s.href}" aria-current="page"`)); assert.ok(html.includes('4 solicitudes pendientes')); assert.ok(html.includes('2 solicitudes pendientes Farmasi')); assert.ok(html.includes('Solicitudes Desafío')); assert.ok(html.includes('Invitaciones y Farmasi')); assert.ok(html.includes('group-open:hidden')); assert.ok(!html.includes('<select')); assert.ok(!html.includes('overflow-x'))
     const grupo = navigation.ADMIN_NAVIGATION_GROUPS.find(g => g.rutas.includes(s.href)); assert.equal((html.match(/<details open=""/g) ?? []).length, grupo ? 1 : 0)
     for (const section of sections.ADMIN_SECTIONS) assert.ok(html.includes(`href="${section.href}"`))
   }
-  const Sidebar = sidebar(); const zero = renderToStaticMarkup(React.createElement(Sidebar, { datos: { ...datos, solicitudesPendientes: 0 } })); assert.ok(!zero.includes('solicitudes pendientes'))
+  const Sidebar = sidebar(); const zero = renderToStaticMarkup(React.createElement(Sidebar, { datos: { ...datos, solicitudesPendientes: 0, solicitudesFarmasiPendientes: 0 } })); assert.ok(!zero.includes('solicitudes pendientes'))
   const unknown = renderToStaticMarkup(React.createElement(Sidebar, { datos: { ...datos, solicitudesPendientes: null } })); assert.ok(unknown.includes('Solicitudes pendientes sin comprobar'))
 })
 test('marco único: encabezado, sidebar sticky y diálogo cerrado sin repetir navegación ni tocar el main', () => {

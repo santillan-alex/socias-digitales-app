@@ -4,7 +4,7 @@ const read = file => fs.readFileSync(path.resolve(__dirname, '..', file), 'utf8'
 function load(file, deps = {}) { const mod = { exports: {} }; new Function('require', 'module', 'exports', ts.transpileModule(read(file), { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(name => name in deps ? deps[name] : require(name), mod, mod.exports); return mod.exports }
 const Recovery = load('src/app/admin/AdminRecovery.tsx').default
 function Dashboard() { return null }
-function fixture({ user = { id: 'actor' }, role = 'admin', roleError = null, roleThrows = false, failure = null, throws = false, nullData = false, empty = false } = {}) {
+function fixture({ user = { id: 'actor' }, role = 'admin', roleError = null, roleThrows = false, failure = null, throws = false, nullData = false, empty = false, farmasiPendiente = false, farmasiError = false } = {}) {
   const calls = []
   const supabase = { auth: { getUser: async () => ({ data: { user } }) }, from: table => {
     let monthly = false
@@ -14,12 +14,12 @@ function fixture({ user = { id: 'actor' }, role = 'admin', roleError = null, rol
         const key = table === 'pagos' ? monthly ? 'pagosMes' : 'pagosHistoricos' : table
         calls.push(key)
         if (throws && failure === key) return Promise.reject(new TypeError('network')).then(resolve, reject)
-        const data = empty ? [] : table === 'perfiles' ? [{ id: 'alumna', rol: 'alumna', nombre: 'Alumna ficticia local', estado: 'activa', tipo_usuario: 'gratuito', created_at: '2026-10-01' }] : table === 'pagos' ? [{ monto: 20 }] : [{ comision: 5 }]
+        const data = empty ? [] : table === 'perfiles' ? [{ id: 'alumna', rol: 'alumna', nombre: 'Alumna ficticia local', estado: 'activa', tipo_usuario: 'gratuito', socias_farmaci_habilitada: false, created_at: '2026-10-01' }] : table === 'pagos' ? [{ monto: 20 }] : [{ comision: 5 }]
         return Promise.resolve({ data: failure === key && nullData ? null : data, error: failure === key && !nullData ? { code: 'fixture_error' } : null }).then(resolve, reject)
       },
     }; return q
   } }
-  const Page = load('src/app/admin/page.tsx', { '@/lib/supabase/server': { createClient: async () => supabase }, '@/lib/supabase/admin': { createAdminClient: () => ({}), isAdminSupabaseConfigured: () => true }, '@/lib/admin-team': { identidadesDeCuentas: async () => new Map() }, 'next/navigation': { redirect: location => { throw new Error('redirect:' + location) } }, './AdminDashboard': { default: Dashboard }, './AdminRecovery': { default: Recovery }, '@/lib/test-accounts': { FILTRO_CUENTAS_PRUEBA: '(test)', esCuentaPrueba: () => false } }).default
+  const Page = load('src/app/admin/page.tsx', { '@/lib/supabase/server': { createClient: async () => supabase }, '@/lib/supabase/admin': { createAdminClient: () => ({}), isAdminSupabaseConfigured: () => true }, '@/lib/admin-team': { identidadesDeCuentas: async () => new Map() }, '@/lib/admin-student-directory-server': { leerSolicitudesFarmasi: async (_auth, ids) => farmasiError ? null : new Set(farmasiPendiente ? ids : []) }, 'next/navigation': { redirect: location => { throw new Error('redirect:' + location) } }, './AdminDashboard': { default: Dashboard }, './AdminRecovery': { default: Recovery }, '@/lib/test-accounts': { FILTRO_CUENTAS_PRUEBA: '(test)', esCuentaPrueba: () => false } }).default
   return { Page, calls }
 }
 test('un error de alumnas o cifras nunca aparece como vacío o cero; usa recuperación explícita', async () => {
@@ -44,4 +44,14 @@ test('recuperación móvil mantiene identidad y recarga real sin simular métric
   const html = require('react-dom/server').renderToStaticMarkup(Recovery())
   assert.match(html, /role="alert"/); assert.match(html, /href="\/admin"/); assert.match(html, /Reintentar/); assert.match(html, /min-h-11/)
   assert.match(html, /no mostramos un listado vacío/); assert.ok(!html.includes('No hay alumnas'))
+})
+
+test('panel raíz vincula solicitudes Farmasi al listado autorizado y no confunde fallo con ausencia', async () => {
+  const pendiente = await fixture({ farmasiPendiente: true }).Page()
+  assert.equal(pendiente.props.alumnas[0].socias_farmaci_habilitada, false)
+  assert.equal(pendiente.props.alumnas[0].socias_farmasi_pendiente, true)
+  assert.equal(pendiente.props.stats.solicitudesFarmasiPendientes, 1)
+  const desconocido = await fixture({ farmasiError: true }).Page()
+  assert.equal(desconocido.props.alumnas[0].socias_farmasi_pendiente, null)
+  assert.equal(desconocido.props.stats.solicitudesFarmasiPendientes, null)
 })

@@ -8,7 +8,8 @@ function reader(options = {}) {
   const db = { auth: { getUser: async () => { if (options.authThrow) throw options.authThrow; return { data: { user: options.user === undefined ? { id: uid, user_metadata: { rol: 'admin' } } : options.user }, error: options.authError ?? null } } }, from: table => {
     const q = { table, filters: [] }, chain = { select(fields, opts) { q.fields = fields; q.opts = opts; return chain }, eq(k, v) { q.filters.push(['eq', k, v]); return chain }, neq(k, v) { q.filters.push(['neq', k, v]); return chain }, not(k, op, v) { q.filters.push(['not', k, op, v]); return chain }, maybeSingle() { return run() }, then(resolve, reject) { return run().then(resolve, reject) } }
     async function run() {
-      calls.push(q); assert.equal(table, 'perfiles')
+      calls.push(q); assert.ok(['perfiles','solicitudes_socias_farmasi'].includes(table))
+      if (table === 'solicitudes_socias_farmasi') return { count: options.farmasiCount === undefined ? 2 : options.farmasiCount, error: options.farmasiError ?? null }
       if (q.opts?.head) { if (options.countThrow) throw options.countThrow; return { count: options.count === undefined ? 3 : options.count, error: options.countError ?? null } }
       if (options.profileThrow) throw options.profileThrow
       return { data: options.profile === undefined ? { id: uid, nombre: ' Flor Schauman ', rol: 'admin' } : options.profile, error: options.profileError ?? null }
@@ -24,9 +25,9 @@ test('marco admin verifica Auth y perfil propio; metadata, roles alumna y errore
     assert.equal(result.estado, 'error'); assert.equal(result.status, status); assert.ok(!Object.hasOwn(result, 'datos')); assert.ok(!h.calls.some(q => q.opts?.head))
   }
   const h = reader(), result = await h.leerNavegacionAdmin()
-  assert.deepEqual(result, { estado: 'lista', datos: { nombre: 'Flor', solicitudesPendientes: 3 } })
+  assert.deepEqual(result, { estado: 'lista', datos: { nombre: 'Flor', solicitudesPendientes: 3, solicitudesFarmasiPendientes: 2 } })
   assert.deepEqual(h.calls[0].filters, [['eq', 'id', uid]])
-  assert.deepEqual(Object.keys(result.datos).sort(), ['nombre', 'solicitudesPendientes'])
+  assert.deepEqual(Object.keys(result.datos).sort(), ['nombre', 'solicitudesFarmasiPendientes', 'solicitudesPendientes'])
 })
 test('badge usa cantidad real de solicitudes pendientes, excluye admin y prueba, error no se convierte en cero', async () => {
   const h = reader({ count: 0 }); assert.equal((await h.leerNavegacionAdmin()).datos.solicitudesPendientes, 0)
@@ -36,7 +37,7 @@ test('badge usa cantidad real de solicitudes pendientes, excluye admin y prueba,
   for (const options of [{ authThrow: control }, { profileThrow: control }, { countThrow: control }]) await assert.rejects(reader(options).leerNavegacionAdmin(), e => e === control)
 })
 test('layout envuelve todas las rutas admin; denegado o desconocido no renderiza el contenido privado', async () => {
-  const datos = { nombre: 'Flor', solicitudesPendientes: 0 }
+  const datos = { nombre: 'Flor', solicitudesPendientes: 0, solicitudesFarmasiPendientes: 0 }
   for (const lectura of [{ estado: 'lista', datos }, { estado: 'error', status: 401, mensaje: 'Sesión requerida' }, { estado: 'error', status: 403, mensaje: 'Sin permiso' }, { estado: 'error', status: 503, mensaje: 'Acceso sin comprobar' }]) {
     const Layout = load('src/app/admin/layout.tsx', { 'next/navigation': { redirect: href => { throw { redirect: href } } }, '@/lib/admin-navigation-server': { leerNavegacionAdmin: async () => lectura }, '@/components/AdminShellFrame': { default: ({ datos: passed, children }) => { assert.equal(passed, datos); return React.createElement('div', { 'data-admin-shell': true }, children) } } }).default
     if (lectura.status === 401 || lectura.status === 403) await assert.rejects(Layout({ children: 'PRIVADO' }), e => e.redirect === (lectura.status === 401 ? '/login' : '/inicio'))
@@ -45,4 +46,13 @@ test('layout envuelve todas las rutas admin; denegado o desconocido no renderiza
   const source = read('src/lib/admin-navigation-server.ts')
   for (const bad of ['createAdminClient', 'user_metadata', 'process.env', '.update(', '.insert(', 'unstable_cache']) assert.ok(!source.includes(bad))
   assert.ok(read('src/app/admin/page.tsx').includes("perfil?.rol !== 'admin'")); assert.ok(read('src/lib/affiliate-hub-server.ts').includes('autorizarAfiliadas'))
+})
+
+test('badge Farmasi consulta cantidad exacta separada, y fallo no elimina el conteo de Desafío', async () => {
+  const h=reader({farmasiCount:4}), r=await h.leerNavegacionAdmin()
+  assert.equal(r.datos.solicitudesPendientes,3); assert.equal(r.datos.solicitudesFarmasiPendientes,4)
+  const q=h.calls.find(x=>x.table==='solicitudes_socias_farmasi')
+  assert.deepEqual(q.opts,{count:'exact',head:true}); assert.deepEqual(q.filters,[['not','usuaria_id','in','(prueba)']])
+  const error=await reader({farmasiError:{}}).leerNavegacionAdmin()
+  assert.equal(error.datos.solicitudesFarmasiPendientes,null); assert.equal(error.datos.solicitudesPendientes,3)
 })

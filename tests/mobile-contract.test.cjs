@@ -57,7 +57,7 @@ test('Flor dispone de diecinueve destinos desde el lateral y el diálogo móvil,
   const sections = cargar('src/lib/admin-sections.ts')
   const navigation = cargar('src/lib/admin-navigation.ts', { './admin-sections': sections })
   const Sidebar = cargar('src/components/AdminSidebar.tsx', { 'next/link': link, 'next/navigation': { usePathname: () => '/admin/checklist' }, './NavigationIcon': icon, '@/lib/admin-sections': sections, '@/lib/admin-navigation': navigation }).default
-  const html = renderToStaticMarkup(React.createElement(Sidebar, { datos: { nombre: 'Flor', solicitudesPendientes: 2 } }))
+  const html = renderToStaticMarkup(React.createElement(Sidebar, { datos: { nombre: 'Flor', solicitudesPendientes: 2, solicitudesFarmasiPendientes: 0 } }))
   assert.equal(sections.ADMIN_SECTIONS.length, 19)
   for (const s of sections.ADMIN_SECTIONS) assert.ok(html.includes(`href="${s.href}"`))
   assert.ok(html.includes('href="/admin/alumnas"')); assert.ok(html.includes('Todas las alumnas'))

@@ -58,10 +58,10 @@ test('directorio lento termina dentro de su presupuesto y no inicia más página
   assert.equal(calls, 1)
 })
 
-function pageFixture({ user = { id: 'actor' }, role = 'admin', configured = true, directoryError = false, profileFailure = false } = {}) {
+function pageFixture({ user = { id: 'actor' }, role = 'admin', configured = true, directoryError = false, profileFailure = false, farmasiPending = false } = {}) {
   const calls = [], writes = []
   const profiles = [
-    { id: 'socia', nombre: 'Socia ficticia', tipo_usuario: 'socia', rol: 'alumna', estado: 'activa', created_at: '2026-10-01' },
+    { id: 'socia', nombre: 'Socia ficticia', tipo_usuario: 'socia', socias_farmaci_habilitada: false, rol: 'alumna', estado: 'activa', created_at: '2026-10-01' },
     { id: 'prueba', rol: 'alumna', estado: 'activa' }, { id: 'admin', rol: 'admin' },
   ]
   const db = { auth: { getUser: async () => ({ data: { user } }) }, from: table => {
@@ -74,6 +74,7 @@ function pageFixture({ user = { id: 'actor' }, role = 'admin', configured = true
     '@/lib/supabase/server': { createClient: async () => db },
     '@/lib/supabase/admin': { isAdminSupabaseConfigured: () => configured, createAdminClient: () => { calls.push('client'); return {} } },
     '@/lib/admin-team': { identidadesDeCuentas: async (_admin, ids) => { calls.push(ids); if (directoryError) throw new Error('fixture'); return new Map([['socia', { email: 'socia@ejemplo.test', email_confirmado: true, cuenta_encontrada: true }]]) } },
+    '@/lib/admin-student-directory-server': { leerSolicitudesFarmasi: async (_auth, ids) => { assert.deepEqual(ids, ['socia']); return new Set(farmasiPending ? ids : []) } },
     '@/lib/test-accounts': { FILTRO_CUENTAS_PRUEBA: '(prueba)', esCuentaPrueba: id => id === 'prueba' },
     'next/navigation': { redirect: destination => { throw new Error('redirect:' + destination) } },
     './AdminDashboard': { default: () => null }, './AdminRecovery': { default: () => null },
@@ -94,7 +95,7 @@ test('serializa solo alumnas autorizadas, excluye admin/prueba y no cambia métr
   assert.deepEqual(f.calls, ['client', ['socia']])
   assert.equal(element.props.alumnas.length, 1); assert.equal(element.props.alumnas[0].email, 'socia@ejemplo.test')
   assert.equal(element.props.alumnas[0].email_confirmado, true); assert.equal(element.props.errorDirectorio, false)
-  assert.equal(element.props.stats.totalAlumnas, 1); assert.equal(element.props.stats.activas, 1)
+  assert.equal(element.props.stats.totalAlumnas, 1); assert.equal(element.props.stats.activas, 1); assert.equal(element.props.stats.solicitudesFarmasiPendientes, 0)
 })
 test('si directorio falla conserva listado y cifras, declara desconocido y permite reintentar sin escribir', async () => {
   for (const options of [{ directoryError: true }, { configured: false }]) {

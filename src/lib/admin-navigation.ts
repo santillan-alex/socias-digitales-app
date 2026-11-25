@@ -1,6 +1,6 @@
 import { ADMIN_SECTIONS } from './admin-sections'
 
-export interface AdminNavigationData { nombre: string; solicitudesPendientes: number | null }
+export interface AdminNavigationData { nombre: string; solicitudesPendientes: number | null; solicitudesFarmasiPendientes: number | null }
 export type AdminNavigationSection = typeof ADMIN_SECTIONS[number]
 export const ADMIN_NAVIGATION_GROUPS = [
   { id: 'personas', nombre: 'Alumnas y accesos', rutas: ['/admin/alumnas', '/admin/socias', '/admin/afiliadas', '/admin/desafio', '/admin/encuesta', '/admin/invitar', '/admin/equipo'] },
