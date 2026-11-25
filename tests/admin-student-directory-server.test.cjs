@@ -18,7 +18,7 @@ function loader(deps = {}) {
   }
   return load
 }
-const perfil = (n, changes = {}) => ({ id: id(n), nombre: `Alumna ${n}`, rol: 'alumna', tipo_usuario: 'gratuito', estado: 'activa', whatsapp: null, pais: 'Argentina', desafio_socias_habilitada: false, desafio_socias_estado: 'no_aplica', created_at: stamp, ...changes })
+const perfil = (n, changes = {}) => ({ id: id(n), nombre: `Alumna ${n}`, rol: 'alumna', tipo_usuario: 'gratuito', estado: 'activa', whatsapp: null, pais: 'Argentina', desafio_socias_habilitada: false, desafio_socias_estado: 'no_aplica', socias_farmaci_habilitada: false, created_at: stamp, ...changes })
 function fixture(options = {}) {
   const calls = [], events = [], identities = [], privileged = { marker: 'cliente-administrativo-ficticio' }, profiles = options.profiles ?? [perfil(1)], grants = options.grants ?? []
   let profilePages = 0, inFlight = 0, maxInFlight = 0
@@ -33,7 +33,7 @@ function fixture(options = {}) {
         events.push('perfilAdmin')
         return { data: options.adminProfile === null ? null : { id: uid, rol: 'admin', ...options.adminProfile }, error: options.adminProfileError ?? null }
       }
-      assert.ok(['perfiles', 'accesos_afiliadas'].includes(table), table)
+      assert.ok(['perfiles', 'accesos_afiliadas', 'solicitudes_socias_farmasi'].includes(table), table)
       if (table === 'perfiles') {
         events.push('profilesPage'); profilePages++
         if (options.profileErrorAt === profilePages) return { data: null, error: { message: 'detalle-privado-perfiles' }, count: null }
@@ -43,6 +43,11 @@ function fixture(options = {}) {
         if (q.range) data = data.slice(q.range[0], Math.min(q.range[1] + 1, q.range[0] + (options.maxRows ?? 500)))
         if (q.limit) data = data.slice(0, q.limit)
         return { data, error: null, count }
+      }
+      if (table === 'solicitudes_socias_farmasi') {
+        if (options.farmasiRequestsError) return { data: null, error: {}, count: null }
+        const data = (options.farmasiRequests ?? []).filter(matches)
+        return { data, error: null, count: data.length }
       }
       events.push('grantsBatch'); inFlight++; maxInFlight = Math.max(inFlight, maxInFlight)
       await new Promise(resolve => setImmediate(resolve))
@@ -129,4 +134,26 @@ test('API privada soloGET conserva admin, query cerrada y respuestas no cacheabl
   assert.ok(!Object.hasOwn(route, 'POST')); assert.ok(!Object.hasOwn(route, 'PATCH')); assert.ok(!Object.hasOwn(route, 'DELETE'))
   assert.equal((await route.GET(new Request(url + '?usuaria_id=' + id(1)))).status, 400)
   for (const [options, status] of [[{ user: null }, 401], [{ adminProfile: { rol: 'alumna' } }, 403], [{ adminProfileError: {} }, 503]]) { const denied = fixture(options), api = denied.load('src/app/api/admin/alumnas/route.ts'); assert.equal((await api.GET(new Request(url))).status, status); assert.ok(!denied.events.includes('profilesPage')); assert.ok(!denied.events.includes('createAdminClient')) }
+})
+
+test('Farmasi se lee del permiso protegido de perfil y conserva tipo base sin confiar en metadata', async () => {
+  const s = fixture({ profiles: [perfil(1, { socias_farmaci_habilitada: true }), perfil(2, { tipo_usuario: 'socia', socias_farmaci_habilitada: true }), perfil(3, { user_metadata: { socias_farmaci_habilitada: true }, socias_farmaci_habilitada: false })] })
+  const auth = await s.autorizarDirectorioAlumnas(), resultado = await s.leerDirectorioAlumnas(auth)
+  assert.equal(resultado.estado, 'lista')
+  assert.deepEqual(resultado.cuentas.map(c => [c.tipo_usuario, c.socias_farmaci_habilitada]), [['gratuito', true], ['socia', true], ['gratuito', false]])
+  assert.ok(s.calls.some(q => q.table === 'perfiles' && !q.single && q.fields.includes('socias_farmaci_habilitada')))
+  assert.ok(!JSON.stringify(resultado).includes('user_metadata'))
+})
+
+test('solicitudes Farmasi se leen por ID ya autorizado; fallo no clasifica las alumnas como gratuitas', async () => {
+  for (const failed of [false, true]) {
+    const s = fixture({ profiles: [perfil(1), perfil(2, { socias_farmaci_habilitada: true })], farmasiRequests: [{ usuaria_id: id(1) }], farmasiRequestsError: failed })
+    const auth = await s.autorizarDirectorioAlumnas(), resultado = await s.leerDirectorioAlumnas(auth)
+    assert.equal(resultado.estado, 'lista')
+    assert.deepEqual(resultado.cuentas.map(c => c.socias_farmasi_pendiente), failed ? [null, null] : [true, false])
+    assert.deepEqual(resultado.cuentas.map(c => c.tipo_usuario), ['gratuito', 'gratuito'])
+    const q = s.calls.find(q => q.table === 'solicitudes_socias_farmasi')
+    assert.equal(q.fields, 'usuaria_id')
+    assert.deepEqual(q.filters, [['in','usuaria_id',[id(1),id(2)]]])
+  }
 })

@@ -7,7 +7,7 @@ import ArrowIcon from '@/components/ArrowIcon'
 import StudentShellFrame from '@/components/StudentShellFrame'
 import LockedModules from '@/components/LockedModules'
 import FreeStart from '@/components/FreeStart'
-import { RUTA_AULA_FARMASI } from '@/lib/farmasi-registration'
+import { RUTA_AULA_FARMASI, RUTA_FARMASI } from '@/lib/farmasi-registration'
 import { tieneAccesoFarmaci } from '@/lib/class-access'
 import { leerCatalogoClases } from '@/lib/class-catalog'
 import { leerAvisosSinLeer } from '@/lib/unread-notices'
@@ -66,7 +66,13 @@ export default async function InicioPage(props: { searchParams: Promise<Record<s
   const ahoraInicial = await leerHoraServidor()
   const mesCalendario = (await searchParams)?.mes
   const esGratuito = acceso.gratuito
-  const clasesGratuitas = esGratuito && !soloAfiliada && !soloFarmasi && perfil ? await leerCatalogoClases(perfil) : []
+  const solicitudFarmasi = perfil.estado === 'activa' && perfil.socias_farmaci_habilitada !== true
+    ? await supabase.from('solicitudes_socias_farmasi').select('usuaria_id').eq('usuaria_id', user.id).maybeSingle()
+    : null
+  const farmasiPendiente = solicitudFarmasi?.data?.usuaria_id === user.id
+  const farmasiSinComprobar = Boolean(solicitudFarmasi?.error)
+  const soloPendienteFarmasi = esGratuito && (farmasiPendiente || farmasiSinComprobar) && !soloAfiliada
+  const clasesGratuitas = esGratuito && !soloAfiliada && !soloFarmasi && !soloPendienteFarmasi && perfil ? await leerCatalogoClases(perfil) : []
   const accesoCerrado = perfil?.desafio_socias_estado === 'rechazada' || perfil?.desafio_socias_estado === 'bloqueada'
   let hitos: HitoAgenda[] = [], errorAgenda = false
   if (mostrarClase && perfil) {
@@ -81,7 +87,7 @@ export default async function InicioPage(props: { searchParams: Promise<Record<s
         <main className="min-w-0 px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#294A38]">{soloAfiliada ? 'Afiliadas' : acceso.etiqueta}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#294A38]">{soloPendienteFarmasi ? farmasiPendiente ? 'Socias Farmasi · Pendiente' : 'Tu cuenta' : soloAfiliada ? 'Afiliadas' : acceso.etiqueta}</p>
               <h1 className="mt-2 font-serif text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">Hola, {nombre}.</h1>
             </div>
             <Link href="/perfil" className="inline-flex items-center gap-2 text-sm font-medium text-[#294A38]">Mi perfil <ArrowIcon diagonal /></Link>
@@ -89,12 +95,14 @@ export default async function InicioPage(props: { searchParams: Promise<Record<s
 
           {tieneAccesoFarmaci(perfil) && !soloFarmasi && <section aria-label="Socias Farmasi" className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-[#E7DDD5] bg-[#FFFDFA] p-5"><div><h2 className="text-xl font-semibold">Socias Farmasi</h2><p className="mt-1 text-sm text-[#746A64]">Tus clases exclusivas están en la biblioteca.</p></div><Link href={RUTA_AULA_FARMASI} prefetch={false} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#294A38] px-5 py-3 text-sm font-semibold text-white">Ir a mis clases <ArrowIcon /></Link></section>}
 
+          {farmasiPendiente && <section aria-label="Inscripción Farmasi pendiente" className="mt-6 rounded-[24px] border border-[#EC9BB6] bg-[#FFFDFA] p-5"><h2 className="text-xl font-semibold">Socias Farmasi: inscripción pendiente</h2><p className="mt-2 text-sm leading-6 text-[#746A64]">Flor tiene que aceptar tu solicitud. Después podrás entrar directo a las clases de Farmasi.</p><Link href={RUTA_FARMASI} className="mt-4 inline-flex min-h-11 items-center rounded-full bg-[#294A38] px-5 py-3 text-sm font-semibold text-white">Comprobar mi acceso <ArrowIcon /></Link></section>}
+          {farmasiSinComprobar && <p role="alert" className="mt-5 rounded-2xl border border-[#E7DDD5] bg-[#FFFDFA] p-4 text-sm text-[#746A64]">No pudimos comprobar tu inscripción Farmasi. <a href="/inicio" className="font-semibold underline">Actualizar</a></p>}
           {mostrarClase && <div className="mt-5"><ProximaClase ahoraInicial={ahoraInicial} variante="banner" /></div>}
 
           {accesoAfiliadas.habilitada && <section aria-label="Tu espacio de Afiliadas" className="mt-6 flex flex-wrap items-center justify-between gap-5 rounded-[24px] border border-[#EC9BB6] bg-[#F4CAD8] p-6"><div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#294A38]">Para acompañar tus ventas</p><h2 className="mt-2 text-2xl font-semibold">Tu espacio de Afiliadas</h2><p className="mt-2 max-w-xl text-sm leading-6 text-[#746A64]">Mensajes de Flor, textos listos para adaptar y materiales de cada campaña.</p></div><Link href="/afiliadas" prefetch={false} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#294A38] px-5 py-3 text-sm font-semibold text-white">Entrar a Afiliadas <ArrowIcon /></Link></section>}
           {accesoAfiliadas.error && <p role="alert" className="mt-5 rounded-2xl border border-[#E7DDD5] bg-[#FFFDFA] p-4 text-sm text-[#746A64]">No pudimos comprobar el acceso a Afiliadas. <a href="/inicio" className="inline-flex min-h-11 items-center font-semibold text-[#294A38] underline">Actualizar</a></p>}
 
-          {soloAfiliada ? null : acceso.suspendido ? <section className="mt-7 max-w-3xl rounded-[24px] border border-[#EC9BB6] bg-[#F4CAD8] p-6 sm:p-8"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#211c19]/55">Tu acceso</p><h2 className="mt-3 font-serif text-3xl font-semibold">Tu acceso al contenido pago está pausado.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-[#211c19]/70">Tus datos y avances siguen guardados. Si necesitás revisar tu acceso, comunicate con el equipo de Socias Digitales. Podés seguir entrando a tu perfil y tus avisos.</p><Link href="/perfil" className="mt-6 inline-flex min-h-11 items-center rounded-full bg-[#294A38] px-5 py-3 text-sm font-semibold text-white">Ir a mi perfil <ArrowIcon /></Link></section> : soloFarmasi ? <Suspense fallback={<FarmasiHomeLoading />}><FarmasiHome supabase={supabase} usuariaId={user.id} perfil={perfil} /></Suspense> : esGratuito ? <FreeStart clases={clasesGratuitas} /> : !habilitada && esDesafio ? (
+          {soloAfiliada || soloPendienteFarmasi ? null : acceso.suspendido ? <section className="mt-7 max-w-3xl rounded-[24px] border border-[#EC9BB6] bg-[#F4CAD8] p-6 sm:p-8"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#211c19]/55">Tu acceso</p><h2 className="mt-3 font-serif text-3xl font-semibold">Tu acceso al contenido pago está pausado.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-[#211c19]/70">Tus datos y avances siguen guardados. Si necesitás revisar tu acceso, comunicate con el equipo de Socias Digitales. Podés seguir entrando a tu perfil y tus avisos.</p><Link href="/perfil" className="mt-6 inline-flex min-h-11 items-center rounded-full bg-[#294A38] px-5 py-3 text-sm font-semibold text-white">Ir a mi perfil <ArrowIcon /></Link></section> : soloFarmasi ? <Suspense fallback={<FarmasiHomeLoading />}><FarmasiHome supabase={supabase} usuariaId={user.id} perfil={perfil} /></Suspense> : esGratuito ? <FreeStart clases={clasesGratuitas} /> : !habilitada && esDesafio ? (
             <section className="mt-7 max-w-3xl rounded-[24px] bg-[#F4CAD8] p-6 sm:p-8">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#211c19]/55">Inscripción recibida</p>
               <h2 className="mt-3 font-serif text-3xl font-semibold">{accesoCerrado ? 'Tu acceso no está habilitado.' : 'Tu acceso está en revisión.'}</h2>
@@ -120,7 +128,7 @@ export default async function InicioPage(props: { searchParams: Promise<Record<s
             </>
           )}
           {!habilitada && <UnreadNoticeLink variante="tarjeta" />}
-          {!soloAfiliada && !soloFarmasi && <LockedModules compacto={habilitada} erroresPermiso={[...(accesoResultados.error ? ['resultados' as const] : []), ...(accesoMetricas.error ? ['metricas' as const] : []), ...(accesoMiDia.error ? ['checklist' as const] : [])]} venta={esGratuito} resultadosHabilitados={accesoResultados.permitido} metricasHabilitadas={accesoMetricas.permitido} miDiaHabilitado={accesoMiDia.permitido} logrosHabilitados={puedeVerLogros(perfil)} comunidadHabilitada={puedeUsarComunidad(perfil)} />}
+          {!soloAfiliada && !soloFarmasi && !soloPendienteFarmasi && <LockedModules compacto={habilitada} erroresPermiso={[...(accesoResultados.error ? ['resultados' as const] : []), ...(accesoMetricas.error ? ['metricas' as const] : []), ...(accesoMiDia.error ? ['checklist' as const] : [])]} venta={esGratuito} resultadosHabilitados={accesoResultados.permitido} metricasHabilitadas={accesoMetricas.permitido} miDiaHabilitado={accesoMiDia.permitido} logrosHabilitados={puedeVerLogros(perfil)} comunidadHabilitada={puedeUsarComunidad(perfil)} />}
         </main>
     </StudentShellFrame>
   )

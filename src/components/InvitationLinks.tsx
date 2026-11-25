@@ -8,7 +8,7 @@ export const invitationLinks = [
   { label: 'Gratuito', path: '/registro', note: 'Acceso libre a las funciones gratuitas.' },
   { label: 'Desafío Socias', path: '/registro/desafio', note: 'La solicitud queda pendiente de tu aprobación.' },
   { label: 'Socias', path: '/registro/socias', note: 'Crean su cuenta. Después activá Socias desde su ficha en Acceso y actividad.' },
-  { label: 'Socias Farmasi', path: RUTA_FARMASI, note: 'Pueden registrarse o ingresar y solicitar acceso. Revisá las solicitudes en Invitaciones.' },
+  { label: 'Socias Farmasi', path: RUTA_FARMASI, note: 'Al registrarse y confirmar el email, se envía una solicitud de Farmasi. Aprobala en Invitaciones; después entrará a sus clases Farmasi desde este mismo enlace.' },
 ] as const
 
 export default function InvitationLinks() {

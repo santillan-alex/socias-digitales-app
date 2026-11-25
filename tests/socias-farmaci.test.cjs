@@ -80,7 +80,7 @@ test('admin route grants and revokes only this permission and is idempotent', as
   const changes = []
   let profile = { id: cuenta, rol: 'alumna', estado: 'activa', socias_farmaci_habilitada: false }
   let allow = true
-  const db = { from: name => {
+  const db = { auth: { admin: { getUserById: async id => ({ data: { user: { id, email: 'prueba@example.invalid', email_confirmed_at: '2026-11-25T12:00:00Z', is_anonymous: false } }, error: null }) } }, from: name => {
     assert.equal(name, 'perfiles')
     let patch
     const query = { select: () => query, eq: () => query, or: () => query, update: changeset => { patch = changeset; return query },

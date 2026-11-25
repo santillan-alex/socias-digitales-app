@@ -61,7 +61,7 @@ test('Farmasi es un acceso adicional y no modifica el permiso de formación ni e
     assert.equal(cerrada.farmasi, false); assert.equal(cerrada.soloFarmasi, false); assert.equal(cerrada.conocerSocias, false)
   }
 })
-function pagina({ perfil = socia, errorPerfil = null, user = { id: 'propia' }, estrategia = false, afiliadas = { habilitada: false, error: false } } = {}) {
+function pagina({ perfil = socia, errorPerfil = null, user = { id: 'propia' }, estrategia = false, afiliadas = { habilitada: false, error: false }, farmasiPendiente = false, errorFarmasi = null } = {}) {
   const calls = [], seleccion = []
   const db = { auth: { getUser: async () => ({ data: { user } }) }, from: table => {
     calls.push('tabla:' + table)
@@ -69,7 +69,7 @@ function pagina({ perfil = socia, errorPerfil = null, user = { id: 'propia' }, e
       seleccion.push({ table, columns })
       return { eq: (campo, id) => ({ maybeSingle: async () => {
         assert.equal(campo, table === 'perfiles' ? 'id' : 'usuaria_id'); assert.equal(id, 'propia')
-        return table === 'perfiles' ? { data: perfil, error: errorPerfil } : { data: { habilitada: estrategia }, error: null }
+        return table === 'perfiles' ? { data: perfil, error: errorPerfil } : table === 'solicitudes_socias_farmasi' ? { data: farmasiPendiente ? { usuaria_id: 'propia' } : null, error: errorFarmasi } : { data: { habilitada: estrategia }, error: null }
       } }) }
     } }
   } }
@@ -324,4 +324,22 @@ test('SSR Inicio: sesión ausente pide login y admin regresa a su panel sin leer
     await assert.rejects(() => p.page(), new RegExp('redirect:' + destino))
     assert.deepEqual(p.calls, calls)
   }
+})
+
+test('SSR Inicio: pendiente Farmasi queda identificado sin mostrar gratuito ni desbloquear clases', async () => {
+  const p = pagina({ perfil: { ...socia, tipo_usuario: 'gratuito', socias_farmaci_habilitada: false }, farmasiPendiente: true })
+  const html = renderToStaticMarkup(await p.page())
+  assert.match(html, /Socias Farmasi · Pendiente/)
+  assert.match(html, /Socias Farmasi: inscripción pendiente/)
+  assert.match(html, /href="\/registro\/farmasi"/)
+  assert.doesNotMatch(html, /Acceso gratuito|data-inicio-gratuito|data-inicio-farmasi|data-campus|Quiero ser Socia/)
+  assert.ok(!p.calls.includes('catalogo'))
+  assert.ok(p.seleccion.some(s => s.table === 'solicitudes_socias_farmasi' && s.columns === 'usuaria_id'))
+})
+test('SSR Inicio: pendiente Farmasi adicional no oculta el acceso Socias', async () => {
+  const p = pagina({ perfil: { ...socia, socias_farmaci_habilitada: false }, farmasiPendiente: true })
+  const html = renderToStaticMarkup(await p.page())
+  assert.match(html, /Socias Farmasi: inscripción pendiente/)
+  assert.match(html, /data-campus="true"/)
+  assert.doesNotMatch(html, /data-inicio-farmasi/)
 })

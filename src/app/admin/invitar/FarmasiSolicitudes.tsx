@@ -15,7 +15,7 @@ export default function FarmasiSolicitudes({ solicitudes }: { solicitudes: Solic
   const [revisando, setRevisando] = useState<string | null>(null)
   return <section aria-labelledby="solicitudes-farmasi" className="rounded-[24px] border border-[#F4CAD8] bg-white p-5 sm:p-6">
     <h2 id="solicitudes-farmasi" className="font-serif text-2xl text-[#171413]">Solicitudes de Socias Farmasi</h2>
-    <p className="mt-2 text-sm leading-6 text-[#655B56]">Revisá que el correo corresponda a una alumna Farmasi antes de habilitarla. El registro no concede acceso por sí solo.</p>
+    <p className="mt-2 text-sm leading-6 text-[#655B56]">Las inscripciones llegan como Farmasi pendiente. Revisá que el correo corresponda a una alumna Farmasi y aceptá su solicitud para habilitar solo ese acceso.</p>
     {aprobada && <p role="status" className="mt-3 text-sm text-[#294A38]">Acceso Farmasi habilitado.</p>}
     {!solicitudes ? <p role="alert" className="mt-4 text-sm text-[#7C1D2A]">No pudimos verificar las solicitudes. Volvé a cargar esta página.</p>
       : !solicitudes.filas.length ? <p className="mt-4 text-sm text-[#655B56]">No hay solicitudes pendientes.</p>
@@ -28,7 +28,7 @@ export default function FarmasiSolicitudes({ solicitudes }: { solicitudes: Solic
             setRevisando(actual => abierta ? fila.id : actual === fila.id ? null : actual)
           }}>
             <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold text-[#294A38]">Revisar acceso</summary>
-            {revisando === fila.id && <FarmaciAccessControl perfilId={fila.id} alCambiar={habilitada => { setAprobada(habilitada); router.refresh() }} />}
+            {revisando === fila.id && <FarmaciAccessControl esSolicitud perfilId={fila.id} alCambiar={habilitada => { setAprobada(habilitada); router.refresh() }} />}
           </details> : <p className="mt-2 text-sm text-[#655B56]">No se comprobó una cuenta activa con correo confirmado. Por ahora no se puede habilitar.</p>}
         </li>)}</ul>}
     {solicitudes && (solicitudes.pagina > 1 || solicitudes.hayMas) && <nav aria-label="Páginas de solicitudes Farmasi" className="mt-4 flex flex-wrap gap-2">

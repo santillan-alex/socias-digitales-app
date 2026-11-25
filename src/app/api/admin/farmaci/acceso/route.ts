@@ -11,6 +11,13 @@ async function leerCuenta(perfilId: string) {
     .select('id,rol,estado,socias_farmaci_habilitada').eq('id', perfilId).maybeSingle()
 }
 
+async function identidadConfirmada(perfilId: string): Promise<boolean | null> {
+  const { data, error } = await createAdminClient().auth.admin.getUserById(perfilId)
+  if (error) return null
+  const user = data.user
+  return Boolean(user && user.id === perfilId && user.email && user.email_confirmed_at && !user.is_anonymous)
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await autorizarAdmin()
@@ -20,7 +27,9 @@ export async function GET(request: Request) {
     const { data, error } = await leerCuenta(perfilId)
     if (error) return json({ error: 'No pudimos comprobar el acceso.' }, 503)
     if (!data || data.rol === 'admin') return json({ error: 'No encontramos esa alumna.' }, 404)
-    return json({ habilitada: data.socias_farmaci_habilitada === true, elegible: data.estado === 'activa' })
+    const confirmada = data.estado === 'activa' ? await identidadConfirmada(perfilId) : false
+    if (confirmada === null) return json({ error: 'No pudimos verificar el correo de la alumna.' }, 503)
+    return json({ habilitada: data.socias_farmaci_habilitada === true, elegible: confirmada })
   } catch {
     return json({ error: 'No pudimos comprobar el acceso.' }, 503)
   }
@@ -40,7 +49,13 @@ export async function POST(request: Request) {
     if (error) return json({ error: 'No pudimos comprobar la cuenta.' }, 503)
     if (!cuenta || cuenta.rol === 'admin') return json({ error: 'No encontramos esa alumna.' }, 404)
     if (habilitada && cuenta.estado !== 'activa') return json({ error: 'Solo podés habilitar a alumnas con cuenta activa.' }, 409)
-    if (cuenta.socias_farmaci_habilitada === habilitada) return json({ habilitada, elegible: cuenta.estado === 'activa' })
+    // Revoking an access never requires a confirmed email. New grants do.
+    if (habilitada) {
+      const confirmada = await identidadConfirmada(perfilId)
+      if (confirmada === null) return json({ error: 'No pudimos verificar el correo de la alumna.' }, 503)
+      if (!confirmada) return json({ error: 'La alumna debe confirmar su email antes de aceptar la inscripción Farmasi.' }, 409)
+    }
+    if (cuenta.socias_farmaci_habilitada === habilitada) return json({ habilitada, elegible: habilitada || cuenta.estado === 'activa' && (await identidadConfirmada(perfilId).catch(() => null)) === true })
     let mutacion = createAdminClient().from('perfiles').update({
       socias_farmaci_habilitada: habilitada,
       socias_farmaci_habilitada_at: new Date().toISOString(),
@@ -52,7 +67,7 @@ export async function POST(request: Request) {
       .select('id,estado,socias_farmaci_habilitada,socias_farmaci_habilitada_por').maybeSingle()
     if (errorGuardar || !data || data.id !== perfilId || data.socias_farmaci_habilitada !== habilitada || data.socias_farmaci_habilitada_por !== auth.user.id)
       return json({ error: 'No pudimos confirmar el cambio. Revisá el acceso actual antes de volver a intentar.' }, 409)
-    return json({ habilitada, elegible: data.estado === 'activa' })
+    return json({ habilitada, elegible: habilitada || data.estado === 'activa' && (await identidadConfirmada(perfilId).catch(() => null)) === true })
   } catch {
     return json({ error: 'No pudimos confirmar el cambio. Revisá el acceso antes de volver a intentar.' }, 503)
   }

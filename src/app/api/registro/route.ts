@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     ? { type: 'recovery', email, options: { redirectTo: `${site}/auth/callback?flow=recovery` } }
     : reservation.exists
     ? { type: 'magiclink', email, options: { redirectTo: `${site}/auth/callback` } }
-    : { type: 'signup', email, password, options: { data: { nombre, tipo_usuario: input.tipo_usuario === 'desafio' ? 'desafio' : 'gratuito' }, redirectTo: `${site}/auth/callback` } })
+    : { type: 'signup', email, password, options: { data: { nombre, tipo_usuario: !farmasi && input.tipo_usuario === 'desafio' ? 'desafio' : 'gratuito' }, redirectTo: `${site}/auth/callback` } })
   if (error || !data.properties?.hashed_token) {
     console.error('registration_failed', { stage: 'create_access', code: error?.code })
     return NextResponse.json({ error: 'No pudimos crear el acceso. Intentá nuevamente.' }, { status: 503 })
@@ -55,16 +55,26 @@ export async function POST(request: Request) {
     // Missing preference means no optional marketing; never block the access email.
     if (consentError) console.warn('registration_consent_pending', { code: consentError.code })
   }
+  // The Farmasi intent belongs only to a newly created account on this
+  // registration path. No existing account is identified by an unverified email.
+  // This RPC records a pending request, never an entitlement. Confirmation and
+  // the authenticated request remain idempotent, including when this call fails.
+  if (farmasi && !reservation.exists && !resend && data.user?.id) {
+    try {
+      const solicitud = await admin.rpc('solicitar_socias_farmasi', { p_usuaria_id: data.user.id })
+      if (solicitud.error || solicitud.data !== 'pendiente') console.warn('farmasi_registration_pending_unconfirmed')
+    } catch { console.warn('farmasi_registration_pending_unconfirmed') }
+  }
   // Fragment keeps the one-time token out of server request/access logs. A human
   // clicks Confirmar before consuming it, so email link scanners cannot burn it.
   const link = `${site}/confirmar#token_hash=${encodeURIComponent(data.properties.hashed_token)}${recovery ? '&flow=recovery' : farmasi ? '&flow=' + FLUJO_FARMASI : ''}`
   const challenge = data.user?.user_metadata?.tipo_usuario === 'desafio'
   const firstName = escapeHtml(normalizarNombre(data.user?.user_metadata?.nombre || nombre || 'Socia').split(' ')[0])
   const heading = recovery ? 'Recuperá tu acceso' : 'Confirmá tu cuenta'
-  const description = recovery ? 'Recibimos un pedido para recuperar tu acceso. Desde este enlace podés elegir una contraseña nueva.' : challenge ? 'Confirmá tu email para completar tu registro al Desafío Socias. Flor revisará tu inscripción y te enviará la bienvenida cuando habilite tu acceso.' : 'Confirmá tu email para entrar a tu cuenta de Socias Digitales.'
+  const description = farmasi ? 'Confirmá tu email para completar tu inscripción a Socias Farmasi. Flor revisará tu solicitud y habilitará tus clases.' : recovery ? 'Recibimos un pedido para recuperar tu acceso. Desde este enlace podés elegir una contraseña nueva.' : challenge ? 'Confirmá tu email para completar tu registro al Desafío Socias. Flor revisará tu inscripción y te enviará la bienvenida cuando habilite tu acceso.' : 'Confirmá tu email para entrar a tu cuenta de Socias Digitales.'
   const html = `<div style="background:#FAF7F3;padding:32px 16px;font-family:Arial,sans-serif;color:#171413"><div style="max-width:560px;margin:auto">${EMAIL_HEADER}<h1 style="font-size:28px;color:#294A38">${heading}</h1><p>Hola, ${firstName}.</p><p>${description}</p><a href="${link}" style="display:block;text-align:center;background:#294A38;color:white;padding:18px;border-radius:12px;text-decoration:none;font-weight:bold;font-size:18px;margin:28px 0">${recovery ? 'RECUPERAR MI ACCESO' : 'CONFIRMAR MI CUENTA'}</a><p style="font-size:13px;color:#655B56">Si no hiciste este pedido, ignorá este correo.</p><p>Un abrazo,<br>Flor</p></div></div>`
   try {
-    const sent = await enviarConfirmacion({ from: process.env.RESEND_FROM || 'Flor · Socias Digitales <no-reply@sociasdigitales.com>', to: [email], subject: recovery ? 'Recuperá tu acceso · Socias Digitales' : challenge ? 'Confirmá tu registro al Desafío Socias' : 'Confirmá tu cuenta · Socias Digitales', html,
+    const sent = await enviarConfirmacion({ from: process.env.RESEND_FROM || 'Flor · Socias Digitales <no-reply@sociasdigitales.com>', to: [email], subject: recovery ? 'Recuperá tu acceso · Socias Digitales' : farmasi ? 'Confirmá tu inscripción · Socias Farmasi' : challenge ? 'Confirmá tu registro al Desafío Socias' : 'Confirmá tu cuenta · Socias Digitales', html,
         text: `Hola, ${firstName}. ${heading}: ${link}\n${description}\nUn abrazo, Flor` }, process.env.RESEND_API_KEY!)
     if (!sent.ok) {
       console.error('registration_email_failed', { status: sent.status })

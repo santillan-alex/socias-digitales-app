@@ -13,7 +13,7 @@ async function leerRespuesta(response: Response): Promise<Acceso> {
   return { habilitada: data.habilitada, elegible: data.elegible }
 }
 
-export default function FarmaciAccessControl({ perfilId, alCambiar }: { perfilId: string; alCambiar?: (habilitada: boolean) => void }) {
+export default function FarmaciAccessControl({ perfilId, alCambiar, esSolicitud = false }: { perfilId: string; alCambiar?: (habilitada: boolean) => void; esSolicitud?: boolean }) {
   const [acceso, setAcceso] = useState<Acceso | null>(null), [estado, setEstado] = useState('')
   const [ocupado, setOcupado] = useState(true), [intento, setIntento] = useState(0)
   const solicitud = useRef<AbortController | null>(null), mutando = useRef(false)
@@ -53,8 +53,8 @@ export default function FarmaciAccessControl({ perfilId, alCambiar }: { perfilId
   return <section aria-label="Acceso Socias Farmasi" className="mt-5 space-y-3 rounded-2xl border border-[#E7DDD5] bg-[#FAF7F3] p-4" aria-busy={ocupado}>
     <h3 className="text-base font-semibold">Socias Farmasi</h3>
     <p className="text-sm leading-6 text-[#746A64]">Permite ver clases exclusivas. No cambia el plan ni los otros accesos.</p>
-    {acceso ? <><p className="text-sm">{acceso.habilitada ? acceso.elegible ? 'Habilitado' : 'Asignado, pero la cuenta no está activa' : 'Sin habilitar'}</p>
-      <button type="button" className={boton} disabled={ocupado || !acceso.elegible && !acceso.habilitada} onClick={() => void cambiar()}>{acceso.habilitada ? 'Quitar acceso Farmasi' : 'Habilitar acceso Farmasi'}</button></> :
+    {acceso ? <><p className="text-sm">{acceso.habilitada ? acceso.elegible ? 'Habilitado' : 'Asignado, pero la cuenta no está activa o confirmada' : acceso.elegible ? 'Pendiente de habilitar' : 'Cuenta no activa o sin correo confirmado'}</p>
+      <button type="button" className={boton} disabled={ocupado || !acceso.elegible && !acceso.habilitada} onClick={() => void cambiar()}>{acceso.habilitada ? 'Quitar acceso Farmasi' : esSolicitud ? 'Aceptar solicitud Farmasi' : 'Habilitar acceso Farmasi'}</button></> :
       ocupado ? <p className="text-sm">Comprobando acceso…</p> :
       <button type="button" className={boton} onClick={() => { setEstado(''); setOcupado(true); setIntento(n => n + 1) }}>Volver a comprobar</button>}
     {estado && <p role={acceso ? 'status' : 'alert'} className="text-sm leading-6">{estado}</p>}

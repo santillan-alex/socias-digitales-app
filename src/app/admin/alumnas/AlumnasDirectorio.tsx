@@ -4,13 +4,14 @@ import FarmaciAccessControl from './FarmaciAccessControl'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import ArrowIcon from '@/components/ArrowIcon'
-import { esDirectorioAlumnas, filtrarDirectorioAlumnas, resumirDirectorioAlumnas, type CuentaDirectorioAlumna, type DirectorioAlumnas } from '@/lib/admin-student-directory'
+import { esDirectorioAlumnas, estadoFarmasi, filtrarDirectorioAlumnas, resumirDirectorioAlumnas, type CuentaDirectorioAlumna, type DirectorioAlumnas } from '@/lib/admin-student-directory'
 
 const boton = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#E7DDD5] bg-[#FFFDFA] px-4 py-3 text-sm font-semibold text-[#294A38] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38] disabled:opacity-50'
 const campo = 'mt-2 min-h-11 w-full min-w-0 rounded-xl border border-[#E7DDD5] bg-[#FFFDFA] px-3 py-3 text-base text-[#211C19]'
 type TipoFiltro = 'todas' | 'socia' | 'desafio' | 'gratuito' | 'sin_tipo'
 type EstadoFiltro = 'todas' | 'activa' | 'pausada' | 'cancelada' | 'sin_estado'
 type AfiliadasFiltro = 'todas' | 'habilitadas' | 'sin_acceso' | 'sin_comprobar'
+type FarmasiFiltro = AfiliadasFiltro | 'todas_farmasi' | 'pendientes'
 
 function nombreTipo(tipo: string | null) {
   return tipo === 'socia' ? 'Socias Digitales' : tipo === 'desafio' ? 'Desafío Socias' : tipo === 'gratuito' ? 'Gratuito' : 'Tipo por revisar'
@@ -32,8 +33,12 @@ function EstadoCuenta({ cuenta }: { cuenta: CuentaDirectorioAlumna }) {
   return <span className="inline-flex items-center gap-2 text-xs font-medium"><span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${cuenta.estado === 'activa' ? 'bg-[#294A38]' : cuenta.estado === 'pausada' ? 'bg-[#EC9BB6]' : 'bg-[#746A64]'}`} />{nombreEstado(cuenta.estado)}</span>
 }
 function AccesosCuenta({ cuenta }: { cuenta: CuentaDirectorioAlumna }) {
+  const farmasi = estadoFarmasi(cuenta)
   return <div className="flex min-w-0 flex-wrap gap-2">
-    <span className="rounded-full border border-[#EC9BB6] bg-[#F4CAD8] px-2.5 py-1 text-xs font-medium text-[#211C19]">{nombreTipo(cuenta.tipo_usuario)}</span>
+    {farmasi === 'habilitada' && <span className="rounded-full border border-[#294A38] bg-[#294A38] px-2.5 py-1 text-xs font-medium text-white">Socias Farmasi</span>}
+    {farmasi === 'pendiente' && <span className="rounded-full border border-[#EC9BB6] bg-[#F4CAD8] px-2.5 py-1 text-xs font-medium text-[#211C19]">Farmasi pendiente</span>}
+    {farmasi === 'sin_comprobar' && <span className="rounded-full border border-[#E7DDD5] px-2.5 py-1 text-xs text-[#746A64]">Farmasi sin comprobar</span>}
+    {(cuenta.tipo_usuario !== 'gratuito' || farmasi === 'sin_acceso') && <span className="rounded-full border border-[#EC9BB6] bg-[#F4CAD8] px-2.5 py-1 text-xs font-medium text-[#211C19]">{nombreTipo(cuenta.tipo_usuario)}</span>}
     {cuenta.afiliadas_habilitada === true && <span className="rounded-full border border-[#294A38] bg-[#294A38] px-2.5 py-1 text-xs font-medium text-white">Afiliada</span>}
     {cuenta.afiliadas_habilitada === null && <span className="rounded-full border border-[#E7DDD5] px-2.5 py-1 text-xs text-[#746A64]">Afiliadas sin comprobar</span>}
     {cuenta.tipo_usuario === 'desafio' && cuenta.desafio_socias_habilitada !== true && <span className="rounded-full border border-[#E7DDD5] bg-[#FFFDFA] px-2.5 py-1 text-xs text-[#746A64]">{cuenta.desafio_socias_habilitada === null ? 'Desafío sin comprobar' : 'Desafío sin habilitar'}</span>}
@@ -50,6 +55,7 @@ export default function AlumnasDirectorio({ inicial }: { inicial: DirectorioAlum
   const [tipo, setTipo] = useState<TipoFiltro>('todas')
   const [estado, setEstado] = useState<EstadoFiltro>('todas')
   const [afiliadas, setAfiliadas] = useState<AfiliadasFiltro>('todas')
+  const [farmasi, setFarmasi] = useState<FarmasiFiltro>('todas')
   const [cargando, setCargando] = useState(false)
   const [seleccionada, setSeleccionada] = useState<CuentaDirectorioAlumna | null>(null)
   const dialogo = useRef<HTMLDialogElement | null>(null)
@@ -60,16 +66,17 @@ export default function AlumnasDirectorio({ inicial }: { inicial: DirectorioAlum
 
   const cuentas = directorio.estado === 'lista' ? directorio.cuentas : []
   const resumen = resumirDirectorioAlumnas(directorio)
-  const visibles = filtrarDirectorioAlumnas(cuentas, { busqueda, tipo, estado, afiliadas })
-  const hayFiltros = Boolean(busqueda || tipo !== 'todas' || estado !== 'todas' || afiliadas !== 'todas')
+  const visibles = filtrarDirectorioAlumnas(cuentas, { busqueda, tipo, estado, afiliadas, farmasi })
+  const hayFiltros = Boolean(busqueda || tipo !== 'todas' || estado !== 'todas' || afiliadas !== 'todas' || farmasi !== 'todas')
 
-  function limpiar() { setBusqueda(''); setTipo('todas'); setEstado('todas'); setAfiliadas('todas') }
-  function elegirResumen(id: 'total' | 'socias' | 'desafio' | 'gratuitas' | 'afiliadas') {
+  function limpiar() { setBusqueda(''); setTipo('todas'); setEstado('todas'); setAfiliadas('todas'); setFarmasi('todas') }
+  function elegirResumen(id: 'total' | 'socias' | 'desafio' | 'gratuitas' | 'afiliadas' | 'farmasi') {
     limpiar()
     if (id === 'socias') setTipo('socia')
     if (id === 'desafio') setTipo('desafio')
     if (id === 'gratuitas') setTipo('gratuito')
     if (id === 'afiliadas') setAfiliadas('habilitadas')
+    if (id === 'farmasi') setFarmasi('todas_farmasi')
   }
   function verFicha(cuenta: CuentaDirectorioAlumna, origen: HTMLButtonElement) {
     origenFicha.current = origen
@@ -77,6 +84,10 @@ export default function AlumnasDirectorio({ inicial }: { inicial: DirectorioAlum
     if (dialogo.current && !dialogo.current.open) dialogo.current.showModal()
   }
   function cerrarFicha() { dialogo.current?.close() }
+  function reflejarFarmasi(id: string, habilitada: boolean) {
+    setDirectorio(actual => actual.estado === 'lista' ? { ...actual, cuentas: actual.cuentas.map(cuenta => cuenta.id === id ? { ...cuenta, socias_farmaci_habilitada: habilitada, socias_farmasi_pendiente: habilitada ? false : cuenta.socias_farmasi_pendiente } : cuenta) } : actual)
+    setSeleccionada(actual => actual?.id === id ? { ...actual, socias_farmaci_habilitada: habilitada, socias_farmasi_pendiente: habilitada ? false : actual.socias_farmasi_pendiente } : actual)
+  }
   async function actualizar() {
     if (enCurso.current) return
     enCurso.current = true; setCargando(true); cerrarFicha(); setSeleccionada(null)
@@ -96,8 +107,9 @@ export default function AlumnasDirectorio({ inicial }: { inicial: DirectorioAlum
     { id: 'total' as const, titulo: 'Todas las alumnas', valor: resumen?.total, nota: 'Personas, sin duplicados', tono: 'border-[#EC9BB6] bg-[#FFFDFA] text-[#211C19]' },
     { id: 'socias' as const, titulo: 'Socias', valor: resumen?.socias, nota: 'Socias Digitales', tono: 'border-[#EC9BB6] bg-[#EC9BB6] text-[#211C19]' },
     { id: 'desafio' as const, titulo: 'Desafío', valor: resumen?.desafio, nota: 'Desafío Socias', tono: 'border-[#EC9BB6] bg-[#F4CAD8] text-[#211C19]' },
+    { id: 'farmasi' as const, titulo: 'Farmasi', valor: resumen?.farmasi, nota: resumen ? `${resumen.farmasi_habilitadas} habilitadas · ${resumen.farmasi_pendientes} pendientes` : '', tono: 'border-[#294A38] bg-[#294A38] text-white' },
     { id: 'afiliadas' as const, titulo: 'Afiliadas', valor: resumen?.afiliadas, nota: 'Permiso habilitado', tono: 'border-[#294A38] bg-[#294A38] text-white' },
-    { id: 'gratuitas' as const, titulo: 'Gratuitas', valor: resumen?.gratuitas, nota: 'Acceso gratuito', tono: 'border-[#E7DDD5] bg-[#FAF7F3] text-[#211C19]' },
+    { id: 'gratuitas' as const, titulo: 'Gratuitas', valor: resumen?.gratuitas, nota: 'Sin acceso ni solicitud Farmasi', tono: 'border-[#E7DDD5] bg-[#FAF7F3] text-[#211C19]' },
   ]
 
   return <main className="mx-auto min-w-0 max-w-7xl px-5 py-7 text-[#211C19] sm:px-8 sm:py-9">
@@ -109,16 +121,18 @@ export default function AlumnasDirectorio({ inicial }: { inicial: DirectorioAlum
       {directorio.limitado && <p role="alert" className="mt-5 rounded-2xl border border-[#EC9BB6] bg-[#F4CAD8] p-4 text-sm leading-6">Esta lectura alcanzó el límite de cuentas. La lista y sus filtros son parciales; los totales quedan sin confirmar.</p>}
       {directorio.errorIdentidades && <p role="alert" className="mt-5 rounded-2xl border border-[#EC9BB6] bg-[#FAF7F3] p-4 text-sm leading-6">No pudimos comprobar los emails y los últimos ingresos. Podés consultar las cuentas y volver a actualizar; esto no significa que falte confirmar un email.</p>}
       {directorio.errorAfiliadas && <p role="alert" className="mt-5 rounded-2xl border border-[#EC9BB6] bg-[#FAF7F3] p-4 text-sm leading-6">Los permisos de Afiliadas están sin comprobar. No los contamos como deshabilitados; actualizá para consultar su estado.</p>}
-      <section aria-label="Resumen de alumnas y accesos" className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
-        {tarjetas.map(t => <button key={t.id} type="button" disabled={t.valor == null} onClick={() => elegirResumen(t.id)} aria-label={`Ver ${t.titulo}: ${t.valor == null ? 'sin confirmar' : t.valor}`} className={`min-h-32 min-w-0 rounded-[22px] border p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38] disabled:cursor-default sm:p-5 ${t.id === 'total' ? 'col-span-2 md:col-span-4 xl:col-span-1' : ''} ${t.tono}`}><span className="block text-[10px] font-semibold uppercase tracking-[.14em]">{t.titulo}</span><span className="mt-3 block font-impact text-4xl font-semibold tabular-nums">{t.valor ?? '—'}</span><span className="mt-2 block text-xs leading-5">{t.valor == null ? 'Sin confirmar' : t.nota}</span></button>)}
+      {cuentas.some(cuenta => estadoFarmasi(cuenta) === 'sin_comprobar') && <p role="alert" className="mt-5 rounded-2xl border border-[#EC9BB6] bg-[#FAF7F3] p-4 text-sm leading-6">Hay accesos o solicitudes Farmasi sin comprobar. No se cuentan como gratuitas; actualizá para consultar su estado.</p>}
+      <section aria-label="Resumen de alumnas y accesos" className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        {tarjetas.map(t => <button key={t.id} type="button" disabled={t.valor == null} onClick={() => elegirResumen(t.id)} aria-label={`Ver ${t.titulo}: ${t.valor == null ? 'sin confirmar' : t.valor}`} className={`min-h-32 min-w-0 rounded-[22px] border p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#294A38] disabled:cursor-default sm:p-5 ${t.id === 'total' ? 'col-span-2 md:col-span-1 xl:col-span-1' : ''} ${t.tono}`}><span className="block text-[10px] font-semibold uppercase tracking-[.14em]">{t.titulo}</span><span className="mt-3 block font-impact text-4xl font-semibold tabular-nums">{t.valor ?? '—'}</span><span className="mt-2 block text-xs leading-5">{t.valor == null ? 'Sin confirmar' : t.nota}</span></button>)}
       </section>
-      <p className="mt-3 text-xs leading-5 text-[#746A64]">Afiliadas es un acceso adicional: una Socia puede estar en ambos grupos y aparece una sola vez en la lista.</p>
+      <p className="mt-3 text-xs leading-5 text-[#746A64]">Farmasi y Afiliadas son accesos adicionales: una alumna puede tenerlos sin perder Socias Digitales o Desafío y aparece una sola vez. Gratuitas no incluye Farmasi pendiente o habilitada.</p>
       {resumen && <p className="mt-2 text-xs leading-5 text-[#746A64]">{resumen.activas} activas · {resumen.pausadas} pausadas · {resumen.canceladas} canceladas{resumen.sin_tipo > 0 ? ` · ${resumen.sin_tipo} con tipo por revisar` : ''}{resumen.sin_estado > 0 ? ` · ${resumen.sin_estado} con estado por revisar` : ''}</p>}
-      <section aria-label="Filtrar alumnas" className="mt-6 grid min-w-0 gap-4 rounded-[24px] border border-[#E7DDD5] bg-[#FAF7F3] p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
+      <section aria-label="Filtrar alumnas" className="mt-6 grid min-w-0 gap-4 rounded-[24px] border border-[#E7DDD5] bg-[#FAF7F3] p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-5">
         <label className="min-w-0 text-xs font-medium">Buscar alumna<input type="search" value={busqueda} maxLength={200} onChange={e => setBusqueda(e.target.value)} placeholder="Nombre, email, WhatsApp o país" className={campo} /></label>
-        <label className="min-w-0 text-xs font-medium">Acceso principal<select value={tipo} onChange={e => setTipo(e.target.value as TipoFiltro)} className={campo}><option value="todas">Todos los accesos</option><option value="socia">Socias Digitales</option><option value="desafio">Desafío Socias</option><option value="gratuito">Gratuito</option><option value="sin_tipo">Tipo por revisar</option></select></label>
+        <label className="min-w-0 text-xs font-medium">Plan base<select value={tipo} onChange={e => setTipo(e.target.value as TipoFiltro)} className={campo}><option value="todas">Todos los accesos</option><option value="socia">Socias Digitales</option><option value="desafio">Desafío Socias</option><option value="gratuito">Gratuito sin Farmasi</option><option value="sin_tipo">Tipo por revisar</option></select></label>
         <label className="min-w-0 text-xs font-medium">Afiliadas<select value={afiliadas} onChange={e => setAfiliadas(e.target.value as AfiliadasFiltro)} className={campo}><option value="todas">Todas</option><option value="habilitadas">Habilitadas</option><option value="sin_acceso">Sin habilitar</option><option value="sin_comprobar">Sin comprobar</option></select></label>
         <label className="min-w-0 text-xs font-medium">Estado de la cuenta<select value={estado} onChange={e => setEstado(e.target.value as EstadoFiltro)} className={campo}><option value="todas">Todos los estados</option><option value="activa">Activa</option><option value="pausada">Pausada</option><option value="cancelada">Cancelada</option><option value="sin_estado">Estado por revisar</option></select></label>
+        <label className="min-w-0 text-xs font-medium">Socias Farmasi<select value={farmasi} onChange={e => setFarmasi(e.target.value as FarmasiFiltro)} className={campo}><option value="todas">Todas</option><option value="todas_farmasi">Farmasi habilitadas y pendientes</option><option value="habilitadas">Habilitadas</option><option value="pendientes">Pendientes</option><option value="sin_acceso">Sin habilitar</option><option value="sin_comprobar">Sin comprobar</option></select></label>
       </section>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><p role="status" aria-live="polite" className="text-xs leading-5 text-[#746A64]">{visibles.length} {visibles.length === 1 ? 'alumna' : 'alumnas'} en esta vista{resumen ? ` · ${resumen.total} en total` : ''}</p>{hayFiltros && <button type="button" onClick={limpiar} className={boton}>Limpiar filtros</button>}</div>
       {visibles.length === 0 ? <section className="mt-4 rounded-[24px] border border-[#E7DDD5] bg-[#FFFDFA] p-6 sm:p-8"><h2 className="text-xl font-semibold">{cuentas.length ? 'No hay coincidencias' : 'Todavía no hay alumnas para mostrar'}</h2><p className="mt-3 text-sm leading-6 text-[#746A64]">{cuentas.length ? 'Probá otro nombre o combiná otros filtros para encontrar a tu alumna.' : 'Las cuentas aparecerán acá cuando se registren en la plataforma.'}</p></section> : <>
@@ -133,7 +147,7 @@ export default function AlumnasDirectorio({ inicial }: { inicial: DirectorioAlum
       {seleccionada && <div className="min-w-0 pt-5"><AccesosCuenta cuenta={seleccionada} /><div className="mt-4"><EstadoCuenta cuenta={seleccionada} /></div><dl className="mt-5 grid min-w-0 gap-4 text-sm sm:grid-cols-2"><div className="min-w-0 sm:col-span-2"><dt className="text-xs text-[#746A64]">Email de acceso</dt><dd className="mt-1"><EmailCuenta cuenta={seleccionada} /></dd></div>{[
         ['WhatsApp', seleccionada.whatsapp || 'Sin completar'], ['País', seleccionada.pais || 'Sin completar'], ['Alta en la plataforma', fecha(seleccionada.created_at)], ['Último ingreso', ultimoIngreso(seleccionada, true)], ['Afiliadas', seleccionada.afiliadas_habilitada === null ? 'Sin comprobar' : seleccionada.afiliadas_habilitada ? 'Permiso habilitado' : 'Sin habilitar'], ...(seleccionada.tipo_usuario === 'desafio' ? [['Desafío Socias', seleccionada.desafio_socias_habilitada === null ? 'Sin comprobar' : seleccionada.desafio_socias_habilitada ? 'Habilitado' : 'Sin habilitar']] : []),
       ].map(([etiqueta, valor]) => <div key={etiqueta} className="min-w-0"><dt className="text-xs text-[#746A64]">{etiqueta}</dt><dd className="mt-1 break-words leading-6">{valor}</dd></div>)}</dl>
-      <FarmaciAccessControl key={seleccionada.id} perfilId={seleccionada.id} />
+      <FarmaciAccessControl key={seleccionada.id} perfilId={seleccionada.id} alCambiar={habilitada => reflejarFarmasi(seleccionada.id, habilitada)} />
       {['pausada', 'cancelada'].includes(seleccionada.estado || '') && <p className="mt-5 rounded-2xl border border-[#EC9BB6] bg-[#F4EFEA] p-4 text-sm leading-6">La cuenta está {nombreEstado(seleccionada.estado).toLocaleLowerCase('es-AR')}. Los permisos asignados no significan que pueda entrar mientras su cuenta esté suspendida.</p>}
       <section className="mt-5 rounded-2xl border border-[#E7DDD5] bg-[#FAF7F3] p-4"><p className="text-xs leading-6 text-[#746A64]">Esta ficha reúne la información de la cuenta. Los cambios se gestionan desde sus apartados.</p><div className="mt-3 flex flex-wrap gap-2"><Link href="/admin#acceso-actividad" className={boton}>Acceso y actividad<ArrowIcon /></Link><Link href="/admin/afiliadas/accesos" className={boton}>Gestionar Afiliadas<ArrowIcon /></Link>{seleccionada.tipo_usuario === 'socia' && <Link href="/admin/socias" className={boton}>Seguimiento de Socias<ArrowIcon /></Link>}</div></section>
       </div>}

@@ -1,5 +1,11 @@
 # Estado de Socias Digitales
 
+## Identificación y aprobación Farmasi — 25/11/2026
+
+La inscripción pública sigue siendo `/registro/farmasi`: crea una cuenta base sin plan general y registra una solicitud Farmasi pendiente para las altas nuevas inequívocas. La confirmación del correo y el ingreso por el enlace mantienen el pedido de acceso autenticado e idempotente. Un correo existente no se clasifica como Farmasi solamente por escribirlo en un formulario. Una solicitud no concede ningún acceso; la administradora debe aceptar conscientemente una cuenta activa con correo confirmado. El mismo enlace posterior a la aprobación conduce al aula Farmasi.
+
+El directorio distingue Farmasi habilitadas y pendientes, no las cuenta como gratuitas, preserva accesos combinados (Socias, Desafío, Afiliadas) y muestra un estado sin comprobar si la lectura de Farmasi falla. Inicio muestra el estado pendiente para una cuenta que entra por el login general sin anunciarle acceso al aula ni clasificarla como gratuita. Sigue vigente la separación del tipo base interno y el permiso Farmasi; no hay migración ni cambios de cuenta, correo o permisos retroactivos.
+
 ## Experiencia Farmasi y propuesta Socias — ampliación del 24/11/2026
 
 **Publicado y READY.** Commit `a134e2e8c5540d43eaac3a7a0064d957a4b3902a`, árbol `6c5207abbd298c9b26586acbfd4eddced4fb72a7`, deployment `dpl_EVNBnam2zzVfz3oViHCF1RdzGtz6`. Se confirmó que `app.sociasdigitales.com` apunta a esta versión. Base `e62f2462d1e167c67846e261bd5abb8ee3a96f36`, registro documental de la producción previa `6926a0aa279f0b03e720b6dc9b7d18b4da447c40`.

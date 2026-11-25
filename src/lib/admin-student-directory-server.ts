@@ -10,9 +10,9 @@ import { esCuentaDirectorioAlumna, esDirectorioAlumnas, fechaDirectorioValida, L
 
 export interface SesionDirectorioAlumnas { supabase: Awaited<ReturnType<typeof createClient>>; userId: string; admin: true }
 export const HEADERS_DIRECTORIO_ALUMNAS = { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' }
-const CAMPOS = 'id,nombre,whatsapp,pais,estado,tipo_usuario,rol,desafio_socias_habilitada,desafio_socias_estado,created_at'
+const CAMPOS = 'id,nombre,whatsapp,pais,estado,tipo_usuario,rol,desafio_socias_habilitada,desafio_socias_estado,socias_farmaci_habilitada,created_at'
 const TAMANO_PAGINA = 500, MAX_PAGINAS = 100, TAMANO_LOTE_ACCESOS = 100
-type PerfilLeido = Omit<CuentaDirectorioAlumna, 'email' | 'email_confirmado' | 'cuenta_encontrada' | 'ultimo_acceso' | 'afiliadas_habilitada'>
+type PerfilLeido = Omit<CuentaDirectorioAlumna, 'email' | 'email_confirmado' | 'cuenta_encontrada' | 'ultimo_acceso' | 'afiliadas_habilitada' | 'socias_farmasi_pendiente'>
 async function aTiempo<T>(promesa: PromiseLike<T>, timeoutMs = 6000): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
   return Promise.race([Promise.resolve(promesa), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('directory_timeout')), timeoutMs) })]).finally(() => clearTimeout(timer))
@@ -38,12 +38,13 @@ function fecha(x: unknown): string | null { if (x === null) return null; if (!fe
 function perfilDto(raw: unknown): PerfilLeido | null {
   if (!objeto(raw) || !esIdAfiliadas(raw.id) || !(raw.rol === null || typeof raw.rol === 'string')) throw new Error('invalid_profile')
   if (raw.rol === 'admin' || esCuentaPrueba(raw.id)) return null
-  if (!(raw.desafio_socias_habilitada === null || typeof raw.desafio_socias_habilitada === 'boolean') || !(raw.tipo_usuario === null || typeof raw.tipo_usuario === 'string') || !(raw.estado === null || typeof raw.estado === 'string') || !(raw.desafio_socias_estado === null || typeof raw.desafio_socias_estado === 'string')) throw new Error('invalid_profile')
+  if (!(raw.socias_farmaci_habilitada === null || typeof raw.socias_farmaci_habilitada === 'boolean') || !(raw.desafio_socias_habilitada === null || typeof raw.desafio_socias_habilitada === 'boolean') || !(raw.tipo_usuario === null || typeof raw.tipo_usuario === 'string') || !(raw.estado === null || typeof raw.estado === 'string') || !(raw.desafio_socias_estado === null || typeof raw.desafio_socias_estado === 'string')) throw new Error('invalid_profile')
   return {
     id: raw.id, nombre: texto(raw.nombre, 240), whatsapp: texto(raw.whatsapp, 80), pais: texto(raw.pais, 120), created_at: fecha(raw.created_at),
     tipo_usuario: ['gratuito', 'desafio', 'socia'].includes(String(raw.tipo_usuario)) ? raw.tipo_usuario as TipoDirectorioAlumna : null,
     estado: ['activa', 'pausada', 'cancelada'].includes(String(raw.estado)) ? raw.estado as EstadoDirectorioAlumna : null,
     desafio_socias_habilitada: raw.desafio_socias_habilitada as boolean | null,
+    socias_farmaci_habilitada: raw.socias_farmaci_habilitada as boolean | null,
     desafio_socias_estado: ['no_aplica', 'pendiente', 'habilitada', 'rechazada', 'bloqueada'].includes(String(raw.desafio_socias_estado)) ? raw.desafio_socias_estado as EstadoDesafioDirectorio : null,
   }
 }
@@ -83,6 +84,23 @@ async function leerHabilitaciones(auth: SesionDirectorioAlumnas, ids: string[]) 
     return permisos
   } catch (error) { unstable_rethrow(error); return null }
 }
+async function leerSolicitudesFarmasi(auth: SesionDirectorioAlumnas, ids: string[]) {
+  const lotes: string[][] = [], pendientes = new Set<string>()
+  for (let i = 0; i < ids.length; i += TAMANO_LOTE_ACCESOS) lotes.push(ids.slice(i, i + TAMANO_LOTE_ACCESOS))
+  try {
+    for (let i = 0; i < lotes.length; i += 4) {
+      // Consultar solo IDs del directorio administrativo ya autorizado, sin datos personales adicionales.
+      const partes = await Promise.all(lotes.slice(i, i + 4).map(async lote => {
+        const result = await aTiempo(auth.supabase.from('solicitudes_socias_farmasi').select('usuaria_id', { count: 'exact' }).in('usuaria_id', lote).range(0, lote.length - 1))
+        if (result.error || !Array.isArray(result.data) || !Number.isSafeInteger(result.count) || result.count !== result.data.length || result.data.length > lote.length) throw new Error('farmasi_requests_read_failed')
+        for (const row of result.data) if (!objeto(row) || typeof row.usuaria_id !== 'string' || !lote.includes(row.usuaria_id)) throw new Error('invalid_farmasi_request')
+        return result.data as { usuaria_id: string }[]
+      }))
+      for (const row of partes.flat()) { if (pendientes.has(row.usuaria_id)) throw new Error('duplicate_farmasi_request'); pendientes.add(row.usuaria_id) }
+    }
+    return pendientes
+  } catch (error) { unstable_rethrow(error); return null }
+}
 async function leerIdentidades(ids: string[]) {
   try {
     if (!isAdminSupabaseConfigured()) throw new Error('directory_unconfigured')
@@ -93,7 +111,7 @@ async function leerIdentidades(ids: string[]) {
 }
 function conIdentidad(perfil: PerfilLeido, identidad: IdentidadCuenta | null): CuentaDirectorioAlumna {
   if (identidad && (!(identidad.email === null || typeof identidad.email === 'string') || !(identidad.email_confirmado === null || typeof identidad.email_confirmado === 'boolean') || typeof identidad.cuenta_encontrada !== 'boolean')) throw new Error('invalid_identity')
-  const row = { ...perfil, email: identidad?.email ?? null, email_confirmado: identidad?.email_confirmado ?? null, cuenta_encontrada: identidad?.cuenta_encontrada ?? null, ultimo_acceso: identidad?.ultimo_acceso ?? null, afiliadas_habilitada: null }
+  const row = { ...perfil, email: identidad?.email ?? null, email_confirmado: identidad?.email_confirmado ?? null, cuenta_encontrada: identidad?.cuenta_encontrada ?? null, ultimo_acceso: identidad?.ultimo_acceso ?? null, afiliadas_habilitada: null, socias_farmasi_pendiente: null }
   if (!esCuentaDirectorioAlumna(row)) throw new Error('invalid_identity')
   return row
 }
@@ -102,7 +120,7 @@ export async function leerDirectorioAlumnas(auth: SesionDirectorioAlumnas): Prom
     if (auth.admin !== true || !esIdAfiliadas(auth.userId)) throw new Error('invalid_admin_session')
     const { perfiles, limitado } = await leerPerfiles(auth), ids = perfiles.map(p => p.id)
     if (!ids.length) return { estado: 'lista', cuentas: [], limitado, errorIdentidades: false, errorAfiliadas: false }
-    const [grants, identidades] = await Promise.all([leerHabilitaciones(auth, ids), leerIdentidades(ids)])
+    const [grants, identidades, solicitudesFarmasi] = await Promise.all([leerHabilitaciones(auth, ids), leerIdentidades(ids), leerSolicitudesFarmasi(auth, ids)])
     let conCuentas: CuentaDirectorioAlumna[], errorIdentidades = identidades === null
     try {
       conCuentas = perfiles.map(p => {
@@ -111,7 +129,7 @@ export async function leerDirectorioAlumnas(auth: SesionDirectorioAlumnas): Prom
         return conIdentidad(p, identidad)
       })
     } catch (error) { unstable_rethrow(error); errorIdentidades = true; conCuentas = perfiles.map(p => conIdentidad(p, null)) }
-    const resultado: DirectorioAlumnas = { estado: 'lista', cuentas: conCuentas.map(c => ({ ...c, afiliadas_habilitada: grants ? grants.get(c.id) ?? false : null })), limitado, errorIdentidades, errorAfiliadas: grants === null }
+    const resultado: DirectorioAlumnas = { estado: 'lista', cuentas: conCuentas.map(c => ({ ...c, afiliadas_habilitada: grants ? grants.get(c.id) ?? false : null, socias_farmasi_pendiente: solicitudesFarmasi ? solicitudesFarmasi.has(c.id) : null })), limitado, errorIdentidades, errorAfiliadas: grants === null }
     if (!esDirectorioAlumnas(resultado)) throw new Error('invalid_directory')
     return resultado
   } catch (error) { unstable_rethrow(error); return { estado: 'error', mensaje: 'No pudimos comprobar el listado de alumnas. Volvé a intentar; no se muestran cifras incompletas como definitivas.' } }

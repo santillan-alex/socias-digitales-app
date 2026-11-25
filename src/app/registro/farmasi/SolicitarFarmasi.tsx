@@ -13,7 +13,7 @@ const textos: Record<Estado, string> = {
   admin: 'Tu cuenta es de administración. Podés gestionar las solicitudes desde Invitaciones.',
   inactiva: 'Para enviar una solicitud, tu cuenta tiene que estar activa. Si necesitás ayuda, contactá al equipo de Socias Digitales.',
   sin_confirmar: 'Confirmá el email de tu cuenta antes de solicitar acceso.',
-  pendiente: 'Tu solicitud está pendiente. Cuando Flor la apruebe, este mismo enlace te llevará directo a tus clases Farmasi.',
+  pendiente: 'Tu inscripción a Socias Farmasi está pendiente de aprobación. Cuando Flor la acepte, este mismo enlace te llevará directo a tus clases Farmasi.',
   error: 'No pudimos comprobar el estado de tu solicitud. Volvé a cargar la página para intentarlo de nuevo.',
 }
 
@@ -44,7 +44,7 @@ export default function SolicitarFarmasi({ inicial }: { inicial: Estado }) {
       {error && <p role="alert" className="mt-5 text-sm text-[#7C1D2A]">{error}</p>}
       <div className="mt-6">
         {estado === 'lista' && <button type="button" disabled={enviando} onClick={() => void solicitar()} className={boton}>{enviando ? 'Enviando…' : 'Solicitar acceso Farmasi'}</button>}
-        {estado === 'pendiente' && <button type="button" className={boton} onClick={() => window.location.replace(RUTA_FARMASI)}>Volver a revisar</button>}
+        {estado === 'pendiente' && <button type="button" className={boton} onClick={() => window.location.replace(RUTA_FARMASI)}>Comprobar mi acceso</button>}
         {estado === 'admin' && <Link className={boton} href="/admin/invitar">Revisar solicitudes</Link>}
         {estado === 'sin_confirmar' && <Link className={boton} href={DESTINO_INGRESO_FARMASI}>Ir a Ingresar</Link>}
       </div>

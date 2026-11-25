@@ -13,7 +13,7 @@ function loader(deps = {}, env = {}) {
   return load
 }
 const d = loader()('src/lib/admin-student-directory.ts'), id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`, stamp = '2026-11-05T12:00:00Z'
-const cuenta = changes => ({ id: id(1), nombre: 'María Alba', email: 'maria@example.invalid', email_confirmado: true, cuenta_encontrada: true, whatsapp: '+5493511234567', pais: 'Argentina', estado: 'activa', tipo_usuario: 'socia', desafio_socias_habilitada: false, desafio_socias_estado: 'no_aplica', created_at: stamp, ultimo_acceso: stamp, afiliadas_habilitada: true, ...changes })
+const cuenta = changes => ({ id: id(1), nombre: 'María Alba', email: 'maria@example.invalid', email_confirmado: true, cuenta_encontrada: true, whatsapp: '+5493511234567', pais: 'Argentina', estado: 'activa', tipo_usuario: 'socia', desafio_socias_habilitada: false, desafio_socias_estado: 'no_aplica', socias_farmaci_habilitada: false, socias_farmasi_pendiente: false, created_at: stamp, ultimo_acceso: stamp, afiliadas_habilitada: true, ...changes })
 const roster = [cuenta(), cuenta({ id: id(2), nombre: 'Ana Desafío', email: 'ana@example.invalid', pais: 'Chile', tipo_usuario: 'desafio', desafio_socias_habilitada: false, desafio_socias_estado: 'pendiente', afiliadas_habilitada: false }), cuenta({ id: id(3), nombre: 'Celia Libre', email: 'celia@example.invalid', pais: 'Uruguay', tipo_usuario: 'gratuito', estado: 'pausada', afiliadas_habilitada: false })]
 const lista = (cuentas = roster, changes = {}) => ({ estado: 'lista', cuentas, limitado: false, errorIdentidades: false, errorAfiliadas: false, ...changes })
 const Link = ({ prefetch, children, ...p }) => { void prefetch; return React.createElement('a', p, children) }
@@ -105,4 +105,49 @@ test('ficha nativa conserva datos de solo lectura y control Farmasi puntual, con
   by(dlg, n => n.type === 'button' && text(n) === 'Cerrar').props.onClick(); assert.equal(h.closed(), 1); assert.equal(focused, 1); assert.ok(!renderToStaticMarkup(by(h.render(), n => n.type === 'dialog')).includes('maria@example.invalid'))
   open(); const next = by(h.render(), n => n.type === 'dialog'); next.props.onClick({ target: {}, currentTarget: next }); assert.equal(h.dialog().open, true); next.props.onClick({ target: next, currentTarget: next }); assert.equal(h.closed(), 2)
   open(); h.dialog().close(); assert.equal(focused, 3); assert.equal(h.closed(), 3)
+})
+
+test('Farmasi tiene su propia tarjeta, distintivo y filtro adicional que conserva el plan base', () => {
+  const h = harness(lista([cuenta({ socias_farmaci_habilitada: true }), cuenta({ id: id(2), nombre: 'Alumna Farmasi', tipo_usuario: 'gratuito', socias_farmaci_habilitada: true }), cuenta({ id: id(3), nombre: 'Sin permiso', tipo_usuario: 'gratuito' })]))
+  assert.equal(tile(h, 'Farmasi').props['aria-label'], 'Ver Farmasi: 2')
+  tile(h, 'Farmasi').props.onClick()
+  const rows = nodes(cards(h)).filter(n => n.type === 'article')
+  assert.equal(rows.length, 2)
+  const htmlRows = rows.map(renderToStaticMarkup)
+  assert.ok(htmlRows[0].includes('Socias Farmasi') && htmlRows[0].includes('Socias Digitales'))
+  assert.ok(htmlRows[1].includes('Socias Farmasi') && !htmlRows[1].includes('Gratuito'))
+  assert.equal(select(h, 0).props.value, 'todas')
+  assert.equal(select(h, 3).props.value, 'todas_farmasi')
+  select(h, 0).props.onChange({ target: { value: 'gratuito' } })
+  assert.ok(html(h).includes('No hay coincidencias'))
+  by(h.render(), n => n.type === 'button' && text(n) === 'Limpiar filtros').props.onClick()
+  assert.equal(nodes(cards(h)).filter(n => n.type === 'article').length, 3)
+})
+
+test('Farmasi sin comprobar no es sin acceso; contador incompleto permanece sin confirmar', () => {
+  const h = harness(lista([cuenta({ socias_farmaci_habilitada: null }), cuenta({ id: id(2), socias_farmaci_habilitada: false })]))
+  assert.equal(tile(h, 'Farmasi').props.disabled, true)
+  select(h, 3).props.onChange({ target: { value: 'sin_comprobar' } })
+  assert.equal(nodes(cards(h)).filter(n => n.type === 'article').length, 1)
+  assert.ok(renderToStaticMarkup(cards(h)).includes('Farmasi sin comprobar'))
+  select(h, 3).props.onChange({ target: { value: 'sin_acceso' } })
+  assert.equal(nodes(cards(h)).filter(n => n.type === 'article').length, 1)
+  assert.ok(!renderToStaticMarkup(cards(h)).includes('Farmasi sin comprobar'))
+})
+
+test('Farmasi pendiente aparece separada de gratuitas y preserva acceso propio en cuentas combinadas', () => {
+  const h = harness(lista([cuenta({ nombre: 'Pendiente', tipo_usuario: 'gratuito', socias_farmasi_pendiente: true }), cuenta({ id: id(2), nombre: 'Habilitada', tipo_usuario: 'gratuito', socias_farmaci_habilitada: true }), cuenta({ id: id(3), nombre: 'Libre', tipo_usuario: 'gratuito' }), cuenta({ id: id(4), nombre: 'Socia combinada', socias_farmasi_pendiente: true })]))
+  assert.equal(tile(h,'Farmasi').props['aria-label'],'Ver Farmasi: 3')
+  assert.equal(tile(h,'Gratuitas').props['aria-label'],'Ver Gratuitas: 1')
+  tile(h,'Farmasi').props.onClick()
+  const rows = nodes(cards(h)).filter(n => n.type === 'article').map(renderToStaticMarkup)
+  assert.equal(rows.length,3)
+  assert.ok(rows[0].includes('Farmasi pendiente') && !rows[0].includes('Gratuito'))
+  assert.ok(rows[1].includes('Socias Farmasi') && !rows[1].includes('Gratuito'))
+  assert.ok(rows[2].includes('Farmasi pendiente') && rows[2].includes('Socias Digitales'))
+  select(h,3).props.onChange({target:{value:'pendientes'}})
+  assert.equal(nodes(cards(h)).filter(n=>n.type==='article').length,2)
+  tile(h, 'Gratuitas').props.onClick()
+  assert.equal(nodes(cards(h)).filter(n=>n.type==='article').length,1)
+  assert.ok(renderToStaticMarkup(cards(h)).includes('Libre'))
 })
